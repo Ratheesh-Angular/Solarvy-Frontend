@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solarvy – Get Expert Review</title>
+<style>
+:root{
+--bg:#0b1420;
+--panel:#111c2b;
+--line:#25384e;
+--text:#eaf1f8;
+--muted:#9db0c6;
+--accent:#2dd4bf;
+--accent2:#60a5fa;
+--radius:14px;
+--shadow:0 10px 24px rgba(0,0,0,.22);
+}
+body{margin:0;font-family:Inter,Segoe UI,Arial;background:var(--bg);color:var(--text)}
+.wrap{max-width:980px;margin:auto;padding:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+h1{margin:0 0 8px}
+p{color:var(--muted)}
+label{display:block;margin-top:14px;font-size:13px;font-weight:600}
+input,textarea,select{
+width:100%;margin-top:6px;padding:12px;border-radius:10px;
+border:1px solid var(--line);background:#0d1826;color:var(--text)
+}
+textarea{height:120px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.summary{margin-top:20px;padding:14px;background:#0d1826;border-radius:12px;border:1px solid var(--line)}
+.btn{
+margin-top:18px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+border:none;padding:14px 22px;border-radius:12px;font-weight:700;cursor:pointer
+}
+.small{font-size:13px;color:var(--muted);margin-top:8px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<div class="card">
+
+<h1>Request Expert System Review</h1>
+<p>Upload your installer quote or project details for an independent technical review by Solarvy engineers.</p>
+
+<div class="grid">
+<div>
+<label>Full Name</label>
+<input placeholder="Your full name">
+</div>
+
+<div>
+<label>Phone Number</label>
+<input placeholder="+234...">
+</div>
+
+<div>
+<label>Email Address</label>
+<input placeholder="name@email.com">
+</div>
+
+<div>
+<label>Project Location</label>
+<input placeholder="City / State">
+</div>
+</div>
+
+<label>Upload Installer Quote (optional)</label>
+<input type="file">
+
+<label>What would you like reviewed?</label>
+<select>
+<option>System size recommendation</option>
+<option>Battery sizing</option>
+<option>Total installation cost</option>
+<option>Payback estimate</option>
+<option>Full technical review</option>
+</select>
+
+<label>Additional Notes (optional)</label>
+<textarea placeholder="Example: I received a quote and want confirmation before proceeding"></textarea>
+
+<div class="summary">
+<strong>What you receive after review:</strong>
+<ul>
+<li>Independent system sizing validation</li>
+<li>Battery configuration check</li>
+<li>Cost comparison against expected range</li>
+<li>Savings and payback confirmation</li>
+<li>Technical recommendations before installation</li>
+</ul>
+</div>
+
+<button class="btn">Request Expert Review</button>
+
+<div class="small">
+Your information is used only for preparing your independent assessment.
+</div>
+
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,160 @@
+/* Behind-the-scenes cards: content-height on mobile, fixed on md+ */
+.how-behind-scenes-card {
+  box-sizing: border-box;
+  height: auto;
+  min-height: fit-content;
+  padding: 24px 1.5rem;
+  background-color: #ffffff;
+}
+
+@media (min-width: 768px) {
+  .how-behind-scenes-row > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .how-behind-scenes-card {
+    min-height: 350px;
+    padding: 1.5rem;
+  }
+
+  .how-behind-scenes-row .how-behind-scenes-card {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
+
+.process-section {
+  padding: 10px 10px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  align-items: center;
+
+  text-align: center;
+}
+
+.process-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e2a5a;
+
+  margin-bottom: 10px;
+}
+
+.process-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.feature-list {
+  padding: 20px 10px;
+  border-radius: 10px;
+  max-width: 500px;
+}
+
+h5.fw-bold.mb-2.rang-head {
+  color: #1a2259;
+  font-size: 22px;
+  font-weight: 600 !important;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 20px !important;
+  font-size: 16px;
+  color: #4b5563;
+  margin-bottom: 14px;
+}
+
+.feature-item:last-child {
+  margin-bottom: 0;
+}
+
+.h6.title.cardss {
+  font-size: 45px;
+  font-weight: 400;
+  color: #1f2a56;
+  margin-top: -30px;
+}
+
+.dot-blue {
+  width: 6px;
+  height: 6px;
+  background-color: #234e8f;
+
+  border-radius: 50%;
+  position: relative;
+}
+
+.dot-blue::before {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: rgba(37, 99, 235, 0.15);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.feature-list-orange {
+  padding: 20px 4px;
+  border-radius: 10px;
+  max-width: 500px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  color: #4b5563;
+  margin-bottom: 14px;
+}
+
+.feature-item:last-child {
+  margin-bottom: 0;
+}
+
+.dot-orange {
+  width: 6px;
+  height: 6px;
+  background-color: #e33a02;
+
+  border-radius: 50%;
+  position: relative;
+}
+
+.dot-orange::before {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: rgba(249, 115, 22, 0.2);
+
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+span.dots-texts {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4d5260;
+}
+
+@media (max-width: 768px) {
+  .how-it-works-banner-text {
+    margin-top: 30px;
+  }
+}

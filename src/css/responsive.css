@@ -1,0 +1,147 @@
+/* 📏 Responsive fixes for 110%–150% zoom levels (approx. 1300px–1700px width) */
+@media screen and (min-width: 1300px) and (max-width: 1700px) {
+  /* Navbar adjustments */
+  nav.navbar {
+    padding: 10px 60px; /* reduce side padding to prevent overflow */
+  }
+
+  .navbar-brand img.normal-sizee {
+    width: 130px; /* scale logo moderately */
+  }
+
+  /* Hero text & layout scaling */
+  h1.bannr-text.display-5 {
+    font-size: 38px;
+    top: -20px !important;
+  }
+
+  .solar-main-title {
+    color: #ffffff;
+    font-size: 30px;
+    line-height: 1.1;
+    font-weight: 400;
+    margin-bottom: 60px;
+    margin-top: 0px;
+  }
+
+  p.bannr-text-s.text-light {
+    font-size: 17px;
+  }
+
+  /* Buttons */
+  .custom-btn,
+  .custom-btn-mobile-view {
+    font-size: 15px;
+    height: 46px;
+    padding: 6px 10px 6px 18px !important;
+  }
+
+  /* Prevent content from crowding top navbar */
+  .bannar-see,
+  .hero,
+  .hero-home {
+    background-position: center top;
+    min-height: 75vh;
+  }
+
+  .card-box h3,
+  .card-boxs h3 {
+    font-size: 32px;
+  }
+
+  .steps {
+    gap: 40px;
+  }
+
+  .overlay-card {
+    width: 550px;
+    padding: 35px;
+  }
+
+  .overlay-card h1 {
+    font-size: 36px;
+  }
+
+  /* Footer layout tightening */
+  .footer-section {
+    padding: 20px 0;
+  }
+}
+
+/* 📱 iPad / Tablet Fix (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .solar-main-row {
+    text-align: center;
+  }
+
+  .solar-left-area {
+    padding: 20px 30px;
+  }
+
+  .solar-main-title {
+    font-size: 30px;
+    line-height: 1.3;
+  }
+
+  .solar-main-desc {
+    font-size: 16px;
+  }
+
+  .solar-action-group {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .solar-form-column {
+    margin-top: 30px;
+    padding: 0 40px;
+  }
+
+  .solar-preview-card {
+    padding: 25px;
+  }
+
+  /* Navbar spacing fix */
+  .solar-top-navbar {
+    padding: 10px 20px;
+  }
+
+  /* Button full width on tablet */
+  .solar-primary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.navbar-toggler {
+  border: none;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+@media (max-width: 991px) {
+  .solar-hero-wrapper {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .navbar-expand-md .navbar-collapse {
+    display: inline-block;
+    flex-basis: auto;
+  }
+}
+
+/* 125% zoom fix */
+
+@media screen and (max-width: 1600px) {
+  .solar-main-title {
+    font-size: 30px;
+    line-height: 1.15;
+    margin-bottom: 40px;
+  }
+}

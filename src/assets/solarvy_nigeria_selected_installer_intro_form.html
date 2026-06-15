@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solarvy Nigeria - Request Introduction Form</title>
+  <style>
+    :root{
+      --bg:#0b1420;
+      --panel:#111c2b;
+      --line:#25384e;
+      --text:#eaf1f8;
+      --muted:#9db0c6;
+      --accent:#2dd4bf;
+      --accent2:#60a5fa;
+      --success:#22c55e;
+      --shadow:0 10px 24px rgba(0,0,0,.22);
+      --radius:14px;
+      --max:980px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#0b1420;color:var(--text)}
+    a{text-decoration:none;color:inherit}
+    .wrap{max-width:var(--max);margin:0 auto;padding:0 18px}
+    .nav{border-bottom:1px solid rgba(255,255,255,.06);background:#0a1320;position:sticky;top:0;z-index:20}
+    .nav-inner{height:64px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.05em}
+    .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+    .nav-links{display:flex;gap:18px;color:var(--muted);font-size:14px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 14px;border-radius:10px;font-size:14px;font-weight:700;border:1px solid transparent}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#34d399);color:#062a20}
+    .btn-secondary{background:#0f1a28;border-color:var(--line);color:var(--text)}
+    .page{padding:18px 0 36px}
+    .breadcrumb{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;margin-bottom:12px}
+    .layout{display:grid;grid-template-columns:1fr 320px;gap:14px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .pad{padding:16px}
+    h1{margin:0 0 6px;font-size:26px;letter-spacing:-.02em}
+    h2{margin:0 0 6px;font-size:18px}
+    h3{margin:0}
+    .lead,.small{color:var(--muted)}
+    .lead{font-size:14px;line-height:1.45}
+    .installer-head{display:flex;gap:14px;align-items:center;margin-top:12px}
+    .thumb{width:74px;height:74px;border-radius:12px;background:linear-gradient(135deg,rgba(96,165,250,.26),rgba(45,212,191,.18)),linear-gradient(180deg,#1a2b42,#102033);border:1px solid rgba(255,255,255,.08)}
+    .meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:6px}
+    .pill{padding:7px 9px;border-radius:999px;background:#0d1826;border:1px solid var(--line);font-size:11px;color:#dce7f4}
+    .pill.good{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.22);color:#a8f3b9}
+    .form-grid{display:grid;gap:12px;margin-top:16px}
+    .two{grid-template-columns:repeat(2,1fr)}
+    label{display:block;font-size:13px;font-weight:700;color:#ced9e7;margin-bottom:6px}
+    input,select,textarea{
+      width:100%;height:42px;border-radius:10px;padding:0 12px;
+      border:1px solid var(--line);background:#0d1826;color:var(--text)
+    }
+    textarea{height:96px;padding-top:10px;resize:vertical}
+    .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+    .mini{background:#0d1826;border:1px solid var(--line);border-radius:12px;padding:12px}
+    .mini label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+    .mini strong{font-size:15px}
+    .notice{
+      margin-top:14px;padding:12px 14px;
+      background:#0d1826;border:1px solid var(--line);border-radius:12px;
+      color:var(--muted);font-size:13px
+    }
+    .checklist{display:grid;gap:10px;margin-top:10px}
+    .check{display:flex;gap:9px;align-items:flex-start}
+    .icon{
+      width:20px;height:20px;border-radius:50%;
+      background:rgba(34,197,94,.14);color:#9af0b3;
+      display:grid;place-items:center;font-size:12px;font-weight:800;flex:0 0 20px
+    }
+    .sticky{position:sticky;bottom:10px;z-index:12;margin-top:16px}
+    .sticky-inner{
+      background:#0b1522;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+      padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px
+    }
+    @media (max-width:900px){
+      .nav-links{display:none}
+      .layout,.two,.summary{grid-template-columns:1fr}
+      .sticky-inner{flex-direction:column;align-items:start}
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <div class="brand"><div class="mark"></div><div>SOLARVY</div></div>
+      <nav class="nav-links">
+        <a href="#">Results</a>
+        <a href="#">Installers</a>
+        <a href="#">Review</a>
+      </nav>
+      <a class="btn btn-secondary" href="#">Need help?</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="#">Results</a>
+        <span>›</span>
+        <a href="#">Matched installers</a>
+        <span>›</span>
+        <span>Request introduction</span>
+      </div>
+
+      <div class="layout">
+        <section class="card pad">
+          <h1>Request Introduction to PrimeVolt Energy</h1>
+          <p class="lead">Send your details to this selected installer so they can contact you about your project.</p>
+
+          <div class="installer-head">
+            <div class="thumb"></div>
+            <div>
+              <h2 style="margin:0">PrimeVolt Energy</h2>
+              <div class="meta">
+                <div class="pill good">Match score: 82/100</div>
+                <div class="pill">Lagos</div>
+                <div class="pill">SME fit</div>
+                <div class="pill">Solar + battery</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid two">
+            <div>
+              <label>Full name</label>
+              <input placeholder="Your full name" />
+            </div>
+            <div>
+              <label>Phone number</label>
+              <input placeholder="e.g. +234..." />
+            </div>
+            <div>
+              <label>Email address</label>
+              <input placeholder="name@email.com" />
+            </div>
+            <div>
+              <label>Project timeline</label>
+              <select>
+                <option>Immediately</option>
+                <option>Within 1 month</option>
+                <option>1–3 months</option>
+                <option>3–6 months</option>
+                <option>Just exploring</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Anything you want the installer to know? (optional)</label>
+            <textarea placeholder="For example: I want battery backup included, I already use a generator, I prefer weekend contact, or I already received another quote."></textarea>
+          </div>
+
+          <div class="notice">
+            Your details will be shared only with this selected installer for the purpose of responding to your project enquiry.
+          </div>
+        </section>
+
+        <aside class="card pad">
+          <h2>Project summary</h2>
+          <p class="lead">This is the project information already carried over from your Solarvy results.</p>
+
+          <div class="summary">
+            <div class="mini"><label>Location</label><strong>Lagos</strong></div>
+            <div class="mini"><label>Project type</label><strong>Small business</strong></div>
+            <div class="mini"><label>Estimated size</label><strong>15–25 kWp</strong></div>
+            <div class="mini"><label>Budget range</label><strong>₦18m–₦24m</strong></div>
+          </div>
+
+          <div class="checklist">
+            <div class="check"><div class="icon">✓</div><div><strong>Selected installer only</strong><br><span class="small">Your request is tied to the installer you chose.</span></div></div>
+            <div class="check"><div class="icon">✓</div><div><strong>No repeated assessment</strong><br><span class="small">You do not need to enter all your project details again.</span></div></div>
+            <div class="check"><div class="icon">✓</div><div><strong>Easy next step</strong><br><span class="small">Just send your contact details and move forward.</span></div></div>
+          </div>
+
+          <div style="margin-top:14px">
+            <a class="btn btn-secondary" href="#">Back to matched installers</a>
+          </div>
+        </aside>
+      </div>
+
+      <div class="sticky">
+        <div class="sticky-inner">
+          <div>
+            <div style="font-weight:800">Ready to connect with this installer?</div>
+            <div class="small">Send your details and let the installer respond to your project enquiry.</div>
+          </div>
+          <a class="btn btn-primary" href="#">Request Introduction</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
