@@ -42,6 +42,44 @@ export async function apiPost<T = ApiResponse>(
   return data;
 }
 
+export async function apiGet<T = ApiResponse>(path: string): Promise<T> {
+  const response = await fetch(buildApiUrl(path), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = (await response.json()) as T & { message?: string };
+
+  if (!response.ok) {
+    throw new ApiError(data.message || "Request failed");
+  }
+
+  return data;
+}
+
+export async function apiPatch<T = ApiResponse>(
+  path: string,
+  body: unknown,
+): Promise<T> {
+  const response = await fetch(buildApiUrl(path), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json()) as T & { message?: string };
+
+  if (!response.ok) {
+    throw new ApiError(data.message || "Request failed");
+  }
+
+  return data;
+}
+
 export async function checkApiHealth() {
   const response = await fetch(buildApiUrl("/health"));
   return response.json();

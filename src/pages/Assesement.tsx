@@ -34,9 +34,21 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { ApiError } from "../lib/api";
+import {
+  completeAssessment,
+  completeAssessmentDraft,
+  createAssessmentDraft,
+  getAssessmentDraft,
+  updateAssessmentDraft,
+} from "../lib/assessmentApi";
+import {
+  applyAssessmentFormData,
+  buildAssessmentFormData,
+} from "../lib/assessmentFormHelpers";
 
 type LoadTableRow = {
   id: string;
@@ -427,6 +439,24 @@ function Assesement() {
     "bill" | "appliance" | "custom"
   >("bill");
   const [selectedObjectiveId, setSelectedObjectiveId] = useState("bill");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const draftIdParam = searchParams.get("draft");
+  const [draftId, setDraftId] = useState<number | null>(
+    draftIdParam ? Number(draftIdParam) : null,
+  );
+  const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftIdParam));
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [billNotes, setBillNotes] = useState("");
+  const [monthlyUsage, setMonthlyUsage] = useState("");
+  const [usageUnit, setUsageUnit] = useState("");
+  const [monthlySpend, setMonthlySpend] = useState("");
+  const [gridTariff, setGridTariff] = useState("");
+  const [monthlyElectricityBill, setMonthlyElectricityBill] = useState("");
+  const [roofArea, setRoofArea] = useState("");
+  const [backupDuration, setBackupDuration] = useState("");
   const handleToggle = () => {
     if (window.innerWidth < 768) {
       setOpen(!open);
@@ -713,6 +743,137 @@ function Assesement() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const getFormPayload = () =>
+    buildAssessmentFormData({
+      selectedProperty,
+      selectedPower,
+      inputMethod,
+      selectedObjectiveId,
+      formData,
+      fileName,
+      billNotes,
+      monthlyUsage,
+      usageUnit,
+      monthlySpend,
+      gridTariff,
+      monthlyElectricityBill,
+      appliancePresetTabId,
+      applianceRows,
+      customPresetTabId,
+      customRows,
+      roofArea,
+      backupDuration,
+    });
+
+  useEffect(() => {
+    if (!draftIdParam) {
+      setIsLoadingDraft(false);
+      return;
+    }
+
+    const id = Number(draftIdParam);
+    if (!Number.isFinite(id)) {
+      setIsLoadingDraft(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const draft = await getAssessmentDraft(id);
+        if (cancelled) return;
+
+        setDraftId(draft.id);
+        applyAssessmentFormData(draft.formData, {
+          setSelectedProperty,
+          setSelectedPower,
+          setInputMethod,
+          setSelectedObjectiveId,
+          setFormData,
+          setFileName,
+          setBillNotes,
+          setMonthlyUsage,
+          setUsageUnit,
+          setMonthlySpend,
+          setGridTariff,
+          setMonthlyElectricityBill,
+          setAppliancePresetTabId,
+          setApplianceRows,
+          setCustomPresetTabId,
+          setCustomRows,
+          setRoofArea,
+          setBackupDuration,
+        });
+      } catch (error) {
+        if (!cancelled) {
+          setSaveError(
+            error instanceof ApiError
+              ? error.message
+              : "Unable to load saved assessment draft.",
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoadingDraft(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftIdParam]);
+
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    setSaveError("");
+    setSaveMessage("");
+
+    try {
+      const payload = getFormPayload();
+
+      if (draftId) {
+        await updateAssessmentDraft(draftId, payload);
+        setSaveMessage("Draft saved successfully.");
+      } else {
+        const draft = await createAssessmentDraft(payload);
+        setDraftId(draft.id);
+        setSearchParams({ draft: String(draft.id) });
+        setSaveMessage("Draft created and saved.");
+      }
+    } catch (error) {
+      setSaveError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save draft. Please try again.",
+      );
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleCompleteAssessment = async () => {
+    setIsSubmitting(true);
+    setSaveError("");
+    setSaveMessage("");
+
+    try {
+      const payload = getFormPayload();
+      const result = draftId
+        ? await completeAssessmentDraft(draftId, payload)
+        : await completeAssessment(payload);
+
+      navigate(`/assesement-result?assessment=${result.id}`);
+    } catch (error) {
+      setSaveError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to complete assessment. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const summaryAssessmentPathTitle =
     inputMethod === "bill"
       ? "Bill"
@@ -738,22 +899,28 @@ function Assesement() {
       <button
         type="button"
         className="btn-primary-custom calu"
-        onClick={() => navigate("/assesement-result")}
+        onClick={handleCompleteAssessment}
+        disabled={isSubmitting || isLoadingDraft}
       >
         <span className="icon-sun">
           <img src={sunone} alt="icon" />
         </span>
-        <span>Calculate My Energy System</span>
+        <span>{isSubmitting ? "Calculating..." : "Calculate My Energy System"}</span>
         <span className="arrows">
           <img src={sunthree} alt="icon" />
         </span>
       </button>
 
-      <button className="btn-outline-custom2 calu-2">
+      <button
+        type="button"
+        className="btn-outline-custom2 calu-2"
+        onClick={handleSaveDraft}
+        disabled={isSavingDraft || isLoadingDraft}
+      >
         <span className="icon-sun">
           <img src={save} alt="icon" />
         </span>
-        <span>Save Draft</span>
+        <span>{isSavingDraft ? "Saving..." : "Save Draft"}</span>
       </button>
     </div>
   );
@@ -838,6 +1005,24 @@ function Assesement() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          {isLoadingDraft && (
+            <div className="alert alert-info mb-3" role="status">
+              Loading your saved assessment...
+            </div>
+          )}
+
+          {saveMessage && (
+            <div className="alert alert-success mb-3" role="status">
+              {saveMessage}
+            </div>
+          )}
+
+          {saveError && (
+            <div className="alert alert-danger mb-3" role="alert">
+              {saveError}
+            </div>
+          )}
+
           <div className="row g-4 align-items-start">
             <div className="col-lg-8">
               <div className="p-4 shadow-sm rounded-4 ass-first">
@@ -906,7 +1091,7 @@ function Assesement() {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label ass-field-label">STATE</label>
+                    <label className="form-label ass-field-label">City</label>
                     <select
                       name="state"
                       value={
@@ -915,7 +1100,7 @@ function Assesement() {
                       onChange={handleChange}
                       className="form-select ass-field-control"
                     >
-                      <option value="">Select state</option>
+                      <option value="">Select city</option>
                       {NIGERIA_STATES_SORTED.map(([slug, label]) => (
                         <option key={slug} value={label}>
                           {label}
@@ -1058,6 +1243,8 @@ function Assesement() {
                         <textarea
                           className="form-control ass-field-control notes-box ass-text-area"
                           placeholder="Any additional notes about the site, bill pattern, or load profile..."
+                          value={billNotes}
+                          onChange={(e) => setBillNotes(e.target.value)}
                         />
                       </div>
                     </div>
@@ -1088,6 +1275,8 @@ function Assesement() {
                             type="text"
                             className="form-control ass-field-control"
                             placeholder=""
+                            value={monthlyUsage}
+                            onChange={(e) => setMonthlyUsage(e.target.value)}
                           />
                         </div>
 
@@ -1095,7 +1284,11 @@ function Assesement() {
                           <label className="form-label ass-field-label">
                             UNIT
                           </label>
-                          <select className="form-select ass-field-control">
+                          <select
+                            className="form-select ass-field-control"
+                            value={usageUnit}
+                            onChange={(e) => setUsageUnit(e.target.value)}
+                          >
                             <option value="">Select unit</option>
                             <option value="kWh">kWh</option>
                             <option value="units">Units</option>
@@ -1110,6 +1303,8 @@ function Assesement() {
                             type="text"
                             className="form-control ass-field-control"
                             placeholder=""
+                            value={monthlySpend}
+                            onChange={(e) => setMonthlySpend(e.target.value)}
                           />
                         </div>
 
@@ -1120,25 +1315,8 @@ function Assesement() {
                           <input
                             type="text"
                             className="form-control ass-field-control"
-                          />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label ass-field-label">
-                            PEAK LOAD (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control ass-field-control"
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label ass-field-label">
-                            AVERAGE OUTAGE HOURS / DAY
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control ass-field-control"
+                            value={gridTariff}
+                            onChange={(e) => setGridTariff(e.target.value)}
                           />
                         </div>
                       </div>
@@ -1523,6 +1701,8 @@ function Assesement() {
                           type="number"
                           className="form-control ass-field-control"
                           placeholder="200"
+                          value={roofArea}
+                          onChange={(e) => setRoofArea(e.target.value)}
                         />
                         <span className="unit">m²</span>
                       </div>
@@ -1533,18 +1713,20 @@ function Assesement() {
                         Backup Duration Required
                       </label>
                       <select
-                        name="country"
+                        name="backupDuration"
                         className="form-select ass-field-control"
+                        value={backupDuration}
+                        onChange={(e) => setBackupDuration(e.target.value)}
                       >
                         <option value="">Select Duration Required</option>
-                        <option value="Nigeria">1</option>
-                        <option value="India">2</option>
-                        <option value="USA">3</option>
-                        <option value="USA">4</option>
-                        <option value="USA">5</option>
-                        <option value="USA">6</option>
-                        <option value="USA">7</option>
-                        <option value="USA">8</option>
+                        <option value="1">1 hour</option>
+                        <option value="2">2 hours</option>
+                        <option value="3">3 hours</option>
+                        <option value="4">4 hours</option>
+                        <option value="5">5 hours</option>
+                        <option value="6">6 hours</option>
+                        <option value="7">7 hours</option>
+                        <option value="8">8 hours</option>
                       </select>
                     </div>
                     <p className="text-muted small mb-0 para-ass">

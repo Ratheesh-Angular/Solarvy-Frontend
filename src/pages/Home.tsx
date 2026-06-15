@@ -19,9 +19,53 @@ import quik from "../assets/images/quik.png";
 import see from "../assets/images/see-bannar.png";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { ApiError } from "../lib/api";
+import {
+  createAssessmentDraft,
+} from "../lib/assessmentApi";
+import { quickFormToAssessmentForm } from "../lib/assessmentConstants";
+import type { QuickAssessmentFormData } from "../types/assessment";
+
 function Home() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const [isStartingAssessment, setIsStartingAssessment] = useState(false);
+  const [startError, setStartError] = useState("");
+
+  const [quickForm, setQuickForm] = useState<QuickAssessmentFormData>({
+    propertyType: "",
+    location: "",
+    monthlyElectricityBill: "",
+    powerSetup: "",
+    mainObjective: "",
+  });
+
+  const handleQuickFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setQuickForm((prev) => ({ ...prev, [name]: value }));
+    e.target.style.color = "#000";
+  };
+
+  const handleStartAssessment = async () => {
+    setIsStartingAssessment(true);
+    setStartError("");
+
+    try {
+      const formData = quickFormToAssessmentForm(quickForm);
+      const draft = await createAssessmentDraft(formData);
+      navigate(`/start-assesement?draft=${draft.id}`);
+    } catch (error) {
+      setStartError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to start assessment. Please try again.",
+      );
+    } finally {
+      setIsStartingAssessment(false);
+    }
+  };
   const handleToggle = () => {
     setOpen(!open);
   };
@@ -177,10 +221,9 @@ function Home() {
                       <label className="quick-lable">Property Type</label>
                       <select
                         className="form-select select-text"
-                        defaultValue=""
-                        onChange={(e) => {
-                          e.target.style.color = "#000";
-                        }}
+                        name="propertyType"
+                        value={quickForm.propertyType}
+                        onChange={handleQuickFormChange}
                       >
                         <option value="" disabled hidden>
                           Select
@@ -191,25 +234,22 @@ function Home() {
                         <option value="commercial building">
                           Commercial Building
                         </option>
-                        <option value="hospital clinic">Hospital/Clinic</option>
-                        <option value="school education">
-                          School/Education
-                        </option>
+                        <option value="hospital">Hospital</option>
+                        <option value="school">School</option>
                       </select>
                     </div>
                     <div className="col">
                       <label className="quick-lable">Location</label>
                       <select
                         className="form-select select-text"
-                        defaultValue=""
-                        onChange={(e) => {
-                          e.target.style.color = "#000";
-                        }}
+                        name="location"
+                        value={quickForm.location}
+                        onChange={handleQuickFormChange}
                       >
                         <option value="" disabled hidden>
                           Select
                         </option>
-                        <option>Nigeria</option>
+                        <option value="Nigeria">Nigeria</option>
                       </select>
                     </div>
                   </div>
@@ -219,6 +259,9 @@ function Home() {
                   </label>
                   <input
                     type="text"
+                    name="monthlyElectricityBill"
+                    value={quickForm.monthlyElectricityBill}
+                    onChange={handleQuickFormChange}
                     className="form-control select-text mb-2"
                     placeholder=""
                   />
@@ -228,10 +271,9 @@ function Home() {
                       <label className="quick-lable">Power Setup</label>
                       <select
                         className="form-select select-text"
-                        defaultValue=""
-                        onChange={(e) => {
-                          e.target.style.color = "#000";
-                        }}
+                        name="powerSetup"
+                        value={quickForm.powerSetup}
+                        onChange={handleQuickFormChange}
                       >
                         <option value="" disabled hidden>
                           Select
@@ -245,10 +287,9 @@ function Home() {
                       <label className="quick-lable">Main Objective</label>
                       <select
                         className="form-select select-text"
-                        defaultValue=""
-                        onChange={(e) => {
-                          e.target.style.color = "#000";
-                        }}
+                        name="mainObjective"
+                        value={quickForm.mainObjective}
+                        onChange={handleQuickFormChange}
                       >
                         <option value="" disabled hidden>
                           Select
@@ -260,12 +301,19 @@ function Home() {
                     </div>
                   </div>
 
+                  {startError && (
+                    <div className="alert alert-danger py-2 mb-2" role="alert">
+                      {startError}
+                    </div>
+                  )}
+
                   <button
+                    type="button"
                     className="custom-btn other-section d-flex align-items-center justify-content-between w-100"
-                    onClick={() => navigate("/start-assesement")}
+                    onClick={handleStartAssessment}
+                    disabled={isStartingAssessment}
                   >
-                    {" "}
-                    Start Assessment
+                    {isStartingAssessment ? "Starting..." : "Start Assessment"}
                     <img src={bttnarrowhite} alt="arrow" />
                   </button>
                 </div>
