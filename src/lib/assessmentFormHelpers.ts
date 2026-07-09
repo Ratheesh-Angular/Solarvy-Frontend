@@ -2,10 +2,11 @@ import type { AssessmentFormData, LoadTableRow } from "../types/assessment";
 import { EMPTY_ASSESSMENT_FORM } from "../types/assessment";
 
 type AssessmentStateSetters = {
-  setSelectedProperty: (id: number) => void;
-  setSelectedPower: (id: number) => void;
+  setSelectedProperty: (label: string) => void;
+  setSelectedTemplate: (label: string) => void;
+  setSelectedPower: (label: string) => void;
   setInputMethod: (method: "bill" | "appliance" | "custom") => void;
-  setSelectedObjectiveId: (id: string) => void;
+  setSelectedObjective: (label: string) => void;
   setFormData: React.Dispatch<
     React.SetStateAction<{ country: string; state: string }>
   >;
@@ -16,19 +17,18 @@ type AssessmentStateSetters = {
   setMonthlySpend: (value: string) => void;
   setGridTariff: (value: string) => void;
   setMonthlyElectricityBill: (value: string) => void;
-  setAppliancePresetTabId: (id: string) => void;
   setApplianceRows: React.Dispatch<React.SetStateAction<LoadTableRow[]>>;
-  setCustomPresetTabId: (id: string) => void;
   setCustomRows: React.Dispatch<React.SetStateAction<LoadTableRow[]>>;
   setRoofArea: (value: string) => void;
   setBackupDuration: (value: string) => void;
 };
 
 export function buildAssessmentFormData(input: {
-  selectedProperty: number;
-  selectedPower: number;
+  selectedProperty: string;
+  selectedTemplate: string;
+  selectedPower: string;
   inputMethod: "bill" | "appliance" | "custom";
-  selectedObjectiveId: string;
+  selectedObjective: string;
   formData: { country: string; state: string };
   fileName: string;
   billNotes: string;
@@ -37,20 +37,19 @@ export function buildAssessmentFormData(input: {
   monthlySpend: string;
   gridTariff: string;
   monthlyElectricityBill: string;
-  appliancePresetTabId: string;
   applianceRows: LoadTableRow[];
-  customPresetTabId: string;
   customRows: LoadTableRow[];
   roofArea: string;
   backupDuration: string;
 }): AssessmentFormData {
   return {
-    propertyTypeId: input.selectedProperty,
+    propertyType: input.selectedProperty,
+    template: input.selectedTemplate,
     country: input.formData.country,
     city: input.formData.state,
-    powerSetupId: input.selectedPower,
+    powerSetup: input.selectedPower,
     inputMethod: input.inputMethod,
-    mainObjectiveId: input.selectedObjectiveId,
+    mainObjective: input.selectedObjective,
     monthlyElectricityBill: input.monthlyElectricityBill,
     bill: {
       fileName: input.fileName === "No file chosen" ? "" : input.fileName,
@@ -60,14 +59,8 @@ export function buildAssessmentFormData(input: {
       monthlySpend: input.monthlySpend,
       gridTariff: input.gridTariff,
     },
-    appliance: {
-      presetTabId: input.appliancePresetTabId,
-      rows: input.applianceRows,
-    },
-    custom: {
-      presetTabId: input.customPresetTabId,
-      rows: input.customRows,
-    },
+    appliance: { rows: input.applianceRows },
+    custom: { rows: input.customRows },
     roofArea: input.roofArea,
     backupDuration: input.backupDuration,
   };
@@ -79,10 +72,11 @@ export function applyAssessmentFormData(
 ) {
   const merged = { ...EMPTY_ASSESSMENT_FORM, ...data };
 
-  if (merged.propertyTypeId) setters.setSelectedProperty(merged.propertyTypeId);
-  if (merged.powerSetupId) setters.setSelectedPower(merged.powerSetupId);
+  if (merged.propertyType) setters.setSelectedProperty(merged.propertyType);
+  if (merged.template) setters.setSelectedTemplate(merged.template);
+  if (merged.powerSetup) setters.setSelectedPower(merged.powerSetup);
   if (merged.inputMethod) setters.setInputMethod(merged.inputMethod);
-  if (merged.mainObjectiveId) setters.setSelectedObjectiveId(merged.mainObjectiveId);
+  if (merged.mainObjective) setters.setSelectedObjective(merged.mainObjective);
 
   setters.setFormData({
     country: merged.country || "",
@@ -102,22 +96,12 @@ export function applyAssessmentFormData(
     setters.setGridTariff(merged.bill.gridTariff || "");
   }
 
-  if (merged.appliance) {
-    if (merged.appliance.presetTabId) {
-      setters.setAppliancePresetTabId(merged.appliance.presetTabId);
-    }
-    if (merged.appliance.rows?.length) {
-      setters.setApplianceRows(merged.appliance.rows);
-    }
+  if (merged.appliance?.rows?.length) {
+    setters.setApplianceRows(merged.appliance.rows);
   }
 
-  if (merged.custom) {
-    if (merged.custom.presetTabId) {
-      setters.setCustomPresetTabId(merged.custom.presetTabId);
-    }
-    if (merged.custom.rows?.length) {
-      setters.setCustomRows(merged.custom.rows);
-    }
+  if (merged.custom?.rows?.length) {
+    setters.setCustomRows(merged.custom.rows);
   }
 
   if (merged.roofArea) setters.setRoofArea(merged.roofArea);

@@ -5,10 +5,6 @@ import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-import buletwo from "../assets/images/icon/bule2.svg";
-
-import money from "../assets/images/icon/money-bag.svg";
-
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 function SampleResults() {

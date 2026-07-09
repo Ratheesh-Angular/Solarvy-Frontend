@@ -15,14 +15,10 @@ import linkone from "../assets/images/Link2.png";
 import linktwo from "../assets/images/Link3.png";
 import link from "../assets/images/Link1.png";
 import enery from "../assets/images/energy.png";
-import quik from "../assets/images/quik.png";
-import see from "../assets/images/see-bannar.png";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { ApiError } from "../lib/api";
-import {
-  createAssessmentDraft,
-} from "../lib/assessmentApi";
+import { createAssessmentDraft } from "../lib/assessmentApi";
 import { quickFormToAssessmentForm } from "../lib/assessmentConstants";
 import type { QuickAssessmentFormData } from "../types/assessment";
 
@@ -228,14 +224,12 @@ function Home() {
                         <option value="" disabled hidden>
                           Select
                         </option>
-                        <option value="home">Home</option>
-                        <option value="hotel">Hotel</option>
-                        <option value="factory">Factory</option>
-                        <option value="commercial building">
-                          Commercial Building
-                        </option>
-                        <option value="hospital">Hospital</option>
-                        <option value="school">School</option>
+                        <option value="Home">Home</option>
+                        <option value="Hotel">Hotel</option>
+                        <option value="Factory">Factory</option>
+                        <option value="Commercial">Commercial Building</option>
+                        <option value="Hospital">Hospital</option>
+                        <option value="School">School</option>
                       </select>
                     </div>
                     <div className="col">
@@ -263,7 +257,7 @@ function Home() {
                     value={quickForm.monthlyElectricityBill}
                     onChange={handleQuickFormChange}
                     className="form-control select-text mb-2"
-                    placeholder=""
+                    placeholder="₦"
                   />
 
                   <div className="row g-2 mb-3">
@@ -278,9 +272,11 @@ function Home() {
                         <option value="" disabled hidden>
                           Select
                         </option>
-                        <option value="Grid Generator">Grid + Generator</option>
+                        <option value="Grid + Generator">
+                          Grid + Generator
+                        </option>
                         <option value="Grid Only">Grid Only</option>
-                        <option value="Solar grid">Solar grid</option>
+                        <option value="Solar + Grid">Solar + Grid</option>
                       </select>
                     </div>
                     <div className="col">
@@ -294,9 +290,15 @@ function Home() {
                         <option value="" disabled hidden>
                           Select
                         </option>
-                        <option value="1">Reduce Diesel Use</option>
-                        <option value="2">Reduce Electricity Bills</option>
-                        <option value="3">Backup During Outages</option>
+                        <option value="Reduce Diesel Use">
+                          Reduce Diesel Use
+                        </option>
+                        <option value="Reduce Electricity Bills">
+                          Reduce Electricity Bills
+                        </option>
+                        <option value="Backup During Outages">
+                          Backup During Outages
+                        </option>
                       </select>
                     </div>
                   </div>

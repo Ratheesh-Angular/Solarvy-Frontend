@@ -49,16 +49,16 @@ import {
   applyAssessmentFormData,
   buildAssessmentFormData,
 } from "../lib/assessmentFormHelpers";
-
-type LoadTableRow = {
-  id: string;
-  kind: string;
-  qty: number;
-  hours: number;
-  power: number;
-  /** Percent 0–100; used only in Custom Equipment daily kWh. */
-  loadFactorPct?: number;
-};
+import {
+  extractBillValues,
+  getExcelCatalogs,
+  getTemplatePrefill,
+} from "../lib/excelApi";
+import type {
+  ExcelCatalogs,
+  EquipmentCatalogItem,
+  LoadTableRow,
+} from "../types/assessment";
 
 type ApplianceCatalogItem = {
   kind: string;
@@ -67,156 +67,92 @@ type ApplianceCatalogItem = {
   Icon: LucideIcon;
 };
 
-const APPLIANCE_CALC_CATALOG: ApplianceCatalogItem[] = [
-  { kind: "led-bulb", label: "LED Bulb", defaultPower: 10, Icon: Lightbulb },
-  { kind: "fan", label: "Fan", defaultPower: 75, Icon: Fan },
-  { kind: "tv", label: "TV", defaultPower: 120, Icon: Tv },
-  { kind: "ac", label: "AC", defaultPower: 1500, Icon: AirVent },
+/** Icon lookup for equipment names coming from the Excel "Equipment Default" sheet. */
+const EQUIPMENT_ICON_RULES: Array<[RegExp, LucideIcon]> = [
+  [/bulb|light|led/i, Lightbulb],
+  [/fan/i, Fan],
+  [/tv|television|display/i, Tv],
+  [/ac\b|a\/c|air/i, AirVent],
+  [/fridge|refrigerator|freezer|cold/i, BatteryCharging],
+  [/router|wifi|cctv|computer|pos|charger/i, PlugZap],
+  [/pump|motor|compressor|machine|cnc/i, Wrench],
 ];
 
-const CUSTOM_EQUIP_CATALOG: ApplianceCatalogItem[] = [
-  { kind: "ce-10", label: "Ultrasound", defaultPower: 10, Icon: Lightbulb },
-  { kind: "ce-120", label: "Ultrasound", defaultPower: 120, Icon: Fan },
-  { kind: "ce-70", label: "Ultrasound", defaultPower: 70, Icon: Tv },
-  { kind: "ce-1500", label: "Ultrasound", defaultPower: 1500, Icon: AirVent },
-];
+function iconForEquipment(name: string): LucideIcon {
+  for (const [pattern, Icon] of EQUIPMENT_ICON_RULES) {
+    if (pattern.test(name)) return Icon;
+  }
+  return PlugZap;
+}
 
-type AppliancePresetRowTemplate = Pick<
-  LoadTableRow,
-  "kind" | "qty" | "hours" | "power"
->;
-
-type AppliancePresetTab = {
-  id: string;
-  label: string;
-  rows: AppliancePresetRowTemplate[];
-};
-
-/** Preset appliance lists per home size (Daily kWh is derived in the table). */
-const APPLIANCE_PRESETS: AppliancePresetTab[] = [
-  {
-    id: "1-bedroom",
-    label: "2 Bedroom House",
-    rows: [
-      { kind: "led-bulb", qty: 8, hours: 6, power: 10 },
-      { kind: "fan", qty: 3, hours: 8, power: 75 },
-      { kind: "tv", qty: 2, hours: 4, power: 120 },
-      { kind: "ac", qty: 1, hours: 6, power: 1500 },
-    ],
-  },
-  {
-    id: "2-bedroom",
-    label: "2 Bedroom House",
-    rows: [
-      { kind: "led-bulb", qty: 8, hours: 6, power: 10 },
-      { kind: "fan", qty: 3, hours: 8, power: 75 },
-      { kind: "tv", qty: 2, hours: 4, power: 120 },
-      { kind: "ac", qty: 1, hours: 6, power: 1500 },
-    ],
-  },
-  {
-    id: "3-bedroom",
-    label: "3 Bedroom House",
-    rows: [
-      { kind: "led-bulb", qty: 14, hours: 6, power: 10 },
-      { kind: "fan", qty: 5, hours: 10, power: 75 },
-      { kind: "tv", qty: 3, hours: 5, power: 120 },
-      { kind: "ac", qty: 2, hours: 7, power: 1500 },
-    ],
-  },
-  {
-    id: "duplex",
-    label: "Duplex Houses",
-    rows: [
-      { kind: "led-bulb", qty: 18, hours: 6, power: 10 },
-      { kind: "fan", qty: 7, hours: 12, power: 75 },
-      { kind: "tv", qty: 4, hours: 6, power: 120 },
-      { kind: "ac", qty: 3, hours: 8, power: 1500 },
-    ],
-  },
-];
-
-function loadApplianceRowsFromPreset(
-  preset: AppliancePresetTab,
-): LoadTableRow[] {
-  return preset.rows.map((r) => ({
-    id: newRowId("ap"),
-    kind: r.kind,
-    qty: r.qty,
-    hours: r.hours,
-    power: r.power,
+/** Build the appliance dropdown catalog from the Excel equipment list. */
+function catalogFromEquipment(
+  items: EquipmentCatalogItem[],
+): ApplianceCatalogItem[] {
+  return items.map((item) => ({
+    kind: item.name,
+    label: item.name,
+    defaultPower: item.watts,
+    Icon: iconForEquipment(item.name),
   }));
 }
 
-type CustomPresetRowTemplate = Pick<
-  LoadTableRow,
-  "kind" | "qty" | "hours" | "power"
-> & {
-  loadFactorPct?: number;
-};
-
-type CustomPresetTab = {
-  id: string;
-  label: string;
-  rows: CustomPresetRowTemplate[];
-};
-
-/** Preset custom equipment rows per scenario (same tab labels as appliance calculator). */
-const CUSTOM_PRESETS: CustomPresetTab[] = [
-  {
-    id: "1-bedroom",
-    label: "1 Bedroom House",
-    rows: [
-      { kind: "ce-10", qty: 6, hours: 6, power: 10, loadFactorPct: 100 },
-      { kind: "ce-120", qty: 1, hours: 4, power: 120, loadFactorPct: 100 },
-      { kind: "ce-70", qty: 1, hours: 7, power: 70, loadFactorPct: 90 },
-      { kind: "ce-1500", qty: 1, hours: 5, power: 1500, loadFactorPct: 65 },
-    ],
-  },
-  {
-    id: "2-bedroom",
-    label: "2 Bedroom House",
-    rows: [
-      { kind: "ce-10", qty: 6, hours: 6, power: 10, loadFactorPct: 100 },
-      { kind: "ce-120", qty: 1, hours: 4, power: 120, loadFactorPct: 100 },
-      { kind: "ce-70", qty: 1, hours: 7, power: 70, loadFactorPct: 90 },
-      { kind: "ce-1500", qty: 1, hours: 5, power: 1500, loadFactorPct: 65 },
-    ],
-  },
-  {
-    id: "3-bedroom",
-    label: "3 Bedroom House",
-    rows: [
-      { kind: "ce-10", qty: 10, hours: 6, power: 10, loadFactorPct: 100 },
-      { kind: "ce-120", qty: 1, hours: 5, power: 120, loadFactorPct: 100 },
-      { kind: "ce-70", qty: 2, hours: 8, power: 70, loadFactorPct: 100 },
-      { kind: "ce-1500", qty: 1, hours: 6, power: 1500, loadFactorPct: 100 },
-    ],
-  },
-  {
-    id: "duplex",
-    label: "Duplex Houses",
-    rows: [
-      { kind: "led-bulb", qty: 18, hours: 6, power: 10 },
-      { kind: "fan", qty: 7, hours: 12, power: 75 },
-      { kind: "tv", qty: 4, hours: 6, power: 120 },
-      { kind: "ac", qty: 3, hours: 8, power: 1500 },
-    ],
-  },
+const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
+  { kind: "LED bulb", label: "LED bulb", defaultPower: 10, Icon: Lightbulb },
+  { kind: "Fan", label: "Fan", defaultPower: 60, Icon: Fan },
+  { kind: "TV", label: "TV", defaultPower: 100, Icon: Tv },
+  { kind: "AC 1HP", label: "AC 1HP", defaultPower: 900, Icon: AirVent },
 ];
 
-function loadCustomRowsFromPreset(preset: CustomPresetTab): LoadTableRow[] {
-  return preset.rows.map((r) => ({
-    id: newRowId("ce"),
-    kind: r.kind,
-    qty: r.qty,
-    hours: r.hours,
-    power: r.power,
-    loadFactorPct: r.loadFactorPct ?? 100,
-  }));
-}
+const PROPERTY_ICONS: Record<string, LucideIcon> = {
+  Home: Home,
+  Hotel: Hotel,
+  Factory: Factory,
+  Commercial: Building2,
+  Hospital: Hospital,
+  School: School,
+};
+
+const PROPERTY_DESCRIPTIONS: Record<string, string> = {
+  Home: "Backup and lower energy bills",
+  Hotel: "Optimise generator and hybrid power",
+  Factory: "Support larger equipment loads",
+  Commercial: "Reduce business electricity cost",
+  Hospital: "Reliable power for critical systems",
+  School: "Maximise daytime solar savings",
+};
+
+const POWER_SETUP_ICONS: Record<string, LucideIcon> = {
+  "Grid + Generator": PlugZap,
+  "Grid Only": LayoutGrid,
+  "Solar + Grid": Sun,
+  "Generator Only": Fuel,
+  "No Reliable Grid": BatteryCharging,
+};
+
+const POWER_SETUP_DESCRIPTIONS: Record<string, string> = {
+  "Grid + Generator": "Grid supply with backup generator",
+  "Grid Only": "Utility electricity supply only",
+  "Solar + Grid": "Solar connected with utility supply",
+  "Generator Only": "Generator is the main power source",
+  "No Reliable Grid": "Little or no grid availability",
+};
+
+const OBJECTIVE_ICONS: Record<string, LucideIcon> = {
+  "Reduce Diesel Use": Fuel,
+  "Reduce Electricity Bills": Wallet,
+  "Backup During Outages": BatteryCharging,
+};
+
+const OBJECTIVE_DESCRIPTIONS: Record<string, string> = {
+  "Reduce Diesel Use": "Cut diesel consumption.",
+  "Reduce Electricity Bills": "Lower monthly energy costs.",
+  "Backup During Outages": "Maintain power when grid fails.",
+};
 
 const MIN_EQUIP_ROWS = 1;
+/** Excel Appliance_Input / Custom_Equipment tables support rows 4–23. */
+const MAX_EQUIP_ROWS = 20;
 
 const newRowId = (prefix: string) =>
   `${prefix}-${typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`}`;
@@ -226,7 +162,7 @@ const defaultRowFromCatalog = (
   catalog: ApplianceCatalogItem[],
   customEquipment: boolean,
 ): LoadTableRow => {
-  const first = catalog[0];
+  const first = catalog[0] ?? FALLBACK_EQUIPMENT_CATALOG[0];
   return {
     id: newRowId(prefix),
     kind: first.kind,
@@ -432,13 +368,17 @@ const NIGERIA_STATES_SORTED = Object.entries(NIGERIA_STATES).sort((a, b) =>
 
 function Assesement() {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(1);
-  const [selectedProperty, setSelectedProperty] = useState(1);
-  const [selectedPower, setSelectedPower] = useState(1);
+  const [selectedProperty, setSelectedProperty] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [showTemplatePopup, setShowTemplatePopup] = useState(false);
+  const [selectedPower, setSelectedPower] = useState("");
   const [inputMethod, setInputMethod] = useState<
     "bill" | "appliance" | "custom"
   >("bill");
-  const [selectedObjectiveId, setSelectedObjectiveId] = useState("bill");
+  const [selectedObjective, setSelectedObjective] = useState("");
+  const [catalogs, setCatalogs] = useState<ExcelCatalogs | null>(null);
+  const [isPrefilling, setIsPrefilling] = useState(false);
+  const [isExtractingBill, setIsExtractingBill] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const draftIdParam = searchParams.get("draft");
   const [draftId, setDraftId] = useState<number | null>(
@@ -457,6 +397,7 @@ function Assesement() {
   const [monthlyElectricityBill, setMonthlyElectricityBill] = useState("");
   const [roofArea, setRoofArea] = useState("");
   const [backupDuration, setBackupDuration] = useState("");
+  const templatePromptHandledRef = useRef(false);
   const handleToggle = () => {
     if (window.innerWidth < 768) {
       setOpen(!open);
@@ -489,101 +430,43 @@ function Assesement() {
     },
   ];
 
-  const Objectiveoptions: {
-    id: string;
-    title: string;
-    desc: string;
-    Icon: LucideIcon;
-  }[] = [
-    {
-      id: "bill",
-      title: "Reduce Diesel Use",
-      desc: "Cut diesel consumption.",
-      Icon: Fuel,
-    },
-    {
-      id: "appliance",
-      title: "Reduce Electricity Bills",
-      desc: "Lower monthly energy costs.",
-      Icon: Wallet,
-    },
-    {
-      id: "custom",
-      title: "Backup During Outages",
-      desc: "Maintain power when grid fails.",
-      Icon: BatteryCharging,
-    },
-  ];
+  /** Property / power / objective cards driven by Excel catalogs (with fallbacks). */
+  const propertyOptions = (
+    catalogs?.propertyTypes ?? Object.keys(PROPERTY_ICONS)
+  ).map((label) => ({
+    title: label,
+    desc:
+      catalogs?.categoryDescriptions?.[label]?.bestFor ||
+      PROPERTY_DESCRIPTIONS[label] ||
+      "",
+    Icon: PROPERTY_ICONS[label] ?? Building2,
+  }));
 
-  const propertyOptions: {
-    id: number;
-    title: string;
-    desc: string;
-    Icon: LucideIcon;
-  }[] = [
-    {
-      id: 1,
-      title: "Home",
-      desc: "Backup and lower energy bills",
-      Icon: Home,
-    },
-    {
-      id: 2,
-      title: "Hotel",
-      desc: "Optimise generator and hybrid power",
-      Icon: Hotel,
-    },
-    {
-      id: 3,
-      title: "Factory",
-      desc: "Support larger equipment loads",
-      Icon: Factory,
-    },
-    {
-      id: 4,
-      title: "Commercial Building",
-      desc: "Reduce business electricity cost",
-      Icon: Building2,
-    },
-    {
-      id: 5,
-      title: "Hospital",
-      desc: "Reliable power for critical systems",
-      Icon: Hospital,
-    },
-    {
-      id: 6,
-      title: "School",
-      desc: "Maximise daytime solar savings",
-      Icon: School,
-    },
-  ];
+  const powerOptions = (
+    catalogs?.powerSetups ?? Object.keys(POWER_SETUP_ICONS)
+  ).map((label) => ({
+    title: label,
+    desc: POWER_SETUP_DESCRIPTIONS[label] ?? "",
+    Icon: POWER_SETUP_ICONS[label] ?? PlugZap,
+  }));
 
-  const powerOptions: {
-    id: number;
-    title: string;
-    desc: string;
-    Icon: LucideIcon;
-  }[] = [
-    {
-      id: 1,
-      title: "Grid + Generator",
-      desc: "Grid supply with backup generator",
-      Icon: PlugZap,
-    },
-    {
-      id: 2,
-      title: "Grid Only",
-      desc: "Utility electricity supply only",
-      Icon: LayoutGrid,
-    },
-    {
-      id: 3,
-      title: "Solar + Grid",
-      desc: "Solar connected with utility supply",
-      Icon: Sun,
-    },
-  ];
+  const Objectiveoptions = (
+    catalogs?.objectives ?? Object.keys(OBJECTIVE_ICONS)
+  ).map((label) => ({
+    title: label,
+    desc: OBJECTIVE_DESCRIPTIONS[label] ?? "",
+    Icon: OBJECTIVE_ICONS[label] ?? Wallet,
+  }));
+
+  const equipmentCatalog: ApplianceCatalogItem[] = catalogs?.equipmentCatalog
+    ?.length
+    ? catalogFromEquipment(catalogs.equipmentCatalog)
+    : FALLBACK_EQUIPMENT_CATALOG;
+
+  const templateOptions =
+    selectedProperty && catalogs
+      ? (catalogs.templatesByProperty[selectedProperty] ?? [])
+      : [];
 
   const [formData, setFormData] = useState({
     country: "",
@@ -609,29 +492,92 @@ function Assesement() {
     });
   };
 
-  const categories = [
-    "Hospitals",
-    "Factories",
-    "Hotels",
-    "Clinics",
-    "Farms",
-    "Workshops",
-  ];
+  const [applianceRows, setApplianceRows] = useState<LoadTableRow[]>([]);
+  const [customRows, setCustomRows] = useState<LoadTableRow[]>([]);
 
-  const [activeTab, setActiveTab] = useState("Businesses");
+  // Load dropdown catalogs from the Excel workbook (auto-refreshes when the
+  // client uploads an updated template — backend caches by file mtime).
+  useEffect(() => {
+    let cancelled = false;
 
-  const [appliancePresetTabId, setAppliancePresetTabId] = useState(
-    APPLIANCE_PRESETS[0].id,
-  );
-  const [applianceRows, setApplianceRows] = useState<LoadTableRow[]>(() =>
-    loadApplianceRowsFromPreset(APPLIANCE_PRESETS[0]),
-  );
-  const [customPresetTabId, setCustomPresetTabId] = useState(
-    CUSTOM_PRESETS[1].id,
-  );
-  const [customRows, setCustomRows] = useState<LoadTableRow[]>(() =>
-    loadCustomRowsFromPreset(CUSTOM_PRESETS[1]),
-  );
+    (async () => {
+      try {
+        const data = await getExcelCatalogs();
+        if (!cancelled) setCatalogs(data);
+      } catch {
+        // fall back to hardcoded options; page stays usable
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Seed one editable row per table once the equipment catalog is known.
+  useEffect(() => {
+    if (!equipmentCatalog.length) return;
+    setApplianceRows((prev) =>
+      prev.length
+        ? prev
+        : [defaultRowFromCatalog("ap", equipmentCatalog, false)],
+    );
+    setCustomRows((prev) =>
+      prev.length
+        ? prev
+        : [defaultRowFromCatalog("ce", equipmentCatalog, true)],
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogs]);
+
+  /** Open template picker when property is pre-filled (e.g. from Home quick form) but no template yet. */
+  useEffect(() => {
+    if (templatePromptHandledRef.current) return;
+    if (!selectedProperty || selectedTemplate || !catalogs) return;
+
+    const options = catalogs.templatesByProperty[selectedProperty] ?? [];
+    if (options.length === 0) return;
+
+    setShowTemplatePopup(true);
+    templatePromptHandledRef.current = true;
+  }, [selectedProperty, selectedTemplate, catalogs]);
+
+  const closeTemplatePicker = () => {
+    setShowTemplatePopup(false);
+    templatePromptHandledRef.current = true;
+  };
+
+  /** Select a template in the popup: Excel recalculates and returns prefill rows. */
+  const handleTemplateSelect = async (template: string) => {
+    setSelectedTemplate(template);
+    setShowTemplatePopup(false);
+    setIsPrefilling(true);
+    setSaveError("");
+
+    try {
+      const prefill = await getTemplatePrefill(selectedProperty, template);
+      if (prefill.applianceRows.length) {
+        setApplianceRows(
+          prefill.applianceRows.map((row) => ({
+            id: newRowId("ap"),
+            kind: row.name,
+            qty: row.qty,
+            hours: row.hours,
+            power: row.watts,
+            loadFactorPct: Math.round((row.dutyCycle || 1) * 100),
+          })),
+        );
+      }
+    } catch (error) {
+      setSaveError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to load template appliances from the calculator.",
+      );
+    } finally {
+      setIsPrefilling(false);
+    }
+  };
 
   const [openApplianceSelectRow, setOpenApplianceSelectRow] = useState<
     number | null
@@ -669,11 +615,7 @@ function Assesement() {
       }
 
       if (field === "kind") {
-        const catalog =
-          inputMethod === "custom"
-            ? CUSTOM_EQUIP_CATALOG
-            : APPLIANCE_CALC_CATALOG;
-        const opt = catalog.find((o) => o.kind === value);
+        const opt = equipmentCatalog.find((o) => o.kind === value);
         if (opt) updatedRows[index].power = opt.defaultPower;
       }
 
@@ -684,11 +626,12 @@ function Assesement() {
   const addEquipmentRow = (customEquipment: boolean) => {
     const row = defaultRowFromCatalog(
       customEquipment ? "ce" : "ap",
-      customEquipment ? CUSTOM_EQUIP_CATALOG : APPLIANCE_CALC_CATALOG,
+      equipmentCatalog,
       customEquipment,
     );
-    if (customEquipment) setCustomRows((prev) => [...prev, row]);
-    else setApplianceRows((prev) => [...prev, row]);
+    const setter = customEquipment ? setCustomRows : setApplianceRows;
+    // Excel table supports max 20 rows (rows 4–23)
+    setter((prev) => (prev.length >= MAX_EQUIP_ROWS ? prev : [...prev, row]));
     setOpenApplianceSelectRow(null);
   };
 
@@ -709,11 +652,53 @@ function Assesement() {
     setOpenApplianceSelectRow(null);
   }, [inputMethod]);
 
-  const handleFileChange = (e: any) => {
-    if (e.target.files.length > 0) {
-      setFileName(e.target.files[0].name);
-    } else {
+  /** Bill upload: extract usage/spend/tariff with OCR and prefill (editable). */
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
       setFileName("No file chosen");
+      return;
+    }
+
+    setFileName(file.name);
+    setIsExtractingBill(true);
+    setSaveError("");
+
+    try {
+      const extracted = await extractBillValues(file);
+      let filled = 0;
+
+      if (extracted.monthlyUsage !== null) {
+        setMonthlyUsage(String(extracted.monthlyUsage));
+        setUsageUnit("kWh");
+        filled += 1;
+      }
+      if (extracted.monthlySpend !== null) {
+        setMonthlySpend(String(extracted.monthlySpend));
+        setMonthlyElectricityBill(String(extracted.monthlySpend));
+        filled += 1;
+      }
+      if (extracted.gridTariff !== null) {
+        setGridTariff(String(extracted.gridTariff));
+        filled += 1;
+      }
+
+      if (filled > 0) {
+        setSaveMessage("Bill values extracted — review and edit if needed.");
+        setSaveError("");
+      } else {
+        setSaveError(
+          "Could not detect bill values automatically. Please enter them manually.",
+        );
+      }
+    } catch (error) {
+      setSaveError(
+        error instanceof ApiError
+          ? error.message
+          : "Could not read values from the bill automatically — please enter them below.",
+      );
+    } finally {
+      setIsExtractingBill(false);
     }
   };
 
@@ -747,9 +732,10 @@ function Assesement() {
   const getFormPayload = () =>
     buildAssessmentFormData({
       selectedProperty,
+      selectedTemplate,
       selectedPower,
       inputMethod,
-      selectedObjectiveId,
+      selectedObjective,
       formData,
       fileName,
       billNotes,
@@ -758,9 +744,7 @@ function Assesement() {
       monthlySpend,
       gridTariff,
       monthlyElectricityBill,
-      appliancePresetTabId,
       applianceRows,
-      customPresetTabId,
       customRows,
       roofArea,
       backupDuration,
@@ -788,9 +772,10 @@ function Assesement() {
         setDraftId(draft.id);
         applyAssessmentFormData(draft.formData, {
           setSelectedProperty,
+          setSelectedTemplate,
           setSelectedPower,
           setInputMethod,
-          setSelectedObjectiveId,
+          setSelectedObjective,
           setFormData,
           setFileName,
           setBillNotes,
@@ -799,9 +784,7 @@ function Assesement() {
           setMonthlySpend,
           setGridTariff,
           setMonthlyElectricityBill,
-          setAppliancePresetTabId,
           setApplianceRows,
-          setCustomPresetTabId,
           setCustomRows,
           setRoofArea,
           setBackupDuration,
@@ -888,11 +871,45 @@ function Assesement() {
 
   const summarySecondMetricLabel =
     inputMethod === "bill" ? "ESTIMATED MONTHLY SPEND" : "Monthly Energy";
-  const summarySecondMetricValue = inputMethod === "bill" ? "N200,000" : "1.9";
 
-  /** Shared display values — update in one place for desktop & mobile summaries. */
-  const summaryFirstMetricValue = "11.3";
-  const summaryEstimatedAnnualLoad = "340";
+  /**
+   * Live summary mirrors the Excel SUM formulas client-side for instant
+   * feedback (Appliance_Input!L4/L5, Custom_Equipment!M4/M5, Bill_Input!B5).
+   * Excel remains authoritative at Calculate time.
+   */
+  const sumDailyKwh = (rows: LoadTableRow[]) =>
+    rows.reduce((total, row) => {
+      const lf = (row.loadFactorPct ?? 100) / 100;
+      return (
+        total +
+        ((Number(row.qty) || 0) *
+          (Number(row.hours) || 0) *
+          (Number(row.power) || 0) *
+          lf) /
+          1000
+      );
+    }, 0);
+
+  const activeRows = inputMethod === "custom" ? customRows : applianceRows;
+  const liveDailyKwh = sumDailyKwh(activeRows);
+  const liveMonthlyKwh = liveDailyKwh * 30;
+
+  const summaryFirstMetricValue =
+    inputMethod === "bill" ? monthlyUsage || "0" : liveDailyKwh.toFixed(2);
+
+  const summarySecondMetricValue =
+    inputMethod === "bill"
+      ? monthlySpend
+        ? `N${Number(monthlySpend).toLocaleString()}`
+        : "—"
+      : liveMonthlyKwh.toFixed(1);
+
+  const summaryEstimatedAnnualLoad =
+    inputMethod === "bill"
+      ? monthlyUsage
+        ? String(Math.round(Number(monthlyUsage) * 12))
+        : "—"
+      : String(Math.round(liveDailyKwh * 365));
 
   const assessmentCtaBar = (
     <div className="d-flex gap-3 flex-wrap mt-3 mb-4 assessment-cta-bar">
@@ -905,7 +922,9 @@ function Assesement() {
         <span className="icon-sun">
           <img src={sunone} alt="icon" />
         </span>
-        <span>{isSubmitting ? "Calculating..." : "Calculate My Energy System"}</span>
+        <span>
+          {isSubmitting ? "Calculating..." : "Calculate My Energy System"}
+        </span>
         <span className="arrows">
           <img src={sunthree} alt="icon" />
         </span>
@@ -1041,10 +1060,14 @@ function Assesement() {
 
                 <div className="row g-3 mb-3 start-assesement-cards">
                   {propertyOptions.map((item) => (
-                    <div className="col-6 col-lg-4 d-flex" key={item.id}>
+                    <div className="col-6 col-lg-4 d-flex" key={item.title}>
                       <div
-                        className={`property-card w-100 ${selectedProperty === item.id ? "active" : ""}`}
-                        onClick={() => setSelectedProperty(item.id)}
+                        className={`property-card w-100 ${selectedProperty === item.title ? "active" : ""}`}
+                        onClick={() => {
+                          setSelectedProperty(item.title);
+                          setSelectedTemplate("");
+                          setShowTemplatePopup(true);
+                        }}
                       >
                         <div className="d-flex gap-2 building-info-cards-content">
                           <div className="icon-box-tops">
@@ -1065,7 +1088,7 @@ function Assesement() {
                             </p>
                           </div>
 
-                          {selectedProperty === item.id && (
+                          {selectedProperty === item.title && (
                             <div className="check-icon-homss">✔</div>
                           )}
                         </div>
@@ -1073,6 +1096,84 @@ function Assesement() {
                     </div>
                   ))}
                 </div>
+
+                {selectedProperty && showTemplatePopup && (
+                  <div className="template-picker-panel mb-3">
+                    <div className="template-picker-header">
+                      <div className="template-picker-header-main">
+                        <div className="template-picker-icon" aria-hidden>
+                          <LayoutGrid size={14} strokeWidth={2} />
+                        </div>
+                        <div>
+                          <h6 className="template-picker-title ass-semi mb-1">
+                            {catalogs?.templatesTitle || "Templates"}
+                          </h6>
+                          <p className="template-picker-subtitle para-ass mb-0">
+                            Choose the closest match for{" "}
+                            <strong>{selectedProperty}</strong>
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="template-picker-close"
+                        aria-label="Close templates"
+                        onClick={closeTemplatePicker}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="template-picker-grid" role="list">
+                      {templateOptions.length === 0 && (
+                        <span className="template-picker-loading para-ass">
+                          Loading templates...
+                        </span>
+                      )}
+                      {templateOptions.map((template) => {
+                        const isSelected = selectedTemplate === template;
+                        return (
+                          <button
+                            key={template}
+                            type="button"
+                            role="listitem"
+                            className={`template-picker-option${
+                              isSelected
+                                ? " template-picker-option--selected"
+                                : ""
+                            }`}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            {template}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {selectedTemplate && !showTemplatePopup && (
+                  <div className="template-picker-summary mb-3">
+                    <span className="template-picker-summary-label ass-field-label">
+                      Template
+                    </span>
+                    <span className="template-picker-summary-value ass-semi">
+                      {selectedTemplate}
+                    </span>
+                    {isPrefilling && (
+                      <span className="template-picker-summary-status">
+                        Loading...
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      className="template-picker-change-btn"
+                      onClick={() => setShowTemplatePopup(true)}
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
 
                 <div className="row g-3 align-items-center">
                   <div className="col-md-6">
@@ -1086,12 +1187,19 @@ function Assesement() {
                       className="form-select ass-field-control"
                     >
                       <option value="">Select country</option>
-                      <option value="Nigeria">Nigeria</option>
+                      {(catalogs?.countries?.length
+                        ? catalogs.countries
+                        : ["Nigeria"]
+                      ).map((country) => (
+                        <option key={country} value={country}>
+                          {country}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label ass-field-label">City</label>
+                    <label className="form-label ass-field-label">State</label>
                     <select
                       name="state"
                       value={
@@ -1100,9 +1208,12 @@ function Assesement() {
                       onChange={handleChange}
                       className="form-select ass-field-control"
                     >
-                      <option value="">Select city</option>
-                      {NIGERIA_STATES_SORTED.map(([slug, label]) => (
-                        <option key={slug} value={label}>
+                      <option value="">Select State</option>
+                      {(catalogs?.states?.length
+                        ? catalogs.states
+                        : NIGERIA_STATES_SORTED.map(([, label]) => label)
+                      ).map((label) => (
+                        <option key={label} value={label}>
                           {label}
                         </option>
                       ))}
@@ -1126,11 +1237,10 @@ function Assesement() {
                 </div>
 
                 {powerOptions.map((item) => (
-                  <div className="parent-container onlt-this">
+                  <div className="parent-container onlt-this" key={item.title}>
                     <div
-                      key={item.id}
-                      className={`property-card  ${selectedPower === item.id ? "active" : ""}`}
-                      onClick={() => setSelectedPower(item.id)}
+                      className={`property-card  ${selectedPower === item.title ? "active" : ""}`}
+                      onClick={() => setSelectedPower(item.title)}
                     >
                       <div className="d-flex align-items-center justify-content-between w-100">
                         <div className="d-flex align-items-center gap-3">
@@ -1149,7 +1259,7 @@ function Assesement() {
                         </div>
 
                         <div className="radio-circle ms-auto">
-                          {selectedPower === item.id && (
+                          {selectedPower === item.title && (
                             <div className="radio-dot"></div>
                           )}
                         </div>
@@ -1228,9 +1338,18 @@ function Assesement() {
                         <div className="upload-box-ass text-center">
                           <div className="file-upload">
                             <label className="file-label">
-                              <span className="file-btn">Choose file</span>
+                              <span className="file-btn">
+                                {isExtractingBill
+                                  ? "Reading bill..."
+                                  : "Choose file"}
+                              </span>
                               <span className="file-name">{fileName}</span>
-                              <input type="file" onChange={handleFileChange} />
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                onChange={handleFileChange}
+                                disabled={isExtractingBill}
+                              />
                             </label>
                           </div>
                         </div>
@@ -1342,33 +1461,14 @@ function Assesement() {
                       </div>
                     </div>
                     <div className="mt-1">
-                      <div
-                        className="tag-row appliance-preset-tabs"
-                        role="tablist"
-                        aria-label="Typical load by home size"
-                      >
-                        {APPLIANCE_PRESETS.map((preset) => {
-                          const selected = appliancePresetTabId === preset.id;
-                          return (
-                            <button
-                              key={preset.id}
-                              type="button"
-                              role="tab"
-                              aria-selected={selected}
-                              className={`badge-custom appliance-preset-tab${selected ? " appliance-preset-tab--selected" : ""}`}
-                              onClick={() => {
-                                setAppliancePresetTabId(preset.id);
-                                setApplianceRows(
-                                  loadApplianceRowsFromPreset(preset),
-                                );
-                                setOpenApplianceSelectRow(null);
-                              }}
-                            >
-                              {preset.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      {isPrefilling && (
+                        <div
+                          className="alert alert-info py-2 small"
+                          role="status"
+                        >
+                          Loading typical appliances for {selectedTemplate}...
+                        </div>
+                      )}
                       <div className="table-container appliance-table-allow-dropdown">
                         <table className="appliance-table mt-2">
                           <thead>
@@ -1399,7 +1499,7 @@ function Assesement() {
                                 <td className="appliance-cell py-2">
                                   <ApplianceKindSelect
                                     rowIndex={index}
-                                    catalog={APPLIANCE_CALC_CATALOG}
+                                    catalog={equipmentCatalog}
                                     valueKind={item.kind}
                                     onPick={(kind) =>
                                       handleRowChange(index, "kind", kind)
@@ -1514,31 +1614,6 @@ function Assesement() {
                   </div>
 
                   <div className="mt-4">
-                    <div
-                      className="tag-row appliance-preset-tabs"
-                      role="tablist"
-                      aria-label="Typical custom equipment by scenario"
-                    >
-                      {CUSTOM_PRESETS.map((preset) => {
-                        const selected = customPresetTabId === preset.id;
-                        return (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={selected}
-                            className={`badge-custom appliance-preset-tab${selected ? " appliance-preset-tab--selected" : ""}`}
-                            onClick={() => {
-                              setCustomPresetTabId(preset.id);
-                              setCustomRows(loadCustomRowsFromPreset(preset));
-                              setOpenApplianceSelectRow(null);
-                            }}
-                          >
-                            {preset.label}
-                          </button>
-                        );
-                      })}
-                    </div>
                     <div className="table-container appliance-table-allow-dropdown">
                       <table className="appliance-table">
                         <thead>
@@ -1573,7 +1648,7 @@ function Assesement() {
                               >
                                 <ApplianceKindSelect
                                   rowIndex={index}
-                                  catalog={CUSTOM_EQUIP_CATALOG}
+                                  catalog={equipmentCatalog}
                                   valueKind={item.kind}
                                   onPick={(kind) =>
                                     handleRowChange(index, "kind", kind)
@@ -1719,14 +1794,15 @@ function Assesement() {
                         onChange={(e) => setBackupDuration(e.target.value)}
                       >
                         <option value="">Select Duration Required</option>
-                        <option value="1">1 hour</option>
-                        <option value="2">2 hours</option>
-                        <option value="3">3 hours</option>
-                        <option value="4">4 hours</option>
-                        <option value="5">5 hours</option>
-                        <option value="6">6 hours</option>
-                        <option value="7">7 hours</option>
-                        <option value="8">8 hours</option>
+                        {(catalogs?.backupDurations?.length
+                          ? catalogs.backupDurations
+                          : ["1", "2", "3", "4", "5", "6", "7", "8"]
+                        ).map((duration) => (
+                          <option key={duration} value={duration}>
+                            {duration}{" "}
+                            {Number(duration) === 1 ? "hour" : "hours"}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <p className="text-muted small mb-0 para-ass">
@@ -1734,12 +1810,12 @@ function Assesement() {
                     </p>
 
                     {Objectiveoptions.map((item) => (
-                      <div className="col-md-4" key={item.id}>
+                      <div className="col-md-4" key={item.title}>
                         <div
                           className={`option-card option-card-main-objective ${
-                            selectedObjectiveId === item.id ? "active" : ""
+                            selectedObjective === item.title ? "active" : ""
                           }`}
-                          onClick={() => setSelectedObjectiveId(item.id)}
+                          onClick={() => setSelectedObjective(item.title)}
                         >
                           <div className="d-flex option-card-main-objective-individual">
                             <div className="icon-box-topsss me-2 ">
@@ -1759,7 +1835,7 @@ function Assesement() {
                               </p>
                             </div>
 
-                            {selectedObjectiveId === item.id && (
+                            {selectedObjective === item.title && (
                               <div className="check-icon">✔</div>
                             )}
                           </div>

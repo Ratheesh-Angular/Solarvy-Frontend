@@ -14,7 +14,7 @@ type DraftResponse = {
 type AssessmentResponse = {
   success: boolean;
   data: {
-    id: number;
+    id: string;
     draftId: number | null;
     formData: AssessmentFormData;
     createdAt: string;

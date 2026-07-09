@@ -1980,6 +1980,189 @@ textarea:not(.form-control):not(.ass-field-control):not(
   border: 1px solid #c7d9f5;
 }
 
+/* Property template picker — Building Information step */
+.template-picker-panel {
+  font-family: inherit;
+  border: 1px solid #e4e8f2;
+  border-radius: 12px;
+  background: #fafbfd;
+  padding: 0.75rem 0.85rem;
+}
+
+.template-picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.template-picker-header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.template-picker-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #174c90;
+  background: #eef4ff;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.template-picker-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #1a2259;
+  line-height: 1.3;
+}
+
+.template-picker-subtitle {
+  font-size: 12px !important;
+  color: #6f7196 !important;
+  line-height: 1.4;
+}
+
+.template-picker-subtitle strong {
+  color: #174c90;
+  font-weight: 600;
+}
+
+.template-picker-close {
+  border: 1px solid #e4e8f2;
+  background: #fff;
+  color: #6f7196;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.template-picker-close:hover {
+  background: #f3f6fb;
+  color: #174c90;
+}
+
+.template-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.template-picker-loading {
+  font-size: 12px !important;
+  color: #6f7196 !important;
+}
+
+.template-picker-option {
+  border: 1px solid #e4e8f2;
+  background: #ffffff;
+  color: #1a2259;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.template-picker-option:hover {
+  border-color: #c7d9f5;
+  background: #f8fbff;
+  color: #174c90;
+}
+
+.template-picker-option:focus-visible {
+  outline: 2px solid #174c90;
+  outline-offset: 1px;
+}
+
+.template-picker-option--selected {
+  border-color: #174c90;
+  background: #eef4ff;
+  color: #174c90;
+  font-weight: 600;
+}
+
+.template-picker-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  border: 1px solid #e4e8f2;
+  border-radius: 8px;
+  background: #fafbfd;
+  padding: 0.45rem 0.65rem;
+  font-family: inherit;
+}
+
+.template-picker-summary .template-picker-summary-label {
+  margin-bottom: 0;
+  font-size: 10px;
+}
+
+.template-picker-summary-value {
+  font-size: 12px !important;
+  color: #174c90 !important;
+  font-weight: 600 !important;
+}
+
+.template-picker-summary-status {
+  font-size: 11px;
+  color: #6f7196;
+}
+
+.template-picker-change-btn {
+  margin-left: auto;
+  border: 1px solid #d4e2f4;
+  background: #fff;
+  color: #174c90;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.template-picker-change-btn:hover {
+  background: #eef4ff;
+  border-color: #c7d9f5;
+}
+
+@media (max-width: 767px) {
+  .template-picker-panel {
+    padding: 0.65rem 0.7rem;
+  }
+
+  .template-picker-option {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+}
+
 @media (min-width: 768px) {
   .building-info-cards-content {
     align-items: flex-start !important;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import "../assets/images/logo.png";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
@@ -18,8 +18,47 @@ import qut from "../assets/images/icon/qut.svg";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import whitearrow from "../assets/images/icon/w-arror.svg";
+import { apiGet } from "../lib/api";
+import type { AssessmentResults } from "../types/assessment";
 
-import { Battery } from "lucide-react";
+type AssessmentApiResponse = {
+  success: boolean;
+  data: {
+    id: string;
+    results: AssessmentResults | null;
+  };
+};
+
+const toNum = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(String(value).replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Format naira compactly, e.g. 7,800,000 -> "N7.8m". */
+const formatNaira = (value: unknown, fallback: string): string => {
+  const n = toNum(value);
+  if (n === null) return fallback;
+  if (Math.abs(n) >= 1_000_000) return `N${(n / 1_000_000).toFixed(1)}m`;
+  if (Math.abs(n) >= 1_000) return `N${(n / 1_000).toFixed(0)}k`;
+  return `N${n.toLocaleString()}`;
+};
+
+const formatNumber = (
+  value: unknown,
+  fallback: string,
+  digits = 1,
+): string => {
+  const n = toNum(value);
+  return n === null ? fallback : n.toFixed(digits);
+};
+
+/** Excel may hold percentages as fractions (0.68) or whole numbers (68). */
+const toPercent = (value: unknown, fallback: number): number => {
+  const n = toNum(value);
+  if (n === null) return fallback;
+  return Math.round(n <= 1 ? n * 100 : n);
+};
 
 function AssesementResult() {
   const [open, setOpen] = useState(false);
@@ -27,6 +66,72 @@ function AssesementResult() {
   const handleToggle = () => {
     setOpen(!open);
   };
+
+  const [searchParams] = useSearchParams();
+  const assessmentId = searchParams.get("assessment");
+  const [results, setResults] = useState<AssessmentResults | null>(null);
+  const [isLoadingResults, setIsLoadingResults] = useState(
+    Boolean(assessmentId),
+  );
+  const [resultsError, setResultsError] = useState("");
+
+  useEffect(() => {
+    if (!assessmentId) {
+      setIsLoadingResults(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await apiGet<AssessmentApiResponse>(
+          `/assessments/${assessmentId}`,
+        );
+        if (cancelled) return;
+
+        if (response.data.results?.calculationError) {
+          setResultsError(
+            "The calculation could not be completed. Showing indicative values.",
+          );
+        } else if (response.data.results) {
+          setResults(response.data.results);
+        }
+      } catch {
+        if (!cancelled) {
+          setResultsError(
+            "Unable to load your assessment results. Showing indicative values.",
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoadingResults(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assessmentId]);
+
+  const solarKwp = formatNumber(results?.recommendedSolarKwp, "5.8");
+  const batteryKwh = formatNumber(results?.recommendedBatteryKwh, "12.0");
+  const inverterKw = formatNumber(results?.recommendedInverterKw, "5.0");
+  const systemCost = formatNaira(results?.estimatedSystemCost, "N7.8m");
+  const grossSavings = formatNaira(results?.grossAnnualSavings, "N2.0m");
+  const omAllowance = formatNaira(results?.annualOmAllowance, "N0.2m");
+  const netSavings = formatNaira(results?.netAnnualSavings, "N1.8m");
+  const paybackYears = formatNumber(results?.simplePaybackYears, "4.3");
+  const solarSharePct = toPercent(results?.solarShare, 68);
+  const gridOffsetPct = toPercent(results?.gridOffset, 42);
+  const dieselReductionPct = toPercent(results?.dieselReduction, 57);
+  const dieselSavedLitres = (() => {
+    const n = toNum(results?.dieselSavedLitres);
+    return n === null ? "2,150L" : `${Math.round(n).toLocaleString()}L`;
+  })();
+  const systemClass = results?.scenarioName || "Hybrid";
+  const disclaimer =
+    results?.disclaimer ||
+    "These results are indicative only. Final system design, procurement, and performance should be validated through a detailed review before investment or installation.";
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -136,6 +241,18 @@ function AssesementResult() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          {isLoadingResults && (
+            <div className="alert alert-info mb-3" role="status">
+              Loading your assessment results...
+            </div>
+          )}
+
+          {resultsError && (
+            <div className="alert alert-warning mb-3" role="alert">
+              {resultsError}
+            </div>
+          )}
+
           <div className="row g-4 align-items-start">
             <div className="col-lg-8">
               <div className="row g-2">
@@ -152,7 +269,7 @@ function AssesementResult() {
                       </div>
 
                       <h2 className="fw-bold sun-head">
-                        5.8 <span className="fs-5 sun-sub">kWp</span>
+                        {solarKwp} <span className="fs-5 sun-sub">kWp</span>
                       </h2>
 
                       <small className="roof-text-text-muted d-block mb-2">
@@ -179,7 +296,7 @@ function AssesementResult() {
                       </div>
 
                       <h2 className="fw-bold sun-head">
-                        12.0 <span className="fs-5 sun-sub">kWh</span>
+                        {batteryKwh} <span className="fs-5 sun-sub">kWh</span>
                       </h2>
 
                       <small className="roof-text-text-muted d-block mb-2">
@@ -210,7 +327,7 @@ function AssesementResult() {
                       </div>
 
                       <h2 className="fw-bold sun-head">
-                        5.0 <span className="fs-5 sun-sub">kWh</span>
+                        {inverterKw} <span className="fs-5 sun-sub">kW</span>
                       </h2>
 
                       <small className="roof-text-text-muted d-block mb-2">
@@ -245,27 +362,27 @@ function AssesementResult() {
                   <div className="col-md-6 border-end">
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Estimated system cost</span>
-                      <strong className="rang-head">N7.8m</strong>
+                      <strong className="rang-head">{systemCost}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Gross annual savings</span>
-                      <strong className="rang-head">N2.0m</strong>
+                      <strong className="rang-head">{grossSavings}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Annual O&M allowance</span>
-                      <strong className="rang-head">N0.2m</strong>
+                      <strong className="rang-head">{omAllowance}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Net annual savings</span>
-                      <strong className="rang-head">N1.8m</strong>
+                      <strong className="rang-head">{netSavings}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between border-0">
                       <span className="rang-name">Simple payback</span>
-                      <strong className="rang-head">4.3 years</strong>
+                      <strong className="rang-head">{paybackYears} years</strong>
                     </div>
                   </div>
 
@@ -275,12 +392,12 @@ function AssesementResult() {
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
                         <span className="rang-name">Solar share</span>
-                        <strong className="per-rang">68%</strong>
+                        <strong className="per-rang">{solarSharePct}%</strong>
                       </div>
                       <div className="progress custom-progress">
                         <div
                           className="progress-bar bg-danger"
-                          style={{ width: "68%" }}
+                          style={{ width: `${solarSharePct}%` }}
                         ></div>
                       </div>
                     </div>
@@ -288,12 +405,12 @@ function AssesementResult() {
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
                         <span className="rang-name">Grid offset</span>
-                        <strong className="per-rang">42%</strong>
+                        <strong className="per-rang">{gridOffsetPct}%</strong>
                       </div>
                       <div className="progress custom-progress">
                         <div
                           className="progress-bar bg-primary"
-                          style={{ width: "42%" }}
+                          style={{ width: `${gridOffsetPct}%` }}
                         ></div>
                       </div>
                     </div>
@@ -301,12 +418,14 @@ function AssesementResult() {
                     <div>
                       <div className="d-flex justify-content-between">
                         <span className="rang-name">Diesel reduction</span>
-                        <strong className="per-rang">57%</strong>
+                        <strong className="per-rang">
+                          {dieselReductionPct}%
+                        </strong>
                       </div>
                       <div className="progress custom-progress">
                         <div
                           className="progress-bar bg-success"
-                          style={{ width: "57%" }}
+                          style={{ width: `${dieselReductionPct}%` }}
                         ></div>
                       </div>
                     </div>
@@ -334,27 +453,27 @@ function AssesementResult() {
                   <div className="">
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Estimated system cost</span>
-                      <strong className="rang-head">N7.8m</strong>
+                      <strong className="rang-head">{systemCost}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Gross annual savings</span>
-                      <strong className="rang-head">N2.0m</strong>
+                      <strong className="rang-head">{grossSavings}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Annual O&M allowance</span>
-                      <strong className="rang-head">N0.2m</strong>
+                      <strong className="rang-head">{omAllowance}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Net annual savings</span>
-                      <strong className="rang-head">N1.8m</strong>
+                      <strong className="rang-head">{netSavings}</strong>
                     </div>
 
                     <div className="summary-row d-flex justify-content-between border-0">
                       <span className="rang-name">Simple payback</span>
-                      <strong className="rang-head">4.3 years</strong>
+                      <strong className="rang-head">{paybackYears} years</strong>
                     </div>
                   </div>
                 </div>
@@ -366,10 +485,7 @@ function AssesementResult() {
                 </div>
 
                 <div>
-                  <span className="fw-bold">Important note:</span> These results
-                  are indicative only. Final system design, procurement, and
-                  performance should be validated through a detailed review
-                  before investment or installation.
+                  <span className="fw-bold">Important note:</span> {disclaimer}
                 </div>
               </div>
 
@@ -479,7 +595,7 @@ function AssesementResult() {
                           <i className="colo-sym-right bi bi-graph-up text-primary fs-5"></i>
                         </div>
                         <small className="label">ANNUAL SAVINGS</small>
-                        <h5 className="value">N1.8M</h5>
+                        <h5 className="value">{netSavings}</h5>
                       </div>
                     </div>
 
@@ -489,7 +605,7 @@ function AssesementResult() {
                           <i className="colo-sym-right bi bi-clock-history text-primary fs-5"></i>
                         </div>
                         <small className="label">PAYBACK</small>
-                        <h5 className="value">4.3yrs</h5>
+                        <h5 className="value">{paybackYears}yrs</h5>
                       </div>
                     </div>
 
@@ -499,7 +615,7 @@ function AssesementResult() {
                           <i className="colo-sym-right bi bi-fire text-primary fs-5"></i>
                         </div>
                         <small className="label">DIESEL SAVED</small>
-                        <h5 className="value">2,150L</h5>
+                        <h5 className="value">{dieselSavedLitres}</h5>
                       </div>
                     </div>
 
@@ -509,7 +625,7 @@ function AssesementResult() {
                           <i className="colo-sym-right bi bi-stack text-primary fs-5"></i>
                         </div>
                         <small className="label">SYSTEM CLASS</small>
-                        <h5 className="value">Hybrid</h5>
+                        <h5 className="value">{systemClass}</h5>
                       </div>
                     </div>
                   </div>
