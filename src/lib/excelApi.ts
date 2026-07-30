@@ -45,10 +45,27 @@ export async function extractBillValues(file: File) {
   const base = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
   const url = `${base}/api/bills/extract`;
 
-  const response = await fetch(url, { method: "POST", body: formData });
-  const data = (await response.json()) as BillExtractResponse & {
-    message?: string;
-  };
+  let response: Response;
+  try {
+    response = await fetch(url, { method: "POST", body: formData });
+  } catch {
+    throw new ApiError(
+      "Could not reach the API. Make sure the backend is running on port 5000.",
+    );
+  }
+
+  let data: BillExtractResponse & { message?: string };
+  try {
+    data = (await response.json()) as BillExtractResponse & {
+      message?: string;
+    };
+  } catch {
+    throw new ApiError(
+      response.status === 502
+        ? "Bill extraction timed out or the API restarted. Please try again."
+        : "Bill extraction failed",
+    );
+  }
 
   if (!response.ok) {
     throw new ApiError(data.message || "Bill extraction failed");

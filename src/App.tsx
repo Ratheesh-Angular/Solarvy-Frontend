@@ -6,6 +6,7 @@ import "./css/howitwork.css";
 import "./css/sample.css";
 import "./css/WhoItsFor.css";
 import "./css/MatchedInstallers.css";
+import "./css/solarvy-feedback.css";
 
 import Footer from "./components/Footer.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";

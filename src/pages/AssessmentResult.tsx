@@ -4,9 +4,7 @@ import "../assets/images/logo.png";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import "bootstrap/dist/css/bootstrap.min.css";
-
 import buletwo from "../assets/images/icon/bule2.svg";
-
 import Sun from "../assets/images/icon/sun-red.svg";
 import halfSun from "../assets/images/icon/half-s.svg";
 import batt from "../assets/images/icon/batt.svg";
@@ -18,6 +16,9 @@ import qut from "../assets/images/icon/qut.svg";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import whitearrow from "../assets/images/icon/w-arror.svg";
+import FeedbackToast from "../components/FeedbackToast";
+import SolarvyLoader from "../components/SolarvyLoader";
+import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { apiGet } from "../lib/api";
 import type { AssessmentResults } from "../types/assessment";
 
@@ -29,35 +30,54 @@ type AssessmentApiResponse = {
   };
 };
 
+const MISSING = "—";
+
 const toNum = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return null;
   const n = Number(String(value).replace(/[^\d.-]/g, ""));
   return Number.isFinite(n) ? n : null;
 };
 
-/** Format naira compactly, e.g. 7,800,000 -> "N7.8m". */
-const formatNaira = (value: unknown, fallback: string): string => {
+/** Naira from Excel — rounded to 1 decimal for readability. */
+const formatNaira = (value: unknown): string => {
   const n = toNum(value);
-  if (n === null) return fallback;
-  if (Math.abs(n) >= 1_000_000) return `N${(n / 1_000_000).toFixed(1)}m`;
-  if (Math.abs(n) >= 1_000) return `N${(n / 1_000).toFixed(0)}k`;
-  return `N${n.toLocaleString()}`;
+  if (n === null) return MISSING;
+  const rounded = Math.round(n * 10) / 10;
+  return `₦${rounded.toLocaleString("en-NG", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1,
+  })}`;
 };
 
-const formatNumber = (
-  value: unknown,
-  fallback: string,
-  digits = 1,
-): string => {
+/** Exact numeric from Excel — no forced 1-decimal rounding. */
+const formatNumber = (value: unknown, maxFractionDigits = 10): string => {
   const n = toNum(value);
-  return n === null ? fallback : n.toFixed(digits);
+  if (n === null) return MISSING;
+  // When maxFractionDigits is 1, force one decimal (sizing cards).
+  if (maxFractionDigits === 1) {
+    return n.toFixed(1);
+  }
+  return n.toLocaleString("en-NG", {
+    maximumFractionDigits: maxFractionDigits,
+    minimumFractionDigits: 0,
+  });
+};
+
+const formatText = (value: unknown): string => {
+  if (value === null || value === undefined || value === "") return MISSING;
+  return String(value);
 };
 
 /** Excel may hold percentages as fractions (0.68) or whole numbers (68). */
-const toPercent = (value: unknown, fallback: number): number => {
+const toPercent = (value: unknown): number | null => {
   const n = toNum(value);
-  if (n === null) return fallback;
+  if (n === null) return null;
   return Math.round(n <= 1 ? n * 100 : n);
+};
+
+const formatPercentLabel = (value: unknown): string => {
+  const pct = toPercent(value);
+  return pct === null ? MISSING : `${pct}%`;
 };
 
 function AssesementResult() {
@@ -73,7 +93,7 @@ function AssesementResult() {
   const [isLoadingResults, setIsLoadingResults] = useState(
     Boolean(assessmentId),
   );
-  const [resultsError, setResultsError] = useState("");
+  const { toast, showError, clearToast } = useFeedbackToast();
 
   useEffect(() => {
     if (!assessmentId) {
@@ -90,18 +110,21 @@ function AssesementResult() {
         );
         if (cancelled) return;
 
-        if (response.data.results?.calculationError) {
-          setResultsError(
-            "The calculation could not be completed. Showing indicative values.",
-          );
-        } else if (response.data.results) {
+        if (response.data.results) {
           setResults(response.data.results);
+        }
+
+        if (response.data.results?.calculationError) {
+          showError(
+            "The calculation could not be completed fully. Some values may be unavailable.",
+            "Calculation incomplete",
+          );
+        } else if (!response.data.results) {
+          showError("No results were stored for this assessment.");
         }
       } catch {
         if (!cancelled) {
-          setResultsError(
-            "Unable to load your assessment results. Showing indicative values.",
-          );
+          showError("Unable to load your assessment results.");
         }
       } finally {
         if (!cancelled) setIsLoadingResults(false);
@@ -111,24 +134,34 @@ function AssesementResult() {
     return () => {
       cancelled = true;
     };
-  }, [assessmentId]);
+  }, [assessmentId, showError]);
 
-  const solarKwp = formatNumber(results?.recommendedSolarKwp, "5.8");
-  const batteryKwh = formatNumber(results?.recommendedBatteryKwh, "12.0");
-  const inverterKw = formatNumber(results?.recommendedInverterKw, "5.0");
-  const systemCost = formatNaira(results?.estimatedSystemCost, "N7.8m");
-  const grossSavings = formatNaira(results?.grossAnnualSavings, "N2.0m");
-  const omAllowance = formatNaira(results?.annualOmAllowance, "N0.2m");
-  const netSavings = formatNaira(results?.netAnnualSavings, "N1.8m");
-  const paybackYears = formatNumber(results?.simplePaybackYears, "4.3");
-  const solarSharePct = toPercent(results?.solarShare, 68);
-  const gridOffsetPct = toPercent(results?.gridOffset, 42);
-  const dieselReductionPct = toPercent(results?.dieselReduction, 57);
+  const solarKwp = formatNumber(results?.recommendedSolarKwp, 1);
+  const batteryKwh = formatNumber(results?.recommendedBatteryKwh, 1);
+  const inverterKw = formatNumber(results?.recommendedInverterKw, 1);
+  const systemCost = formatNaira(results?.estimatedSystemCost);
+  const grossSavings = formatNaira(results?.grossAnnualSavings);
+  const omAllowance = formatNaira(results?.annualOmAllowance);
+  const netSavings = formatNaira(results?.netAnnualSavings);
+  const paybackYears = formatNumber(results?.simplePaybackYears, 1);
+  const solarSharePct = toPercent(results?.solarShare);
+  const gridOffsetPct = toPercent(results?.gridOffset);
+  const dieselReductionPct = toPercent(results?.dieselReduction);
+  const annualPvGeneration = formatNumber(results?.annualPvGenerationKwh);
+  const usableSolar = formatNumber(results?.usableSolarKwh);
   const dieselSavedLitres = (() => {
     const n = toNum(results?.dieselSavedLitres);
-    return n === null ? "2,150L" : `${Math.round(n).toLocaleString()}L`;
+    if (n === null) return MISSING;
+    return `${n.toLocaleString("en-NG", {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+    })}L`;
   })();
-  const systemClass = results?.scenarioName || "Hybrid";
+  const leadType = formatText(results?.leadType);
+  const recommendedNextStep = formatText(results?.recommendedNextStep);
+  const primaryRecommendation = formatText(results?.primaryRecommendation);
+  const confidenceNote = formatText(results?.confidenceNote);
+  const systemClass = formatText(results?.systemClass);
   const disclaimer =
     results?.disclaimer ||
     "These results are indicative only. Final system design, procurement, and performance should be validated through a detailed review before investment or installation.";
@@ -162,6 +195,11 @@ function AssesementResult() {
 
   return (
     <div>
+      <SolarvyLoader
+        open={isLoadingResults}
+        message="Loading your assessment results..."
+      />
+      <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>
@@ -241,18 +279,6 @@ function AssesementResult() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
-          {isLoadingResults && (
-            <div className="alert alert-info mb-3" role="status">
-              Loading your assessment results...
-            </div>
-          )}
-
-          {resultsError && (
-            <div className="alert alert-warning mb-3" role="alert">
-              {resultsError}
-            </div>
-          )}
-
           <div className="row g-4 align-items-start">
             <div className="col-lg-8">
               <div className="row g-2">
@@ -382,7 +408,11 @@ function AssesementResult() {
 
                     <div className="summary-row d-flex justify-content-between border-0">
                       <span className="rang-name">Simple payback</span>
-                      <strong className="rang-head">{paybackYears} years</strong>
+                      <strong className="rang-head">
+                        {paybackYears === MISSING
+                          ? MISSING
+                          : `${paybackYears} years`}
+                      </strong>
                     </div>
                   </div>
 
@@ -392,12 +422,14 @@ function AssesementResult() {
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
                         <span className="rang-name">Solar share</span>
-                        <strong className="per-rang">{solarSharePct}%</strong>
+                        <strong className="per-rang">
+                          {formatPercentLabel(results?.solarShare)}
+                        </strong>
                       </div>
                       <div className="progress custom-progress">
                         <div
                           className="progress-bar bg-danger"
-                          style={{ width: `${solarSharePct}%` }}
+                          style={{ width: `${solarSharePct ?? 0}%` }}
                         ></div>
                       </div>
                     </div>
@@ -405,12 +437,14 @@ function AssesementResult() {
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
                         <span className="rang-name">Grid offset</span>
-                        <strong className="per-rang">{gridOffsetPct}%</strong>
+                        <strong className="per-rang">
+                          {formatPercentLabel(results?.gridOffset)}
+                        </strong>
                       </div>
                       <div className="progress custom-progress">
                         <div
                           className="progress-bar bg-primary"
-                          style={{ width: `${gridOffsetPct}%` }}
+                          style={{ width: `${gridOffsetPct ?? 0}%` }}
                         ></div>
                       </div>
                     </div>
@@ -419,13 +453,15 @@ function AssesementResult() {
                       <div className="d-flex justify-content-between">
                         <span className="rang-name">Diesel reduction</span>
                         <strong className="per-rang">
-                          {dieselReductionPct}%
+                          {formatPercentLabel(results?.dieselReduction)}
                         </strong>
                       </div>
                       <div className="progress custom-progress">
                         <div
                           className="progress-bar bg-success"
-                          style={{ width: `${dieselReductionPct}%` }}
+                          style={{
+                            width: `${dieselReductionPct ?? 0}%`,
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -473,14 +509,64 @@ function AssesementResult() {
 
                     <div className="summary-row d-flex justify-content-between border-0">
                       <span className="rang-name">Simple payback</span>
-                      <strong className="rang-head">{paybackYears} years</strong>
+                      <strong className="rang-head">
+                        {paybackYears === MISSING
+                          ? MISSING
+                          : `${paybackYears} years`}
+                      </strong>
                     </div>
+                    {/* <div className="summary-row d-flex justify-content-between">
+                      <span className="rang-name">Annual PV generation</span>
+                      <strong className="rang-head">
+                        {annualPvGeneration === MISSING
+                          ? MISSING
+                          : `${annualPvGeneration} kWh`}
+                      </strong>
+                    </div>
+
+                    <div className="summary-row d-flex justify-content-between">
+                      <span className="rang-name">Usable solar</span>
+                      <strong className="rang-head">
+                        {usableSolar === MISSING
+                          ? MISSING
+                          : `${usableSolar} kWh`}
+                      </strong>
+                    </div>
+
+                    <div className="summary-row d-flex justify-content-between">
+                      <span className="rang-name">Diesel saved</span>
+                      <strong className="rang-head">{dieselSavedLitres}</strong>
+                    </div>
+
+                    <div className="summary-row d-flex justify-content-between">
+                      <span className="rang-name">Lead type</span>
+                      <strong className="rang-head">{leadType}</strong>
+                    </div>
+
+                    <div className="summary-row d-flex justify-content-between">
+                      <span className="rang-name">Recommended next step</span>
+                      <strong className="rang-head">
+                        {recommendedNextStep}
+                      </strong>
+                    </div>
+
+                    <div className="summary-row d-flex justify-content-between">
+                      <span className="rang-name">Primary recommendation</span>
+                      <strong className="rang-head">
+                        {primaryRecommendation}
+                      </strong>
+                    </div>
+
+                    <div className="summary-row d-flex justify-content-between border-0">
+                      <span className="rang-name">Confidence note</span>
+                      <strong className="rang-head">{confidenceNote}</strong>
+                    </div> */}
                   </div>
                 </div>
               </div>
 
-              <div className="important-note d-flex align-items-start p-3 mt-4">
-                <div className="me-2 mt-1">
+              <div className="important-note d-flex align-items-center p-3 mt-4">
+                <div className="me-2 mt-0">
                   <img src={imp} alt="icon" />
                 </div>
 
@@ -605,7 +691,11 @@ function AssesementResult() {
                           <i className="colo-sym-right bi bi-clock-history text-primary fs-5"></i>
                         </div>
                         <small className="label">PAYBACK</small>
-                        <h5 className="value">{paybackYears}yrs</h5>
+                        <h5 className="value">
+                          {paybackYears === MISSING
+                            ? MISSING
+                            : `${paybackYears} yrs`}
+                        </h5>
                       </div>
                     </div>
 

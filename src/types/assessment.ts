@@ -6,6 +6,14 @@ export type LoadTableRow = {
   power: number;
   /** Percent 0–100. Mirrors Excel duty cycle / load factor. */
   loadFactorPct?: number;
+  /** Appliance_Input row number (template zone 4–20). */
+  excelRow?: number;
+  /** template = from Appliance_Input A4:A20; user = Add Equipment (A21+). */
+  source?: "template" | "user";
+  /** Daily kWh from Excel column G at prefill time. */
+  dailyKwhExcel?: number;
+  /** Hidden from UI; written to Excel with qty=0. */
+  removed?: boolean;
 };
 
 export type AssessmentFormData = {
@@ -52,7 +60,7 @@ export const EMPTY_ASSESSMENT_FORM: AssessmentFormData = {
     fileName: "",
     notes: "",
     monthlyUsage: "",
-    usageUnit: "",
+    usageUnit: "kWh",
     monthlySpend: "",
     gridTariff: "",
   },
@@ -100,6 +108,9 @@ export type TemplatePrefillRow = {
   watts: number;
   hours: number;
   dutyCycle: number;
+  dailyKwh?: number | null;
+  excelRow?: number;
+  source?: "template" | "user";
 };
 
 export type AssessmentResults = {
@@ -128,6 +139,7 @@ export type AssessmentResults = {
   solarShare?: number | null;
   gridOffset?: number | null;
   dieselReduction?: number | null;
+  systemClass?: string | null;
   calculationError?: string;
   summary?: Record<string, Record<string, number | null>>;
 };

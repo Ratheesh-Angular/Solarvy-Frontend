@@ -331,19 +331,36 @@ label.ass-field-label.ass-field-label--section {
 }
 
 input.form-control.ass-field-control,
-select.form-select.ass-field-control,
 textarea.form-control.ass-field-control {
   min-height: 48px;
   padding: 0.65rem 0.9rem;
   font-size: 14px !important;
   line-height: 1.45;
   font-weight: 400;
-  color: #b3b4be !important;
+  color: #1a2259 !important;
   background-color: #ffffff;
   border: 1px solid #e8edf5 !important;
   border-radius: 10px !important;
   box-shadow: none !important;
   text-align: left;
+}
+
+select.form-select.ass-field-control {
+  min-height: 48px;
+  padding: 0.65rem 0.9rem;
+  font-size: 14px !important;
+  line-height: 1.45;
+  font-weight: 400;
+  color: #1a2259 !important;
+  background-color: #ffffff;
+  border: 1px solid #e8edf5 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  text-align: left;
+}
+
+select.form-select.ass-field-control:has(option[value=""]:checked) {
+  color: #94a3b8 !important;
 }
 
 textarea.form-control.ass-field-control {
@@ -370,7 +387,6 @@ textarea.form-control.ass-field-control:focus {
   border-color: #174c90 !important;
   box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12) !important;
   outline: none;
-  color: #1a2259;
 }
 
 .input-wrapper input.form-control.ass-field-control,
@@ -1539,14 +1555,14 @@ tr.appliance-select-row-is-open {
 .appliance-select-cell {
   min-width: 0;
   flex: 1;
-  max-width: 220px;
+  max-width: 320px;
 }
 
 .appliance-select-trigger {
   display: block;
   width: 100%;
-  min-width: 160px;
-  max-width: 220px;
+  min-width: 220px;
+  max-width: 320px;
   min-height: 48px;
   padding: 0.55rem 0.75rem;
   background: #fff;
@@ -1591,12 +1607,14 @@ tr.appliance-select-row-is-open {
 .appliance-select-label {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.25;
   font-weight: 500;
   font-size: 15px;
   color: #1a2259;
+  word-break: break-word;
 }
 
 .appliance-select-chevron {
@@ -1619,14 +1637,58 @@ tr.appliance-select-row-is-open {
   z-index: 1000000;
   min-width: 100%;
   width: max-content;
-  max-width: min(340px, calc(100vw - 32px));
+  max-width: min(420px, calc(100vw - 32px));
   margin: 0;
-  padding: 6px 0;
+  padding: 0;
   list-style: none;
   background: #fff;
   border: 1px solid #e8edf5;
   border-radius: 10px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.appliance-select-search {
+  flex-shrink: 0;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid #e8edf5;
+  background: #fff;
+}
+
+.appliance-select-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1a2259;
+  background: #f8fafc;
+  outline: none;
+}
+
+.appliance-select-search-input:focus {
+  border-color: #174c90;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.1);
+}
+
+.appliance-select-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  /* ~5 option rows visible, then scroll */
+  max-height: calc(5 * 44px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.appliance-select-empty {
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #6b7280;
 }
 
 .appliance-select-option {
@@ -1634,7 +1696,8 @@ tr.appliance-select-row-is-open {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 14px;
+  min-height: 44px;
+  padding: 8px 14px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -1651,6 +1714,14 @@ tr.appliance-select-row-is-open {
 
 .appliance-select-option .tables-icon-box-custom {
   flex-shrink: 0;
+}
+
+.appliance-select-option-label {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 td.kwh.rows-back {
@@ -1880,6 +1951,11 @@ hr {
   font-weight: 700;
 }
 
+.appliance-table th:first-child,
+.appliance-table td.appliance-cell {
+  min-width: 280px;
+}
+
 .appliance-table tbody tr {
   border-bottom: 1px solid #f0f4fa;
 }
@@ -1927,6 +2003,57 @@ button.ass-row-remove-btn:not(:disabled):hover {
 button.ass-row-remove-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+.ass-table-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e8edf5;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.ass-table-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ass-table-pagination__btn {
+  border: 1px solid #dbe3ef;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.ass-table-pagination__btn:not(:disabled):hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.ass-table-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ass-table-pagination__page {
+  color: #64748b;
+  font-weight: 600;
+  min-width: 88px;
+  text-align: center;
 }
 
 .icon {

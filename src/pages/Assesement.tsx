@@ -37,6 +37,9 @@ import type { LucideIcon } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import FeedbackToast from "../components/FeedbackToast";
+import SolarvyLoader from "../components/SolarvyLoader";
+import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { ApiError } from "../lib/api";
 import {
   completeAssessment,
@@ -58,12 +61,16 @@ import type {
   ExcelCatalogs,
   EquipmentCatalogItem,
   LoadTableRow,
+  TemplatePrefillRow,
 } from "../types/assessment";
 
 type ApplianceCatalogItem = {
   kind: string;
   label: string;
   defaultPower: number;
+  defaultHours: number;
+  /** Duty cycle as 0–1 from Equipment Default. */
+  defaultDutyCycle: number;
   Icon: LucideIcon;
 };
 
@@ -93,15 +100,48 @@ function catalogFromEquipment(
     kind: item.name,
     label: item.name,
     defaultPower: item.watts,
+    defaultHours: item.hoursPerDay || 8,
+    defaultDutyCycle:
+      Number.isFinite(item.dutyCycle) && item.dutyCycle > 0
+        ? item.dutyCycle
+        : 1,
     Icon: iconForEquipment(item.name),
   }));
 }
 
 const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
-  { kind: "LED bulb", label: "LED bulb", defaultPower: 10, Icon: Lightbulb },
-  { kind: "Fan", label: "Fan", defaultPower: 60, Icon: Fan },
-  { kind: "TV", label: "TV", defaultPower: 100, Icon: Tv },
-  { kind: "AC 1HP", label: "AC 1HP", defaultPower: 900, Icon: AirVent },
+  {
+    kind: "LED bulb",
+    label: "LED bulb",
+    defaultPower: 10,
+    defaultHours: 6,
+    defaultDutyCycle: 1,
+    Icon: Lightbulb,
+  },
+  {
+    kind: "Fan",
+    label: "Fan",
+    defaultPower: 60,
+    defaultHours: 8,
+    defaultDutyCycle: 1,
+    Icon: Fan,
+  },
+  {
+    kind: "TV",
+    label: "TV",
+    defaultPower: 100,
+    defaultHours: 6,
+    defaultDutyCycle: 1,
+    Icon: Tv,
+  },
+  {
+    kind: "AC 1HP",
+    label: "AC 1HP",
+    defaultPower: 900,
+    defaultHours: 5,
+    defaultDutyCycle: 0.6,
+    Icon: AirVent,
+  },
 ];
 
 const PROPERTY_ICONS: Record<string, LucideIcon> = {
@@ -151,26 +191,219 @@ const OBJECTIVE_DESCRIPTIONS: Record<string, string> = {
 };
 
 const MIN_EQUIP_ROWS = 1;
-/** Excel Appliance_Input / Custom_Equipment tables support rows 4–23. */
-const MAX_EQUIP_ROWS = 20;
+/**
+ * Appliance_Input: template zone A4:A20 + user extras A21:A40
+ * (matches Backend APPLIANCE_TABLE endRow - startRow + 1).
+ */
+const MAX_EQUIP_ROWS = 37;
+const ROWS_PER_PAGE = 5;
+const APPLIANCE_USER_EXCEL_START = 21;
+const APPLIANCE_USER_EXCEL_END = 40;
+const CUSTOM_EXCEL_START = 4;
+const CUSTOM_EXCEL_END = 23;
+
+function nextApplianceExcelRow(rows: LoadTableRow[]): number | null {
+  const occupied = new Set<number>();
+  for (const row of rows) {
+    const slot = row.excelRow;
+    if (
+      typeof slot === "number" &&
+      slot >= APPLIANCE_USER_EXCEL_START &&
+      slot <= APPLIANCE_USER_EXCEL_END
+    ) {
+      occupied.add(slot);
+    }
+  }
+  for (let r = APPLIANCE_USER_EXCEL_START; r <= APPLIANCE_USER_EXCEL_END; r++) {
+    if (!occupied.has(r)) return r;
+  }
+  return null;
+}
+
+function nextCustomExcelRow(rows: LoadTableRow[]): number | null {
+  const occupied = new Set<number>();
+  for (const row of rows) {
+    const slot = row.excelRow;
+    if (
+      typeof slot === "number" &&
+      slot >= CUSTOM_EXCEL_START &&
+      slot <= CUSTOM_EXCEL_END
+    ) {
+      occupied.add(slot);
+    }
+  }
+  for (let r = CUSTOM_EXCEL_START; r <= CUSTOM_EXCEL_END; r++) {
+    if (!occupied.has(r)) return r;
+  }
+  return null;
+}
+
+function visibleEquipmentRows(rows: LoadTableRow[]): LoadTableRow[] {
+  return rows.filter((row) => !row.removed);
+}
+
+function getPaginationMeta(totalRows: number, page: number) {
+  if (totalRows === 0) {
+    return {
+      totalPages: 1,
+      safePage: 1,
+      startIndex: 0,
+      endIndex: 0,
+      showFrom: 0,
+      showTo: 0,
+    };
+  }
+  const totalPages = Math.max(1, Math.ceil(totalRows / ROWS_PER_PAGE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (safePage - 1) * ROWS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ROWS_PER_PAGE, totalRows);
+  return {
+    totalPages,
+    safePage,
+    startIndex,
+    endIndex,
+    showFrom: startIndex + 1,
+    showTo: endIndex,
+  };
+}
+
+type TablePaginationProps = {
+  totalRows: number;
+  page: number;
+  onPageChange: (page: number) => void;
+};
+
+function TablePagination({
+  totalRows,
+  page,
+  onPageChange,
+}: TablePaginationProps) {
+  const { totalPages, safePage, showFrom, showTo } = getPaginationMeta(
+    totalRows,
+    page,
+  );
+
+  if (totalRows === 0) return null;
+
+  const label =
+    totalRows <= ROWS_PER_PAGE
+      ? `Showing all ${totalRows} row${totalRows === 1 ? "" : "s"}`
+      : `Showing ${showFrom}–${showTo} of ${totalRows} rows`;
+
+  return (
+    <div className="ass-table-pagination">
+      <span className="ass-table-pagination__summary text-muted small">
+        {label}
+      </span>
+      {totalRows > ROWS_PER_PAGE && (
+        <div className="ass-table-pagination__controls">
+          <button
+            type="button"
+            className="ass-table-pagination__btn"
+            disabled={safePage <= 1}
+            aria-label="Previous page"
+            onClick={() => onPageChange(safePage - 1)}
+          >
+            Previous
+          </button>
+          <span className="ass-table-pagination__page small">
+            Page {safePage} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className="ass-table-pagination__btn"
+            disabled={safePage >= totalPages}
+            aria-label="Next page"
+            onClick={() => onPageChange(safePage + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const newRowId = (prefix: string) =>
   `${prefix}-${typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`}`;
+
+const rowFromCatalogItem = (
+  prefix: string,
+  item: ApplianceCatalogItem,
+  _customEquipment = false,
+): LoadTableRow => {
+  return {
+    id: newRowId(prefix),
+    kind: item.kind,
+    qty: 0,
+    hours: 0,
+    power: 0,
+    loadFactorPct: 0,
+    source: "user",
+  };
+};
+
+/** Map Appliance_Input prefill rows into UI table rows. */
+const rowsFromAppliancePrefill = (
+  prefillRows: TemplatePrefillRow[],
+): LoadTableRow[] =>
+  prefillRows.map((row) => {
+    const duty = Number(row.dutyCycle);
+    const loadFactorPct =
+      Number.isFinite(duty) && duty > 0
+        ? Math.round((duty <= 1 ? duty : duty / 100) * 100)
+        : 100;
+    return {
+      id: newRowId("ap"),
+      kind: row.name,
+      qty: Number(row.qty) || 0,
+      hours: Number(row.hours) || 0,
+      power: Number(row.watts) || 0,
+      loadFactorPct,
+      excelRow: row.excelRow,
+      source: "template" as const,
+      dailyKwhExcel:
+        row.dailyKwh === null || row.dailyKwh === undefined
+          ? undefined
+          : Number(row.dailyKwh),
+    };
+  });
+
+/** Ensure Appliance_Input names appear in the kind dropdown even if absent from Equipment Default. */
+const mergeCatalogWithKinds = (
+  catalog: ApplianceCatalogItem[],
+  kinds: string[],
+): ApplianceCatalogItem[] => {
+  const byKind = new Map(catalog.map((item) => [item.kind, item]));
+  for (const kind of kinds) {
+    const trimmed = kind?.trim();
+    if (!trimmed || byKind.has(trimmed)) continue;
+    byKind.set(trimmed, {
+      kind: trimmed,
+      label: trimmed,
+      defaultPower: 0,
+      defaultHours: 8,
+      defaultDutyCycle: 1,
+      Icon: iconForEquipment(trimmed),
+    });
+  }
+  return Array.from(byKind.values());
+};
 
 const defaultRowFromCatalog = (
   prefix: string,
   catalog: ApplianceCatalogItem[],
   customEquipment: boolean,
+  preferredKind?: string,
 ): LoadTableRow => {
-  const first = catalog[0] ?? FALLBACK_EQUIPMENT_CATALOG[0];
-  return {
-    id: newRowId(prefix),
-    kind: first.kind,
-    qty: 1,
-    hours: 8,
-    power: first.defaultPower,
-    ...(customEquipment ? { loadFactorPct: 100 } : {}),
-  };
+  const source = catalog.length ? catalog : FALLBACK_EQUIPMENT_CATALOG;
+  const item =
+    (preferredKind
+      ? source.find((entry) => entry.kind === preferredKind)
+      : undefined) ??
+    source[0] ??
+    FALLBACK_EQUIPMENT_CATALOG[0];
+  return rowFromCatalogItem(prefix, item, customEquipment);
 };
 
 function ApplianceKindSelect({
@@ -189,18 +422,31 @@ function ApplianceKindSelect({
   onOpenChange: (row: number | null) => void;
 }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [menuPos, setMenuPos] = useState<{
     top: number;
     left: number;
     minWidth: number;
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const selected = catalog.find((o) => o.kind === valueKind);
   const isOpen = openRow === rowIndex;
   const TriggerIcon = selected?.Icon ?? Lightbulb;
 
+  const filteredCatalog = (() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return catalog;
+    return catalog.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        opt.kind.toLowerCase().includes(q),
+    );
+  })();
+
   useLayoutEffect(() => {
     if (!isOpen) {
       setMenuPos(null);
+      setSearchQuery("");
       return;
     }
     const update = () => {
@@ -209,8 +455,8 @@ function ApplianceKindSelect({
       const r = el.getBoundingClientRect();
       const vw = window.innerWidth;
       const margin = 16;
-      const maxMenuW = Math.min(340, vw - margin * 2);
-      const minWidth = Math.min(Math.max(r.width, 200), maxMenuW);
+      const maxMenuW = Math.min(420, vw - margin * 2);
+      const minWidth = Math.min(Math.max(r.width, 260), maxMenuW);
       let left = r.left;
       if (left + minWidth > vw - margin) {
         left = vw - margin - minWidth;
@@ -231,6 +477,14 @@ function ApplianceKindSelect({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const id = window.requestAnimationFrame(() => {
+      searchRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [isOpen]);
+
   return (
     <div
       className={`appliance-select-cell position-relative${isOpen ? " appliance-select-cell--open" : ""}`}
@@ -241,6 +495,7 @@ function ApplianceKindSelect({
         className="appliance-select-trigger"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        title={selected?.label ?? undefined}
         onClick={(e) => {
           e.stopPropagation();
           onOpenChange(isOpen ? null : rowIndex);
@@ -275,44 +530,78 @@ function ApplianceKindSelect({
               onPointerDown={() => onOpenChange(null)}
             />
             {menuPos ? (
-              <ul
+              <div
                 className="appliance-select-menu appliance-select-menu--portal"
-                role="listbox"
                 style={{
                   position: "fixed",
                   top: menuPos.top,
                   left: menuPos.left,
                   minWidth: menuPos.minWidth,
-                  maxWidth: "min(340px, calc(100vw - 32px))",
+                  width: menuPos.minWidth,
+                  maxWidth: "min(420px, calc(100vw - 32px))",
                   zIndex: 1000000,
                 }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               >
-                {catalog.map((opt) => {
-                  const OptionIcon = opt.Icon;
-                  const active = opt.kind === valueKind;
-                  return (
-                    <li key={opt.kind} role="none">
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={active}
-                        className={`appliance-select-option${active ? " is-active" : ""}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onPick(opt.kind);
-                          onOpenChange(null);
-                        }}
-                      >
-                        <span className="tables-icon-box-custom appliance-select-icon-wrap">
-                          <OptionIcon size={18} strokeWidth={2} aria-hidden />
-                        </span>
-                        <span>{opt.label}</span>
-                      </button>
+                <div className="appliance-select-search w-100">
+                  <input
+                    ref={searchRef}
+                    type="search"
+                    className="appliance-select-search-input w-100"
+                    placeholder="Search appliances…"
+                    value={searchQuery}
+                    aria-label="Search appliances"
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        e.stopPropagation();
+                        onOpenChange(null);
+                      }
+                    }}
+                  />
+                </div>
+                <ul className="appliance-select-menu-list" role="listbox">
+                  {filteredCatalog.length === 0 ? (
+                    <li className="appliance-select-empty" role="presentation">
+                      No matches
                     </li>
-                  );
-                })}
-              </ul>
+                  ) : (
+                    filteredCatalog.map((opt) => {
+                      const OptionIcon = opt.Icon;
+                      const active = opt.kind === valueKind;
+                      return (
+                        <li key={opt.kind} role="none">
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={active}
+                            className={`appliance-select-option${active ? " is-active" : ""}`}
+                            title={opt.label}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onPick(opt.kind);
+                              onOpenChange(null);
+                            }}
+                          >
+                            <span className="tables-icon-box-custom appliance-select-icon-wrap">
+                              <OptionIcon
+                                size={18}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                            </span>
+                            <span className="appliance-select-option-label">
+                              {opt.label}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+              </div>
             ) : null}
           </>,
           document.body,
@@ -377,6 +666,7 @@ function Assesement() {
   >("bill");
   const [selectedObjective, setSelectedObjective] = useState("");
   const [catalogs, setCatalogs] = useState<ExcelCatalogs | null>(null);
+  const [isLoadingCatalogs, setIsLoadingCatalogs] = useState(true);
   const [isPrefilling, setIsPrefilling] = useState(false);
   const [isExtractingBill, setIsExtractingBill] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -387,11 +677,10 @@ function Assesement() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftIdParam));
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
-  const [saveError, setSaveError] = useState("");
+  const { toast, showSuccess, showError, clearToast } = useFeedbackToast();
   const [billNotes, setBillNotes] = useState("");
   const [monthlyUsage, setMonthlyUsage] = useState("");
-  const [usageUnit, setUsageUnit] = useState("");
+  const [usageUnit, setUsageUnit] = useState("kWh");
   const [monthlySpend, setMonthlySpend] = useState("");
   const [gridTariff, setGridTariff] = useState("");
   const [monthlyElectricityBill, setMonthlyElectricityBill] = useState("");
@@ -494,6 +783,13 @@ function Assesement() {
 
   const [applianceRows, setApplianceRows] = useState<LoadTableRow[]>([]);
   const [customRows, setCustomRows] = useState<LoadTableRow[]>([]);
+  const [appliancePage, setAppliancePage] = useState(1);
+  const [customPage, setCustomPage] = useState(1);
+
+  const applianceKindCatalog = mergeCatalogWithKinds(
+    equipmentCatalog,
+    visibleEquipmentRows(applianceRows).map((row) => row.kind),
+  );
 
   // Load dropdown catalogs from the Excel workbook (auto-refreshes when the
   // client uploads an updated template — backend caches by file mtime).
@@ -501,11 +797,14 @@ function Assesement() {
     let cancelled = false;
 
     (async () => {
+      setIsLoadingCatalogs(true);
       try {
         const data = await getExcelCatalogs();
         if (!cancelled) setCatalogs(data);
       } catch {
         // fall back to hardcoded options; page stays usable
+      } finally {
+        if (!cancelled) setIsLoadingCatalogs(false);
       }
     })();
 
@@ -514,21 +813,25 @@ function Assesement() {
     };
   }, []);
 
-  // Seed one editable row per table once the equipment catalog is known.
+  // Custom Equipment seeds from Equipment Default once catalogs are known.
+  // Appliance Calculator rows come from Appliance_Input via template prefill.
   useEffect(() => {
     if (!equipmentCatalog.length) return;
-    setApplianceRows((prev) =>
-      prev.length
-        ? prev
-        : [defaultRowFromCatalog("ap", equipmentCatalog, false)],
-    );
+    if (draftIdParam && isLoadingDraft) return;
+
     setCustomRows((prev) =>
       prev.length
         ? prev
-        : [defaultRowFromCatalog("ce", equipmentCatalog, true)],
+        : [
+            {
+              ...defaultRowFromCatalog("ce", equipmentCatalog, true),
+              excelRow: CUSTOM_EXCEL_START,
+              source: "user" as const,
+            },
+          ],
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catalogs]);
+  }, [catalogs, draftIdParam, isLoadingDraft]);
 
   /** Open template picker when property is pre-filled (e.g. from Home quick form) but no template yet. */
   useEffect(() => {
@@ -547,32 +850,38 @@ function Assesement() {
     templatePromptHandledRef.current = true;
   };
 
-  /** Select a template in the popup: Excel recalculates and returns prefill rows. */
+  /**
+   * Select a template: write property/template to Excel, recalc, then seed
+   * Appliance Calculator from Appliance_Input A4:A20 (available names only).
+   * Keep any previously added user (A21+) rows appended.
+   */
   const handleTemplateSelect = async (template: string) => {
     setSelectedTemplate(template);
     setShowTemplatePopup(false);
     setIsPrefilling(true);
-    setSaveError("");
+    clearToast();
 
     try {
       const prefill = await getTemplatePrefill(selectedProperty, template);
-      if (prefill.applianceRows.length) {
-        setApplianceRows(
-          prefill.applianceRows.map((row) => ({
-            id: newRowId("ap"),
-            kind: row.name,
-            qty: row.qty,
-            hours: row.hours,
-            power: row.watts,
-            loadFactorPct: Math.round((row.dutyCycle || 1) * 100),
-          })),
-        );
-      }
+      const templateRows = rowsFromAppliancePrefill(
+        prefill.applianceRows || [],
+      );
+      setApplianceRows((prev) => {
+        const userExtras = prev.filter((row) => row.source === "user");
+        return [...templateRows, ...userExtras].slice(0, MAX_EQUIP_ROWS);
+      });
+      setAppliancePage(1);
+      showSuccess(
+        templateRows.length
+          ? `Loaded ${templateRows.length} appliances from your template.`
+          : "Template applied. Add appliances with Add Equipment.",
+        "Template applied",
+      );
     } catch (error) {
-      setSaveError(
+      showError(
         error instanceof ApiError
           ? error.message
-          : "Unable to load template appliances from the calculator.",
+          : "Unable to apply template from the calculator.",
       );
     } finally {
       setIsPrefilling(false);
@@ -588,7 +897,15 @@ function Assesement() {
     const q = Number(item.qty) || 0;
     const h = Number(item.hours) || 0;
     const p = Number(item.power) || 0;
-    return ((q * h * p * lf) / 1000).toFixed(2);
+    const live = (q * h * p * lf) / 1000;
+    if (q || h || p) return live.toFixed(2);
+    if (
+      item.dailyKwhExcel !== undefined &&
+      Number.isFinite(item.dailyKwhExcel)
+    ) {
+      return Number(item.dailyKwhExcel).toFixed(2);
+    }
+    return live.toFixed(2);
   };
 
   const handleRowChange = (index: any, field: any, value: any) => {
@@ -600,23 +917,53 @@ function Assesement() {
       if (!updatedRows[index]) return prevRows;
 
       if (field === "qty") {
-        updatedRows[index].qty = Number(value) || 0;
+        updatedRows[index] = {
+          ...updatedRows[index],
+          qty: Number(value) || 0,
+          dailyKwhExcel: undefined,
+        };
       } else if (field === "hours") {
-        updatedRows[index].hours = Number(value) || 0;
+        updatedRows[index] = {
+          ...updatedRows[index],
+          hours: Number(value) || 0,
+          dailyKwhExcel: undefined,
+        };
       } else if (field === "power") {
-        updatedRows[index].power = Number(value) || 0;
+        updatedRows[index] = {
+          ...updatedRows[index],
+          power: Number(value) || 0,
+          dailyKwhExcel: undefined,
+        };
       } else if (field === "loadFactorPct") {
-        updatedRows[index].loadFactorPct = Math.min(
-          100,
-          Math.max(0, Number(value) || 0),
-        );
+        updatedRows[index] = {
+          ...updatedRows[index],
+          loadFactorPct: Math.min(100, Math.max(0, Number(value) || 0)),
+          dailyKwhExcel: undefined,
+        };
       } else if (field === "kind") {
-        updatedRows[index].kind = String(value);
-      }
-
-      if (field === "kind") {
+        const next: LoadTableRow = {
+          ...updatedRows[index],
+          kind: String(value),
+          dailyKwhExcel: undefined,
+        };
+        // Changing kind on a template row moves it to A21+ so we do not
+        // overwrite Appliance_Input name formulas.
+        if (next.source === "template") {
+          next.source = "user";
+          const others = updatedRows.filter((_, i) => i !== index);
+          next.excelRow = nextApplianceExcelRow(others) ?? undefined;
+        } else {
+          next.source = next.source || "user";
+        }
         const opt = equipmentCatalog.find((o) => o.kind === value);
-        if (opt) updatedRows[index].power = opt.defaultPower;
+        if (opt) {
+          next.power = opt.defaultPower;
+          next.hours = opt.defaultHours;
+          next.loadFactorPct = Math.round(
+            (opt.defaultDutyCycle > 0 ? opt.defaultDutyCycle : 1) * 100,
+          );
+        }
+        updatedRows[index] = next;
       }
 
       return updatedRows;
@@ -624,33 +971,121 @@ function Assesement() {
   };
 
   const addEquipmentRow = (customEquipment: boolean) => {
-    const row = defaultRowFromCatalog(
-      customEquipment ? "ce" : "ap",
-      equipmentCatalog,
-      customEquipment,
-    );
     const setter = customEquipment ? setCustomRows : setApplianceRows;
-    // Excel table supports max 20 rows (rows 4–23)
-    setter((prev) => (prev.length >= MAX_EQUIP_ROWS ? prev : [...prev, row]));
+    const setPage = customEquipment ? setCustomPage : setAppliancePage;
+    setter((prev) => {
+      const visible = visibleEquipmentRows(prev);
+      if (visible.length >= MAX_EQUIP_ROWS) return prev;
+
+      const usedKinds = new Set(visible.map((row) => row.kind));
+      const nextUnused = equipmentCatalog.find(
+        (item) => !usedKinds.has(item.kind),
+      );
+
+      if (nextUnused) {
+        const removedIndex = prev.findIndex(
+          (row) => row.removed && row.kind === nextUnused.kind,
+        );
+        if (removedIndex >= 0) {
+          const next = [...prev];
+          next[removedIndex] = {
+            ...next[removedIndex],
+            removed: false,
+            qty: 0,
+            hours: 0,
+            power: 0,
+            loadFactorPct: 0,
+            dailyKwhExcel: undefined,
+          };
+          setPage(Math.ceil((visible.length + 1) / ROWS_PER_PAGE));
+          return next;
+        }
+      }
+
+      const excelRow = customEquipment
+        ? nextCustomExcelRow(prev)
+        : nextApplianceExcelRow(prev);
+      if (excelRow === null) return prev;
+
+      const row = nextUnused
+        ? rowFromCatalogItem(
+            customEquipment ? "ce" : "ap",
+            nextUnused,
+            customEquipment,
+          )
+        : defaultRowFromCatalog(
+            customEquipment ? "ce" : "ap",
+            equipmentCatalog,
+            customEquipment,
+          );
+
+      const next = [
+        ...prev,
+        { ...row, source: "user" as const, excelRow },
+      ];
+      setPage(Math.ceil((visible.length + 1) / ROWS_PER_PAGE));
+      return next;
+    });
     setOpenApplianceSelectRow(null);
   };
 
   const removeEquipmentRow = (customEquipment: boolean, index: number) => {
     const setter = customEquipment ? setCustomRows : setApplianceRows;
-    setter((prev) =>
-      prev.length <= MIN_EQUIP_ROWS ? prev : prev.filter((_, i) => i !== index),
-    );
+    const setPage = customEquipment ? setCustomPage : setAppliancePage;
+    setter((prev) => {
+      const visibleCount = visibleEquipmentRows(prev).length;
+      if (customEquipment && visibleCount <= MIN_EQUIP_ROWS) return prev;
+      if (!prev[index] || prev[index].removed) return prev;
+
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        qty: 0,
+        removed: true,
+        dailyKwhExcel: undefined,
+      };
+
+      const newVisibleCount = visibleEquipmentRows(next).length;
+      setPage((currentPage) =>
+        Math.min(
+          currentPage,
+          Math.max(1, Math.ceil(newVisibleCount / ROWS_PER_PAGE) || 1),
+        ),
+      );
+      return next;
+    });
     setOpenApplianceSelectRow((open) => {
       if (open === null) return null;
       if (open === index) return null;
-      if (open > index) return open - 1;
       return open;
     });
   };
 
   useEffect(() => {
     setOpenApplianceSelectRow(null);
+    setAppliancePage(1);
+    setCustomPage(1);
   }, [inputMethod]);
+
+  useEffect(() => {
+    const visibleCount = visibleEquipmentRows(applianceRows).length;
+    setAppliancePage((currentPage) =>
+      Math.min(
+        currentPage,
+        Math.max(1, Math.ceil(visibleCount / ROWS_PER_PAGE) || 1),
+      ),
+    );
+  }, [applianceRows]);
+
+  useEffect(() => {
+    const visibleCount = visibleEquipmentRows(customRows).length;
+    setCustomPage((currentPage) =>
+      Math.min(
+        currentPage,
+        Math.max(1, Math.ceil(visibleCount / ROWS_PER_PAGE) || 1),
+      ),
+    );
+  }, [customRows]);
 
   /** Bill upload: extract usage/spend/tariff with OCR and prefill (editable). */
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -662,7 +1097,7 @@ function Assesement() {
 
     setFileName(file.name);
     setIsExtractingBill(true);
-    setSaveError("");
+    clearToast();
 
     try {
       const extracted = await extractBillValues(file);
@@ -684,15 +1119,17 @@ function Assesement() {
       }
 
       if (filled > 0) {
-        setSaveMessage("Bill values extracted — review and edit if needed.");
-        setSaveError("");
+        showSuccess(
+          "Bill values extracted — review and edit if needed.",
+          "Bill processed",
+        );
       } else {
-        setSaveError(
+        showError(
           "Could not detect bill values automatically. Please enter them manually.",
         );
       }
     } catch (error) {
-      setSaveError(
+      showError(
         error instanceof ApiError
           ? error.message
           : "Could not read values from the bill automatically — please enter them below.",
@@ -789,9 +1226,32 @@ function Assesement() {
           setRoofArea,
           setBackupDuration,
         });
+
+        const savedApplianceRows = draft.formData?.appliance?.rows;
+        const property = draft.formData?.propertyType;
+        const template = draft.formData?.template;
+        if (
+          (!savedApplianceRows || savedApplianceRows.length === 0) &&
+          property &&
+          template
+        ) {
+          try {
+            setIsPrefilling(true);
+            const prefill = await getTemplatePrefill(property, template);
+            if (!cancelled) {
+              setApplianceRows(
+                rowsFromAppliancePrefill(prefill.applianceRows || []),
+              );
+            }
+          } catch {
+            // Draft still usable without prefill
+          } finally {
+            if (!cancelled) setIsPrefilling(false);
+          }
+        }
       } catch (error) {
         if (!cancelled) {
-          setSaveError(
+          showError(
             error instanceof ApiError
               ? error.message
               : "Unable to load saved assessment draft.",
@@ -805,27 +1265,26 @@ function Assesement() {
     return () => {
       cancelled = true;
     };
-  }, [draftIdParam]);
+  }, [draftIdParam, showError]);
 
   const handleSaveDraft = async () => {
     setIsSavingDraft(true);
-    setSaveError("");
-    setSaveMessage("");
+    clearToast();
 
     try {
       const payload = getFormPayload();
 
       if (draftId) {
         await updateAssessmentDraft(draftId, payload);
-        setSaveMessage("Draft saved successfully.");
+        showSuccess("Draft saved successfully.");
       } else {
         const draft = await createAssessmentDraft(payload);
         setDraftId(draft.id);
         setSearchParams({ draft: String(draft.id) });
-        setSaveMessage("Draft created and saved.");
+        showSuccess("Draft created and saved.");
       }
     } catch (error) {
-      setSaveError(
+      showError(
         error instanceof ApiError
           ? error.message
           : "Unable to save draft. Please try again.",
@@ -837,8 +1296,7 @@ function Assesement() {
 
   const handleCompleteAssessment = async () => {
     setIsSubmitting(true);
-    setSaveError("");
-    setSaveMessage("");
+    clearToast();
 
     try {
       const payload = getFormPayload();
@@ -848,7 +1306,7 @@ function Assesement() {
 
       navigate(`/assesement-result?assessment=${result.id}`);
     } catch (error) {
-      setSaveError(
+      showError(
         error instanceof ApiError
           ? error.message
           : "Unable to complete assessment. Please try again.",
@@ -891,6 +1349,27 @@ function Assesement() {
     }, 0);
 
   const activeRows = inputMethod === "custom" ? customRows : applianceRows;
+  const applianceRowsWithIndex = applianceRows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => !row.removed);
+  const visibleApplianceCount = applianceRowsWithIndex.length;
+  const appliancePagination = getPaginationMeta(
+    visibleApplianceCount,
+    appliancePage,
+  );
+  const paginatedApplianceEntries = applianceRowsWithIndex.slice(
+    appliancePagination.startIndex,
+    appliancePagination.endIndex,
+  );
+  const customRowsWithIndex = customRows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => !row.removed);
+  const visibleCustomCount = customRowsWithIndex.length;
+  const customPagination = getPaginationMeta(visibleCustomCount, customPage);
+  const paginatedCustomEntries = customRowsWithIndex.slice(
+    customPagination.startIndex,
+    customPagination.endIndex,
+  );
   const liveDailyKwh = sumDailyKwh(activeRows);
   const liveMonthlyKwh = liveDailyKwh * 30;
 
@@ -911,13 +1390,35 @@ function Assesement() {
         : "—"
       : String(Math.round(liveDailyKwh * 365));
 
+  const isApiBusy =
+    isLoadingCatalogs ||
+    isLoadingDraft ||
+    isPrefilling ||
+    isExtractingBill ||
+    isSavingDraft ||
+    isSubmitting;
+
+  const loaderMessage = isSubmitting
+    ? "Calculating your system..."
+    : isSavingDraft
+      ? "Saving draft..."
+      : isExtractingBill
+        ? "Reading bill..."
+        : isPrefilling
+          ? "Loading template..."
+          : isLoadingDraft
+            ? "Loading your saved assessment..."
+            : isLoadingCatalogs
+              ? "Loading form options..."
+              : "Please wait...";
+
   const assessmentCtaBar = (
     <div className="d-flex gap-3 flex-wrap mt-3 mb-4 assessment-cta-bar">
       <button
         type="button"
         className="btn-primary-custom calu"
         onClick={handleCompleteAssessment}
-        disabled={isSubmitting || isLoadingDraft}
+        disabled={isApiBusy}
       >
         <span className="icon-sun">
           <img src={sunone} alt="icon" />
@@ -934,7 +1435,7 @@ function Assesement() {
         type="button"
         className="btn-outline-custom2 calu-2"
         onClick={handleSaveDraft}
-        disabled={isSavingDraft || isLoadingDraft}
+        disabled={isApiBusy}
       >
         <span className="icon-sun">
           <img src={save} alt="icon" />
@@ -946,6 +1447,8 @@ function Assesement() {
 
   return (
     <div>
+      <SolarvyLoader open={isApiBusy} message={loaderMessage} />
+      <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>
@@ -1024,24 +1527,6 @@ function Assesement() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
-          {isLoadingDraft && (
-            <div className="alert alert-info mb-3" role="status">
-              Loading your saved assessment...
-            </div>
-          )}
-
-          {saveMessage && (
-            <div className="alert alert-success mb-3" role="status">
-              {saveMessage}
-            </div>
-          )}
-
-          {saveError && (
-            <div className="alert alert-danger mb-3" role="alert">
-              {saveError}
-            </div>
-          )}
-
           <div className="row g-4 align-items-start">
             <div className="col-lg-8">
               <div className="p-4 shadow-sm rounded-4 ass-first">
@@ -1066,6 +1551,10 @@ function Assesement() {
                         onClick={() => {
                           setSelectedProperty(item.title);
                           setSelectedTemplate("");
+                          setAppliancePage(1);
+                          setApplianceRows((prev) =>
+                            prev.filter((row) => row.source === "user"),
+                          );
                           setShowTemplatePopup(true);
                         }}
                       >
@@ -1487,7 +1976,19 @@ function Assesement() {
                             </tr>
                           </thead>
                           <tbody>
-                            {applianceRows.map((item, index) => (
+                            {visibleApplianceCount === 0 && !isPrefilling && (
+                              <tr>
+                                <td
+                                  colSpan={6}
+                                  className="text-muted small py-3"
+                                >
+                                  {selectedTemplate
+                                    ? "No appliances for this template yet. Use Add Equipment to add your own."
+                                    : "Select a property template first to load appliances from the calculator."}
+                                </td>
+                              </tr>
+                            )}
+                            {paginatedApplianceEntries.map(({ row: item, index }) => (
                               <tr
                                 key={item.id}
                                 className={
@@ -1499,7 +2000,7 @@ function Assesement() {
                                 <td className="appliance-cell py-2">
                                   <ApplianceKindSelect
                                     rowIndex={index}
-                                    catalog={equipmentCatalog}
+                                    catalog={applianceKindCatalog}
                                     valueKind={item.kind}
                                     onPick={(kind) =>
                                       handleRowChange(index, "kind", kind)
@@ -1565,9 +2066,7 @@ function Assesement() {
                                   <button
                                     type="button"
                                     className="ass-row-remove-btn"
-                                    disabled={
-                                      applianceRows.length <= MIN_EQUIP_ROWS
-                                    }
+                                    disabled={visibleApplianceCount <= 0}
                                     aria-label="Remove equipment row"
                                     onClick={() =>
                                       removeEquipmentRow(false, index)
@@ -1585,6 +2084,11 @@ function Assesement() {
                           </tbody>
                         </table>
                       </div>
+                      <TablePagination
+                        totalRows={visibleApplianceCount}
+                        page={appliancePage}
+                        onPageChange={setAppliancePage}
+                      />
                       <div className="buttons-actions bottom-bttns d-flex flex-wrap gap-3 mt-3">
                         <button
                           type="button"
@@ -1633,7 +2137,7 @@ function Assesement() {
                           </tr>
                         </thead>
                         <tbody>
-                          {customRows.map((item, index) => (
+                          {paginatedCustomEntries.map(({ row: item, index }) => (
                             <tr
                               key={item.id}
                               className={
@@ -1704,9 +2208,20 @@ function Assesement() {
                               </td>
 
                               <td className="text-center">
-                                <div className="inputs-text-bluess inputs-text-bluess--computed">
-                                  {calculateRowDailyKwh(item)}
-                                </div>
+                                <input
+                                  className="form-control ass-field-control ass-field-control--table"
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={item.loadFactorPct ?? 100}
+                                  onChange={(e) =>
+                                    handleRowChange(
+                                      index,
+                                      "loadFactorPct",
+                                      Number(e.target.value),
+                                    )
+                                  }
+                                />
                               </td>
 
                               <td className="col-md-2">
@@ -1719,7 +2234,7 @@ function Assesement() {
                                 <button
                                   type="button"
                                   className="ass-row-remove-btn"
-                                  disabled={customRows.length <= MIN_EQUIP_ROWS}
+                                  disabled={visibleCustomCount <= MIN_EQUIP_ROWS}
                                   aria-label="Remove equipment row"
                                   onClick={() =>
                                     removeEquipmentRow(true, index)
@@ -1737,6 +2252,12 @@ function Assesement() {
                         </tbody>
                       </table>
                     </div>
+
+                    <TablePagination
+                      totalRows={visibleCustomCount}
+                      page={customPage}
+                      onPageChange={setCustomPage}
+                    />
 
                     <div className="buttons-actions bottom-bttns d-flex flex-wrap gap-3 mt-3">
                       <button

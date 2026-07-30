@@ -249,7 +249,7 @@ function Home() {
                   </div>
 
                   <label className="quick-lable">
-                    Monthly Electricity Bill
+                    Monthly Electricity Bill (₦)
                   </label>
                   <input
                     type="text"
@@ -257,7 +257,7 @@ function Home() {
                     value={quickForm.monthlyElectricityBill}
                     onChange={handleQuickFormChange}
                     className="form-control select-text mb-2"
-                    placeholder="₦"
+                    placeholder=""
                   />
 
                   <div className="row g-2 mb-3">

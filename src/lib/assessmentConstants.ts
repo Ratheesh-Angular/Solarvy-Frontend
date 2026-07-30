@@ -52,7 +52,7 @@ export function quickFormToAssessmentForm(
       fileName: "",
       notes: "",
       monthlyUsage: "",
-      usageUnit: "",
+      usageUnit: "kWh",
       monthlySpend: quick.monthlyElectricityBill,
       gridTariff: "",
     };

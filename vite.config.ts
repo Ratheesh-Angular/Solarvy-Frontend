@@ -10,6 +10,9 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:5000",
         changeOrigin: true,
+        // Bill OCR can take several seconds; avoid premature proxy cutoffs (502).
+        timeout: 120_000,
+        proxyTimeout: 120_000,
       },
     },
   },

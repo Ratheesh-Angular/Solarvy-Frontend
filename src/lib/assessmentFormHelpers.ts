@@ -1,6 +1,57 @@
 import type { AssessmentFormData, LoadTableRow } from "../types/assessment";
 import { EMPTY_ASSESSMENT_FORM } from "../types/assessment";
 
+const CUSTOM_EXCEL_START = 4;
+const CUSTOM_EXCEL_END = 23;
+const APPLIANCE_USER_EXCEL_START = 21;
+const APPLIANCE_USER_EXCEL_END = 40;
+
+function backfillExcelRows(
+  rows: LoadTableRow[],
+  start: number,
+  end: number,
+  needsSlot: (row: LoadTableRow) => boolean,
+): LoadTableRow[] {
+  const occupied = new Set(
+    rows
+      .map((r) => r.excelRow)
+      .filter(
+        (r): r is number => Number.isFinite(r) && r >= start && r <= end,
+      ),
+  );
+  let candidate = start;
+  return rows.map((row) => {
+    if (!needsSlot(row) || Number.isFinite(row.excelRow)) return row;
+    while (candidate <= end && occupied.has(candidate)) candidate += 1;
+    if (candidate > end) return row;
+    occupied.add(candidate);
+    const assigned = candidate;
+    candidate += 1;
+    return { ...row, excelRow: assigned };
+  });
+}
+
+function normalizeApplianceRows(rows: LoadTableRow[]): LoadTableRow[] {
+  return backfillExcelRows(
+    rows,
+    APPLIANCE_USER_EXCEL_START,
+    APPLIANCE_USER_EXCEL_END,
+    (row) =>
+      row.source === "user" ||
+      (Number.isFinite(row.excelRow) &&
+        Number(row.excelRow) >= APPLIANCE_USER_EXCEL_START),
+  );
+}
+
+function normalizeCustomRows(rows: LoadTableRow[]): LoadTableRow[] {
+  return backfillExcelRows(
+    rows,
+    CUSTOM_EXCEL_START,
+    CUSTOM_EXCEL_END,
+    () => true,
+  );
+}
+
 type AssessmentStateSetters = {
   setSelectedProperty: (label: string) => void;
   setSelectedTemplate: (label: string) => void;
@@ -91,17 +142,17 @@ export function applyAssessmentFormData(
     if (merged.bill.fileName) setters.setFileName(merged.bill.fileName);
     setters.setBillNotes(merged.bill.notes || "");
     setters.setMonthlyUsage(merged.bill.monthlyUsage || "");
-    setters.setUsageUnit(merged.bill.usageUnit || "");
+    setters.setUsageUnit(merged.bill.usageUnit || "kWh");
     setters.setMonthlySpend(merged.bill.monthlySpend || "");
     setters.setGridTariff(merged.bill.gridTariff || "");
   }
 
   if (merged.appliance?.rows?.length) {
-    setters.setApplianceRows(merged.appliance.rows);
+    setters.setApplianceRows(normalizeApplianceRows(merged.appliance.rows));
   }
 
   if (merged.custom?.rows?.length) {
-    setters.setCustomRows(merged.custom.rows);
+    setters.setCustomRows(normalizeCustomRows(merged.custom.rows));
   }
 
   if (merged.roofArea) setters.setRoofArea(merged.roofArea);
