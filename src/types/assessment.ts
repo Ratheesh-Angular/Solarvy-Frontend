@@ -141,5 +141,20 @@ export type AssessmentResults = {
   dieselReduction?: number | null;
   systemClass?: string | null;
   calculationError?: string;
-  summary?: Record<string, Record<string, number | null>>;
+  summary?: Record<
+    string,
+    Record<string, number | null> & {
+      estimatedAnnualLoadKwh?: number | null;
+    }
+  >;
+};
+
+export type LiveSummaryResponse = {
+  inputMethod: "bill" | "appliance" | "custom";
+  estimatedAnnualLoadKwh: number | null;
+  /** Outputs!B36 — Estimated Monthly Spend (bill method). */
+  estimatedMonthlySpend?: number | null;
+  summary: AssessmentResults["summary"];
+  /** Per-row Daily_kWh from Appliance_Input!G or Custom_Equipment!G. */
+  rowDailyKwh?: Array<{ excelRow: number; dailyKwh: number | null }>;
 };

@@ -38,15 +38,27 @@ const toNum = (value: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-/** Naira from Excel — rounded to 1 decimal for readability. */
+/** Naira — Excel Outputs B15–B18 use ₦#,##0 (whole naira, lakh grouping). */
 const formatNaira = (value: unknown): string => {
   const n = toNum(value);
   if (n === null) return MISSING;
-  const rounded = Math.round(n * 10) / 10;
-  return `₦${rounded.toLocaleString("en-NG", {
-    maximumFractionDigits: 1,
-    minimumFractionDigits: 1,
+  return `₦${Math.round(n).toLocaleString("en-IN", {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
   })}`;
+};
+
+/** Payback years — one decimal when non-integer, otherwise whole number. */
+const formatPaybackYears = (value: unknown): string => {
+  const n = toNum(value);
+  if (n === null) return MISSING;
+  if (Math.abs(n - Math.round(n)) < 1e-6) {
+    return String(Math.round(n));
+  }
+  return (Math.round(n * 10) / 10).toLocaleString("en-IN", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+  });
 };
 
 /** Exact numeric from Excel — no forced 1-decimal rounding. */
@@ -134,7 +146,9 @@ function AssesementResult() {
     return () => {
       cancelled = true;
     };
-  }, [assessmentId, showError]);
+    // showError identity can change each render; only refetch when assessment id changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessmentId]);
 
   const solarKwp = formatNumber(results?.recommendedSolarKwp, 1);
   const batteryKwh = formatNumber(results?.recommendedBatteryKwh, 1);
@@ -143,18 +157,18 @@ function AssesementResult() {
   const grossSavings = formatNaira(results?.grossAnnualSavings);
   const omAllowance = formatNaira(results?.annualOmAllowance);
   const netSavings = formatNaira(results?.netAnnualSavings);
-  const paybackYears = formatNumber(results?.simplePaybackYears, 1);
+  const paybackYears = formatPaybackYears(results?.simplePaybackYears);
   const solarSharePct = toPercent(results?.solarShare);
   const gridOffsetPct = toPercent(results?.gridOffset);
   const dieselReductionPct = toPercent(results?.dieselReduction);
   const annualPvGeneration = formatNumber(results?.annualPvGenerationKwh);
   const usableSolar = formatNumber(results?.usableSolarKwh);
+  // Excel Outputs B20 uses #,##0.0 — show 0.0L when null/zero, not "—".
   const dieselSavedLitres = (() => {
-    const n = toNum(results?.dieselSavedLitres);
-    if (n === null) return MISSING;
+    const n = toNum(results?.dieselSavedLitres) ?? 0;
     return `${n.toLocaleString("en-NG", {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 1,
     })}L`;
   })();
   const leadType = formatText(results?.leadType);

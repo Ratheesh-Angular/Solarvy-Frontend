@@ -55,6 +55,7 @@ import {
 import {
   extractBillValues,
   getExcelCatalogs,
+  getLiveSummary,
   getTemplatePrefill,
 } from "../lib/excelApi";
 import type {
@@ -330,7 +331,7 @@ const newRowId = (prefix: string) =>
 const rowFromCatalogItem = (
   prefix: string,
   item: ApplianceCatalogItem,
-  _customEquipment = false,
+  customEquipment = false,
 ): LoadTableRow => {
   return {
     id: newRowId(prefix),
@@ -338,7 +339,8 @@ const rowFromCatalogItem = (
     qty: 0,
     hours: 0,
     power: 0,
-    loadFactorPct: 0,
+    // Custom: user enters all numerics. Appliance: default full duty until edited.
+    loadFactorPct: customEquipment ? 0 : 100,
     source: "user",
   };
 };
@@ -413,6 +415,7 @@ function ApplianceKindSelect({
   onPick,
   openRow,
   onOpenChange,
+  allowCustomName = false,
 }: {
   rowIndex: number;
   catalog: ApplianceCatalogItem[];
@@ -420,18 +423,25 @@ function ApplianceKindSelect({
   onPick: (kind: string) => void;
   openRow: number | null;
   onOpenChange: (row: number | null) => void;
+  allowCustomName?: boolean;
 }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const customNameRef = useRef<HTMLInputElement>(null);
   const [menuPos, setMenuPos] = useState<{
     top: number;
     left: number;
     minWidth: number;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [customNameDraft, setCustomNameDraft] = useState("");
   const selected = catalog.find((o) => o.kind === valueKind);
+  const isCustomKind = Boolean(
+    allowCustomName && valueKind && !selected,
+  );
   const isOpen = openRow === rowIndex;
   const TriggerIcon = selected?.Icon ?? Lightbulb;
+  const triggerLabel = selected?.label ?? (valueKind?.trim() || "—");
 
   const filteredCatalog = (() => {
     const q = searchQuery.trim().toLowerCase();
@@ -443,10 +453,19 @@ function ApplianceKindSelect({
     );
   })();
 
+  const commitCustomName = () => {
+    const trimmed = customNameDraft.trim();
+    if (!trimmed) return;
+    onPick(trimmed);
+    setCustomNameDraft("");
+    onOpenChange(null);
+  };
+
   useLayoutEffect(() => {
     if (!isOpen) {
       setMenuPos(null);
       setSearchQuery("");
+      setCustomNameDraft(isCustomKind ? valueKind : "");
       return;
     }
     const update = () => {
@@ -475,7 +494,7 @@ function ApplianceKindSelect({
       window.removeEventListener("scroll", update, true);
       window.removeEventListener("resize", update);
     };
-  }, [isOpen]);
+  }, [isOpen, isCustomKind, valueKind]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -495,7 +514,7 @@ function ApplianceKindSelect({
         className="appliance-select-trigger"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        title={selected?.label ?? undefined}
+        title={triggerLabel !== "—" ? triggerLabel : undefined}
         onClick={(e) => {
           e.stopPropagation();
           onOpenChange(isOpen ? null : rowIndex);
@@ -510,9 +529,7 @@ function ApplianceKindSelect({
               className="appliance-select-trigger-icon"
             />
           </span>
-          <span className="appliance-select-label">
-            {selected?.label ?? "—"}
-          </span>
+          <span className="appliance-select-label">{triggerLabel}</span>
           <ChevronDown
             className="appliance-select-chevron"
             size={18}
@@ -601,6 +618,33 @@ function ApplianceKindSelect({
                     })
                   )}
                 </ul>
+                {allowCustomName && (
+                  <div className="appliance-select-search w-100 border-top pt-2 mt-1">
+                    <input
+                      ref={customNameRef}
+                      type="text"
+                      className="appliance-select-search-input w-100"
+                      placeholder="custom"
+                      aria-label="Custom equipment name"
+                      value={customNameDraft}
+                      onChange={(e) => setCustomNameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          commitCustomName();
+                        }
+                        if (e.key === "Escape") {
+                          e.stopPropagation();
+                          onOpenChange(null);
+                        }
+                      }}
+                    />
+                    <p className="small text-muted mb-0 mt-1 px-1">
+                      Press Enter to use a custom name
+                    </p>
+                  </div>
+                )}
               </div>
             ) : null}
           </>,
@@ -677,6 +721,13 @@ function Assesement() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftIdParam));
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [excelEstimatedAnnualLoad, setExcelEstimatedAnnualLoad] = useState<
+    number | null
+  >(null);
+  const [excelEstimatedMonthlySpend, setExcelEstimatedMonthlySpend] = useState<
+    number | null
+  >(null);
+  const liveSummaryRequestRef = useRef(0);
   const { toast, showSuccess, showError, clearToast } = useFeedbackToast();
   const [billNotes, setBillNotes] = useState("");
   const [monthlyUsage, setMonthlyUsage] = useState("");
@@ -763,6 +814,7 @@ function Assesement() {
   });
 
   const [fileName, setFileName] = useState("No file chosen");
+  const [billFile, setBillFile] = useState<File | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -893,18 +945,22 @@ function Assesement() {
   >(null);
 
   const calculateRowDailyKwh = (item: LoadTableRow) => {
-    const lf = (item.loadFactorPct ?? 100) / 100;
-    const q = Number(item.qty) || 0;
-    const h = Number(item.hours) || 0;
-    const p = Number(item.power) || 0;
-    const live = (q * h * p * lf) / 1000;
-    if (q || h || p) return live.toFixed(2);
     if (
       item.dailyKwhExcel !== undefined &&
       Number.isFinite(item.dailyKwhExcel)
     ) {
       return Number(item.dailyKwhExcel).toFixed(2);
     }
+    const q = Number(item.qty) || 0;
+    const h = Number(item.hours) || 0;
+    const p = Number(item.power) || 0;
+    // Custom_Equipment Excel: Watts × Load_Factor × Qty × Hours / 1000 (LF is 0–100).
+    // Appliance uses duty as 0–1 fraction (UI stores percent).
+    const lf =
+      inputMethod === "custom"
+        ? Number(item.loadFactorPct) || 0
+        : (item.loadFactorPct ?? 100) / 100;
+    const live = (q * h * p * lf) / 1000;
     return live.toFixed(2);
   };
 
@@ -955,13 +1011,11 @@ function Assesement() {
         } else {
           next.source = next.source || "user";
         }
-        const opt = equipmentCatalog.find((o) => o.kind === value);
-        if (opt) {
-          next.power = opt.defaultPower;
-          next.hours = opt.defaultHours;
-          next.loadFactorPct = Math.round(
-            (opt.defaultDutyCycle > 0 ? opt.defaultDutyCycle : 1) * 100,
-          );
+        // Never autofill from catalog/library — customer enters power/hours.
+        // Appliance: reset power/hours to 0 on kind change. Custom: name only.
+        if (inputMethod !== "custom") {
+          next.power = 0;
+          next.hours = 0;
         }
         updatedRows[index] = next;
       }
@@ -994,7 +1048,7 @@ function Assesement() {
             qty: 0,
             hours: 0,
             power: 0,
-            loadFactorPct: 0,
+            loadFactorPct: customEquipment ? 0 : 100,
             dailyKwhExcel: undefined,
           };
           setPage(Math.ceil((visible.length + 1) / ROWS_PER_PAGE));
@@ -1087,20 +1141,30 @@ function Assesement() {
     );
   }, [customRows]);
 
-  /** Bill upload: extract usage/spend/tariff with OCR and prefill (editable). */
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  /** Bill upload: store file only; Analyze Bill runs OpenAI extraction. */
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
       setFileName("No file chosen");
+      setBillFile(null);
+      return;
+    }
+    setFileName(file.name);
+    setBillFile(file);
+    clearToast();
+  };
+
+  const handleAnalyzeBill = async () => {
+    if (!billFile) {
+      showError("Choose a bill image or PDF first.");
       return;
     }
 
-    setFileName(file.name);
     setIsExtractingBill(true);
     clearToast();
 
     try {
-      const extracted = await extractBillValues(file);
+      const extracted = await extractBillValues(billFile);
       let filled = 0;
 
       if (extracted.monthlyUsage !== null) {
@@ -1118,14 +1182,15 @@ function Assesement() {
         filled += 1;
       }
 
-      if (filled > 0) {
+      if (extracted.lowConfidence || filled === 0) {
+        showError(
+          "We couldn't confidently extract all values. Please verify or enter manually.",
+          "Review bill values",
+        );
+      } else {
         showSuccess(
           "Bill values extracted — review and edit if needed.",
           "Bill processed",
-        );
-      } else {
-        showError(
-          "Could not detect bill values automatically. Please enter them manually.",
         );
       }
     } catch (error) {
@@ -1186,6 +1251,120 @@ function Assesement() {
       roofArea,
       backupDuration,
     });
+
+  useEffect(() => {
+    if (
+      isLoadingCatalogs ||
+      isLoadingDraft ||
+      isPrefilling ||
+      isSubmitting ||
+      isExtractingBill
+    ) {
+      return;
+    }
+
+    const hasMinimumInputs =
+      Boolean(selectedProperty && selectedTemplate) &&
+      (inputMethod === "bill"
+        ? Boolean(monthlyUsage && Number(monthlyUsage) > 0)
+        : inputMethod === "appliance"
+          ? applianceRows.some((row) => !row.removed)
+          : customRows.some((row) => !row.removed));
+
+    if (!hasMinimumInputs) {
+      setExcelEstimatedAnnualLoad(null);
+      setExcelEstimatedMonthlySpend(null);
+      return;
+    }
+
+    const requestId = ++liveSummaryRequestRef.current;
+    const timer = window.setTimeout(async () => {
+      try {
+        const summary = await getLiveSummary(getFormPayload());
+        if (liveSummaryRequestRef.current !== requestId) return;
+        setExcelEstimatedAnnualLoad(summary.estimatedAnnualLoadKwh);
+        setExcelEstimatedMonthlySpend(
+          summary.estimatedMonthlySpend ?? null,
+        );
+
+        const rowDaily = summary.rowDailyKwh;
+        if (
+          Array.isArray(rowDaily) &&
+          rowDaily.length > 0 &&
+          (inputMethod === "custom" || inputMethod === "appliance")
+        ) {
+          const byExcelRow = new Map(
+            rowDaily.map((entry) => [entry.excelRow, entry.dailyKwh]),
+          );
+          const applyDaily = (rows: LoadTableRow[]) =>
+            rows.map((row) => {
+              if (!Number.isFinite(row.excelRow)) return row;
+              if (!byExcelRow.has(Number(row.excelRow))) return row;
+              const daily = byExcelRow.get(Number(row.excelRow));
+              const nextDaily =
+                daily === null || daily === undefined
+                  ? undefined
+                  : Number(daily);
+              if (
+                nextDaily === row.dailyKwhExcel ||
+                (nextDaily === undefined && row.dailyKwhExcel === undefined)
+              ) {
+                return row;
+              }
+              return {
+                ...row,
+                dailyKwhExcel: Number.isFinite(nextDaily)
+                  ? nextDaily
+                  : undefined,
+              };
+            });
+
+          if (inputMethod === "custom") {
+            setCustomRows((prev) => {
+              const next = applyDaily(prev);
+              return next.some((row, i) => row !== prev[i]) ? next : prev;
+            });
+          } else {
+            setApplianceRows((prev) => {
+              const next = applyDaily(prev);
+              return next.some((row, i) => row !== prev[i]) ? next : prev;
+            });
+          }
+        }
+      } catch {
+        if (liveSummaryRequestRef.current !== requestId) return;
+        setExcelEstimatedAnnualLoad(null);
+        setExcelEstimatedMonthlySpend(null);
+      }
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    isLoadingCatalogs,
+    isLoadingDraft,
+    isPrefilling,
+    isSubmitting,
+    isExtractingBill,
+    selectedProperty,
+    selectedTemplate,
+    selectedPower,
+    inputMethod,
+    selectedObjective,
+    formData,
+    fileName,
+    billNotes,
+    monthlyUsage,
+    usageUnit,
+    monthlySpend,
+    gridTariff,
+    monthlyElectricityBill,
+    applianceRows,
+    customRows,
+    roofArea,
+    backupDuration,
+  ]);
 
   useEffect(() => {
     if (!draftIdParam) {
@@ -1331,9 +1510,8 @@ function Assesement() {
     inputMethod === "bill" ? "ESTIMATED MONTHLY SPEND" : "Monthly Energy";
 
   /**
-   * Live summary mirrors the Excel SUM formulas client-side for instant
-   * feedback (Appliance_Input!L4/L5, Custom_Equipment!M4/M5, Bill_Input!B5).
-   * Excel remains authoritative at Calculate time.
+   * Live summary: appliance/custom energy from client row math for instant feedback;
+   * bill monthly spend + estimated annual load from Outputs B36 / B34 via live-summary.
    */
   const sumDailyKwh = (rows: LoadTableRow[]) =>
     rows.reduce((total, row) => {
@@ -1378,17 +1556,20 @@ function Assesement() {
 
   const summarySecondMetricValue =
     inputMethod === "bill"
-      ? monthlySpend
-        ? `N${Number(monthlySpend).toLocaleString()}`
+      ? excelEstimatedMonthlySpend !== null &&
+        Number.isFinite(Number(excelEstimatedMonthlySpend))
+        ? `₦${Math.round(Number(excelEstimatedMonthlySpend)).toLocaleString("en-IN", {
+            maximumFractionDigits: 0,
+            minimumFractionDigits: 0,
+          })}`
         : "—"
       : liveMonthlyKwh.toFixed(1);
 
   const summaryEstimatedAnnualLoad =
-    inputMethod === "bill"
-      ? monthlyUsage
-        ? String(Math.round(Number(monthlyUsage) * 12))
-        : "—"
-      : String(Math.round(liveDailyKwh * 365));
+    excelEstimatedAnnualLoad !== null &&
+    Number.isFinite(Number(excelEstimatedAnnualLoad))
+      ? String(Math.round(Number(excelEstimatedAnnualLoad)))
+      : "—";
 
   const isApiBusy =
     isLoadingCatalogs ||
@@ -1403,7 +1584,7 @@ function Assesement() {
     : isSavingDraft
       ? "Saving draft..."
       : isExtractingBill
-        ? "Reading bill..."
+        ? "Analyzing Bill with AI..."
         : isPrefilling
           ? "Loading template..."
           : isLoadingDraft
@@ -1829,7 +2010,7 @@ function Assesement() {
                             <label className="file-label">
                               <span className="file-btn">
                                 {isExtractingBill
-                                  ? "Reading bill..."
+                                  ? "Analyzing..."
                                   : "Choose file"}
                               </span>
                               <span className="file-name">{fileName}</span>
@@ -1841,6 +2022,21 @@ function Assesement() {
                               />
                             </label>
                           </div>
+                          <button
+                            type="button"
+                            className="btn btn-primary mt-3"
+                            disabled={!billFile || isExtractingBill}
+                            onClick={handleAnalyzeBill}
+                          >
+                            {isExtractingBill
+                              ? "Analyzing Bill with AI..."
+                              : "Analyze Bill"}
+                          </button>
+                          {isExtractingBill && (
+                            <p className="small text-muted mt-2 mb-0">
+                              Analyzing electricity bill...
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -2007,6 +2203,7 @@ function Assesement() {
                                     }
                                     openRow={openApplianceSelectRow}
                                     onOpenChange={setOpenApplianceSelectRow}
+                                    allowCustomName
                                   />
                                 </td>
 
@@ -2126,7 +2323,7 @@ function Assesement() {
                             <th>RATED POWER (W)</th>
                             <th>QTY</th>
                             <th>Hrs/Day</th>
-                            <th>LOAD FACTOR</th>
+                            <th>LOAD FACTOR %</th>
                             <th>DAILY KWH</th>
                             <th>ACTION</th>
                             <th
@@ -2159,6 +2356,7 @@ function Assesement() {
                                   }
                                   openRow={openApplianceSelectRow}
                                   onOpenChange={setOpenApplianceSelectRow}
+                                  allowCustomName
                                 />
                               </td>
 

@@ -1,0 +1,145 @@
+.admin-page {
+  background: #f4f7fb;
+}
+
+.admin-shell {
+  min-height: 100vh;
+  background: #f4f7fb;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.admin-header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-header-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-header-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.admin-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 20px 14px;
+}
+
+.admin-nav-label {
+  margin: 0 0 8px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.admin-nav-link {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #334155;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 560;
+  margin-bottom: 4px;
+}
+
+.admin-nav-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.admin-nav-link.is-active {
+  background: #e8eef8;
+  color: #1d4ed8;
+}
+
+.admin-content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+}
+
+.admin-page-inner {
+  max-width: 1100px;
+}
+
+.admin-logo {
+  height: 40px;
+  width: auto;
+}
+
+.admin-info-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-info-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.admin-info-row dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.admin-info-row dd {
+  margin: 0;
+  font-size: 14px;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.admin-prompt-textarea {
+  min-height: 420px;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+@media (max-width: 900px) {
+  .admin-body {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
 import "./App.css";
 import "./css/ass.css";
 import "./css/ass-result.css";
@@ -19,27 +19,47 @@ import WhoItsFor from "./pages/WhoItsFor.tsx";
 import MatchedInstallers from "./pages/MatchedInstallers.tsx";
 import ExpertReview from "./pages/ExpertReview.tsx";
 import RequestIntro from "./pages/RequestIntro.tsx";
+import AdminLogin from "./pages/AdminLogin.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
+import AdminBillInput from "./pages/AdminBillInput.tsx";
+import AdminRoute from "./components/AdminRoute.tsx";
+import AdminLayout from "./components/AdminLayout.tsx";
+import "./css/admin.css";
+
+function MainLayout() {
+  return (
+    <>
+      <Outlet />
+      <Footer />
+    </>
+  );
+}
 
 function App() {
-  //testgit 08.04.2026
   return (
     <Router>
       <ScrollToTop />
-      {/* MIDDLE CONTENT */}
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/start-assesement" element={<Assesement />} />
-        <Route path="/assesement-result" element={<AssesementResult />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/sample-results" element={<SampleResults />} />
-        <Route path="/who-its-for" element={<WhoItsFor />} />
-        <Route path="/matched-installers" element={<MatchedInstallers />} />
-        <Route path="/expert-review" element={<ExpertReview />} />
-        <Route path="/request-intro" element={<RequestIntro />} />
-      </Routes>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="bill-input" element={<AdminBillInput />} />
+          </Route>
+        </Route>
 
-      {/* FOOTER */}
-      <Footer />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/start-assesement" element={<Assesement />} />
+          <Route path="/assesement-result" element={<AssesementResult />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/sample-results" element={<SampleResults />} />
+          <Route path="/who-its-for" element={<WhoItsFor />} />
+          <Route path="/matched-installers" element={<MatchedInstallers />} />
+          <Route path="/expert-review" element={<ExpertReview />} />
+          <Route path="/request-intro" element={<RequestIntro />} />
+        </Route>
+      </Routes>
     </Router>
   );
 }

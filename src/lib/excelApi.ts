@@ -1,6 +1,8 @@
 import { apiGet, apiPost, ApiError } from "./api";
 import type {
+  AssessmentFormData,
   ExcelCatalogs,
+  LiveSummaryResponse,
   TemplatePrefillRow,
 } from "../types/assessment";
 
@@ -22,6 +24,11 @@ type BillExtractResponse = {
     monthlySpend: number | null;
     gridTariff: number | null;
     fieldsDetected: number;
+    confidence?: number;
+    confidenceMin?: number;
+    lowConfidence?: boolean;
+    warnings?: string[];
+    source?: string;
   };
 };
 
@@ -34,6 +41,15 @@ export async function getTemplatePrefill(propertyType: string, template: string)
   const response = await apiPost<PrefillResponse>("/excel/template-prefill", {
     propertyType,
     template,
+  });
+  return response.data;
+}
+
+type LiveSummaryApiResponse = { success: boolean; data: LiveSummaryResponse };
+
+export async function getLiveSummary(formData: AssessmentFormData) {
+  const response = await apiPost<LiveSummaryApiResponse>("/excel/live-summary", {
+    formData,
   });
   return response.data;
 }
