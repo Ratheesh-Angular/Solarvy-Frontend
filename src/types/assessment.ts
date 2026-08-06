@@ -117,6 +117,7 @@ export type AssessmentResults = {
   assessmentId?: string | number | null;
   scenarioName?: string | null;
   country?: string | null;
+  city?: string | null;
   propertyType?: string | null;
   powerSetup?: string | null;
   objective?: string | null;
@@ -139,6 +140,12 @@ export type AssessmentResults = {
   solarShare?: number | null;
   gridOffset?: number | null;
   dieselReduction?: number | null;
+  /** User_Inputs!B30 — NGN/kWh for cost comparison chart. */
+  gridCostPerKwh?: number | null;
+  /** Diesel_Economics!B6 — NGN/kWh for cost comparison chart. */
+  dieselCostPerKwh?: number | null;
+  /** LCOE: system cost / (usable solar × system life years). */
+  solarCostPerKwh?: number | null;
   systemClass?: string | null;
   calculationError?: string;
   summary?: Record<

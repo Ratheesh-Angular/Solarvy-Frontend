@@ -362,10 +362,8 @@ function SampleResults() {
             <div className="col-12 dashboard-container">
               <h2 className="dashboard-title">Energy strategy comparison</h2>
               <p className="dashboard-subtitle">
-                This helps you quickly your options and see which one gives you
-                the best
-                <br />
-                results.
+                This helps you assess your options and see which one gives you
+                the best results.
               </p>
             </div>
 

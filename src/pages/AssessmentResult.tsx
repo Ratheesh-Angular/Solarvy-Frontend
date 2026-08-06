@@ -20,13 +20,19 @@ import FeedbackToast from "../components/FeedbackToast";
 import SolarvyLoader from "../components/SolarvyLoader";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { apiGet } from "../lib/api";
-import type { AssessmentResults } from "../types/assessment";
+import type { AssessmentFormData, AssessmentResults } from "../types/assessment";
+import {
+  downloadAssessmentReport,
+  formatAssessmentDate,
+  type AssessmentReportInputMethod,
+} from "../lib/assessmentReportPdf";
 
 type AssessmentApiResponse = {
   success: boolean;
   data: {
     id: string;
     results: AssessmentResults | null;
+    formData?: Pick<AssessmentFormData, "inputMethod"> | AssessmentFormData | null;
   };
 };
 
@@ -102,9 +108,13 @@ function AssesementResult() {
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get("assessment");
   const [results, setResults] = useState<AssessmentResults | null>(null);
+  const [formData, setFormData] = useState<AssessmentFormData | null>(null);
+  const [inputMethod, setInputMethod] =
+    useState<AssessmentReportInputMethod>("bill");
   const [isLoadingResults, setIsLoadingResults] = useState(
     Boolean(assessmentId),
   );
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const { toast, showError, clearToast } = useFeedbackToast();
 
   useEffect(() => {
@@ -124,6 +134,15 @@ function AssesementResult() {
 
         if (response.data.results) {
           setResults(response.data.results);
+        }
+
+        if (response.data.formData) {
+          setFormData(response.data.formData as AssessmentFormData);
+        }
+
+        const method = response.data.formData?.inputMethod;
+        if (method === "bill" || method === "appliance" || method === "custom") {
+          setInputMethod(method);
         }
 
         if (response.data.results?.calculationError) {
@@ -149,6 +168,29 @@ function AssesementResult() {
     // showError identity can change each render; only refetch when assessment id changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessmentId]);
+
+  const handleDownloadReport = async () => {
+    if (!results || !assessmentId || isDownloadingReport) return;
+
+    setIsDownloadingReport(true);
+    try {
+      await downloadAssessmentReport({
+        assessmentId,
+        inputMethod,
+        results: {
+          ...results,
+          city: results.city ?? formData?.city,
+          country: results.country ?? formData?.country,
+        },
+        assessmentDate: formatAssessmentDate(),
+        logoSrc: logo,
+      });
+    } catch {
+      showError("Unable to generate the PDF report. Please try again.");
+    } finally {
+      setIsDownloadingReport(false);
+    }
+  };
 
   const solarKwp = formatNumber(results?.recommendedSolarKwp, 1);
   const batteryKwh = formatNumber(results?.recommendedBatteryKwh, 1);
@@ -655,11 +697,21 @@ function AssesementResult() {
                 </div>
 
                 <div className="button-group mt-3">
-                  <button className="btn-primary-customss-down">
+                  <button
+                    type="button"
+                    className="btn-primary-customss-down"
+                    onClick={handleDownloadReport}
+                    disabled={!results || isDownloadingReport}
+                    aria-busy={isDownloadingReport}
+                  >
                     <span className="icon-get">
-                      <img src={donw} alt="logo" />
+                      <img src={donw} alt="" />
                     </span>
-                    <span>Download Report</span>
+                    <span>
+                      {isDownloadingReport
+                        ? "Preparing PDF…"
+                        : "Download Report"}
+                    </span>
                   </button>
 
                   <button

@@ -436,9 +436,7 @@ function ApplianceKindSelect({
   const [searchQuery, setSearchQuery] = useState("");
   const [customNameDraft, setCustomNameDraft] = useState("");
   const selected = catalog.find((o) => o.kind === valueKind);
-  const isCustomKind = Boolean(
-    allowCustomName && valueKind && !selected,
-  );
+  const isCustomKind = Boolean(allowCustomName && valueKind && !selected);
   const isOpen = openRow === rowIndex;
   const TriggerIcon = selected?.Icon ?? Lightbulb;
   const triggerLabel = selected?.label ?? (valueKind?.trim() || "—");
@@ -735,7 +733,7 @@ function Assesement() {
   const [monthlySpend, setMonthlySpend] = useState("");
   const [gridTariff, setGridTariff] = useState("");
   const [monthlyElectricityBill, setMonthlyElectricityBill] = useState("");
-  const [roofArea, setRoofArea] = useState("");
+  const [roofArea, setRoofArea] = useState("200");
   const [backupDuration, setBackupDuration] = useState("");
   const templatePromptHandledRef = useRef(false);
   const handleToggle = () => {
@@ -1073,10 +1071,7 @@ function Assesement() {
             customEquipment,
           );
 
-      const next = [
-        ...prev,
-        { ...row, source: "user" as const, excelRow },
-      ];
+      const next = [...prev, { ...row, source: "user" as const, excelRow }];
       setPage(Math.ceil((visible.length + 1) / ROWS_PER_PAGE));
       return next;
     });
@@ -1283,9 +1278,7 @@ function Assesement() {
         const summary = await getLiveSummary(getFormPayload());
         if (liveSummaryRequestRef.current !== requestId) return;
         setExcelEstimatedAnnualLoad(summary.estimatedAnnualLoadKwh);
-        setExcelEstimatedMonthlySpend(
-          summary.estimatedMonthlySpend ?? null,
-        );
+        setExcelEstimatedMonthlySpend(summary.estimatedMonthlySpend ?? null);
 
         const rowDaily = summary.rowDailyKwh;
         if (
@@ -1554,16 +1547,17 @@ function Assesement() {
   const summaryFirstMetricValue =
     inputMethod === "bill" ? monthlyUsage || "0" : liveDailyKwh.toFixed(2);
 
+  const safeMonthlySpend = Number(excelEstimatedMonthlySpend);
+  const safeMonthlyKwh = Number(liveMonthlyKwh);
   const summarySecondMetricValue =
     inputMethod === "bill"
-      ? excelEstimatedMonthlySpend !== null &&
-        Number.isFinite(Number(excelEstimatedMonthlySpend))
-        ? `₦${Math.round(Number(excelEstimatedMonthlySpend)).toLocaleString("en-IN", {
-            maximumFractionDigits: 0,
-            minimumFractionDigits: 0,
-          })}`
-        : "—"
-      : liveMonthlyKwh.toFixed(1);
+      ? `₦${Math.round(
+          Number.isFinite(safeMonthlySpend) ? safeMonthlySpend : 0,
+        ).toLocaleString("en-IN", {
+          maximumFractionDigits: 0,
+          minimumFractionDigits: 0,
+        })}`
+      : (Number.isFinite(safeMonthlyKwh) ? safeMonthlyKwh : 0).toFixed(1);
 
   const summaryEstimatedAnnualLoad =
     excelEstimatedAnnualLoad !== null &&
@@ -2184,100 +2178,102 @@ function Assesement() {
                                 </td>
                               </tr>
                             )}
-                            {paginatedApplianceEntries.map(({ row: item, index }) => (
-                              <tr
-                                key={item.id}
-                                className={
-                                  openApplianceSelectRow === index
-                                    ? "appliance-select-row-is-open"
-                                    : undefined
-                                }
-                              >
-                                <td className="appliance-cell py-2">
-                                  <ApplianceKindSelect
-                                    rowIndex={index}
-                                    catalog={applianceKindCatalog}
-                                    valueKind={item.kind}
-                                    onPick={(kind) =>
-                                      handleRowChange(index, "kind", kind)
-                                    }
-                                    openRow={openApplianceSelectRow}
-                                    onOpenChange={setOpenApplianceSelectRow}
-                                    allowCustomName
-                                  />
-                                </td>
+                            {paginatedApplianceEntries.map(
+                              ({ row: item, index }) => (
+                                <tr
+                                  key={item.id}
+                                  className={
+                                    openApplianceSelectRow === index
+                                      ? "appliance-select-row-is-open"
+                                      : undefined
+                                  }
+                                >
+                                  <td className="appliance-cell py-2">
+                                    <ApplianceKindSelect
+                                      rowIndex={index}
+                                      catalog={applianceKindCatalog}
+                                      valueKind={item.kind}
+                                      onPick={(kind) =>
+                                        handleRowChange(index, "kind", kind)
+                                      }
+                                      openRow={openApplianceSelectRow}
+                                      onOpenChange={setOpenApplianceSelectRow}
+                                      allowCustomName
+                                    />
+                                  </td>
 
-                                <td>
-                                  <input
-                                    className="form-control ass-field-control ass-field-control--table"
-                                    type="number"
-                                    value={item.qty}
-                                    onChange={(e) =>
-                                      handleRowChange(
-                                        index,
-                                        "qty",
-                                        Number(e.target.value),
-                                      )
-                                    }
-                                  />
-                                </td>
-
-                                <td>
-                                  <input
-                                    className="form-control ass-field-control ass-field-control--table"
-                                    type="number"
-                                    value={item.hours}
-                                    onChange={(e) =>
-                                      handleRowChange(
-                                        index,
-                                        "hours",
-                                        Number(e.target.value),
-                                      )
-                                    }
-                                  />
-                                </td>
-
-                                <td>
-                                  <div className="inputs-text-bluess">
+                                  <td>
                                     <input
-                                      type="number"
                                       className="form-control ass-field-control ass-field-control--table"
-                                      value={item.power}
+                                      type="number"
+                                      value={item.qty}
                                       onChange={(e) =>
                                         handleRowChange(
                                           index,
-                                          "power",
+                                          "qty",
                                           Number(e.target.value),
                                         )
                                       }
                                     />
-                                  </div>
-                                </td>
+                                  </td>
 
-                                <td className="col-md-2 ">
-                                  <div className="inputs-text-bluess inputs-text-bluess--computed">
-                                    {calculateRowDailyKwh(item)}
-                                  </div>
-                                </td>
-                                <td className="appliance-table-td-actions text-center align-middle py-2">
-                                  <button
-                                    type="button"
-                                    className="ass-row-remove-btn"
-                                    disabled={visibleApplianceCount <= 0}
-                                    aria-label="Remove equipment row"
-                                    onClick={() =>
-                                      removeEquipmentRow(false, index)
-                                    }
-                                  >
-                                    <Trash2
-                                      size={18}
-                                      strokeWidth={2}
-                                      aria-hidden
+                                  <td>
+                                    <input
+                                      className="form-control ass-field-control ass-field-control--table"
+                                      type="number"
+                                      value={item.hours}
+                                      onChange={(e) =>
+                                        handleRowChange(
+                                          index,
+                                          "hours",
+                                          Number(e.target.value),
+                                        )
+                                      }
                                     />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
+                                  </td>
+
+                                  <td>
+                                    <div className="inputs-text-bluess">
+                                      <input
+                                        type="number"
+                                        className="form-control ass-field-control ass-field-control--table"
+                                        value={item.power}
+                                        onChange={(e) =>
+                                          handleRowChange(
+                                            index,
+                                            "power",
+                                            Number(e.target.value),
+                                          )
+                                        }
+                                      />
+                                    </div>
+                                  </td>
+
+                                  <td className="col-md-2 ">
+                                    <div className="inputs-text-bluess inputs-text-bluess--computed">
+                                      {calculateRowDailyKwh(item)}
+                                    </div>
+                                  </td>
+                                  <td className="appliance-table-td-actions text-center align-middle py-2">
+                                    <button
+                                      type="button"
+                                      className="ass-row-remove-btn"
+                                      disabled={visibleApplianceCount <= 0}
+                                      aria-label="Remove equipment row"
+                                      onClick={() =>
+                                        removeEquipmentRow(false, index)
+                                      }
+                                    >
+                                      <Trash2
+                                        size={18}
+                                        strokeWidth={2}
+                                        aria-hidden
+                                      />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ),
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -2334,119 +2330,123 @@ function Assesement() {
                           </tr>
                         </thead>
                         <tbody>
-                          {paginatedCustomEntries.map(({ row: item, index }) => (
-                            <tr
-                              key={item.id}
-                              className={
-                                openApplianceSelectRow === index
-                                  ? "appliance-select-row-is-open"
-                                  : undefined
-                              }
-                            >
-                              <td
-                                className="appliance-cell py-2"
-                                style={{ minWidth: "180px" }}
+                          {paginatedCustomEntries.map(
+                            ({ row: item, index }) => (
+                              <tr
+                                key={item.id}
+                                className={
+                                  openApplianceSelectRow === index
+                                    ? "appliance-select-row-is-open"
+                                    : undefined
+                                }
                               >
-                                <ApplianceKindSelect
-                                  rowIndex={index}
-                                  catalog={equipmentCatalog}
-                                  valueKind={item.kind}
-                                  onPick={(kind) =>
-                                    handleRowChange(index, "kind", kind)
-                                  }
-                                  openRow={openApplianceSelectRow}
-                                  onOpenChange={setOpenApplianceSelectRow}
-                                  allowCustomName
-                                />
-                              </td>
-
-                              <td>
-                                <input
-                                  className="form-control ass-field-control ass-field-control--table"
-                                  type="number"
-                                  value={item.power}
-                                  onChange={(e) =>
-                                    handleRowChange(
-                                      index,
-                                      "power",
-                                      Number(e.target.value),
-                                    )
-                                  }
-                                />
-                              </td>
-
-                              <td>
-                                <input
-                                  className="form-control ass-field-control ass-field-control--table"
-                                  type="number"
-                                  value={item.qty}
-                                  onChange={(e) =>
-                                    handleRowChange(
-                                      index,
-                                      "qty",
-                                      Number(e.target.value),
-                                    )
-                                  }
-                                />
-                              </td>
-
-                              <td>
-                                <input
-                                  className="form-control ass-field-control ass-field-control--table"
-                                  type="number"
-                                  value={item.hours}
-                                  onChange={(e) =>
-                                    handleRowChange(
-                                      index,
-                                      "hours",
-                                      Number(e.target.value),
-                                    )
-                                  }
-                                />
-                              </td>
-
-                              <td className="text-center">
-                                <input
-                                  className="form-control ass-field-control ass-field-control--table"
-                                  type="number"
-                                  min={0}
-                                  max={100}
-                                  value={item.loadFactorPct ?? 100}
-                                  onChange={(e) =>
-                                    handleRowChange(
-                                      index,
-                                      "loadFactorPct",
-                                      Number(e.target.value),
-                                    )
-                                  }
-                                />
-                              </td>
-
-                              <td className="col-md-2">
-                                <div className="inputs-text-bluess inputs-text-bluess--computed">
-                                  {calculateRowDailyKwh(item)}
-                                </div>
-                              </td>
-
-                              <td className="appliance-table-td-actions text-center align-middle py-2">
-                                <button
-                                  type="button"
-                                  className="ass-row-remove-btn"
-                                  disabled={visibleCustomCount <= MIN_EQUIP_ROWS}
-                                  aria-label="Remove equipment row"
-                                  onClick={() =>
-                                    removeEquipmentRow(true, index)
-                                  }
+                                <td
+                                  className="appliance-cell py-2"
+                                  style={{ minWidth: "180px" }}
                                 >
-                                  <Trash2
-                                    size={18}
-                                    strokeWidth={2}
-                                    aria-hidden
+                                  <ApplianceKindSelect
+                                    rowIndex={index}
+                                    catalog={equipmentCatalog}
+                                    valueKind={item.kind}
+                                    onPick={(kind) =>
+                                      handleRowChange(index, "kind", kind)
+                                    }
+                                    openRow={openApplianceSelectRow}
+                                    onOpenChange={setOpenApplianceSelectRow}
+                                    allowCustomName
                                   />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                                </td>
+
+                                <td>
+                                  <input
+                                    className="form-control ass-field-control ass-field-control--table"
+                                    type="number"
+                                    value={item.power}
+                                    onChange={(e) =>
+                                      handleRowChange(
+                                        index,
+                                        "power",
+                                        Number(e.target.value),
+                                      )
+                                    }
+                                  />
+                                </td>
+
+                                <td>
+                                  <input
+                                    className="form-control ass-field-control ass-field-control--table"
+                                    type="number"
+                                    value={item.qty}
+                                    onChange={(e) =>
+                                      handleRowChange(
+                                        index,
+                                        "qty",
+                                        Number(e.target.value),
+                                      )
+                                    }
+                                  />
+                                </td>
+
+                                <td>
+                                  <input
+                                    className="form-control ass-field-control ass-field-control--table"
+                                    type="number"
+                                    value={item.hours}
+                                    onChange={(e) =>
+                                      handleRowChange(
+                                        index,
+                                        "hours",
+                                        Number(e.target.value),
+                                      )
+                                    }
+                                  />
+                                </td>
+
+                                <td className="text-center">
+                                  <input
+                                    className="form-control ass-field-control ass-field-control--table"
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={item.loadFactorPct ?? 100}
+                                    onChange={(e) =>
+                                      handleRowChange(
+                                        index,
+                                        "loadFactorPct",
+                                        Number(e.target.value),
+                                      )
+                                    }
+                                  />
+                                </td>
+
+                                <td className="col-md-2">
+                                  <div className="inputs-text-bluess inputs-text-bluess--computed">
+                                    {calculateRowDailyKwh(item)}
+                                  </div>
+                                </td>
+
+                                <td className="appliance-table-td-actions text-center align-middle py-2">
+                                  <button
+                                    type="button"
+                                    className="ass-row-remove-btn"
+                                    disabled={
+                                      visibleCustomCount <= MIN_EQUIP_ROWS
+                                    }
+                                    aria-label="Remove equipment row"
+                                    onClick={() =>
+                                      removeEquipmentRow(true, index)
+                                    }
+                                  >
+                                    <Trash2
+                                      size={18}
+                                      strokeWidth={2}
+                                      aria-hidden
+                                    />
+                                  </button>
+                                </td>
+                              </tr>
+                            ),
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -2707,7 +2707,9 @@ function Assesement() {
                       <div className="icon-box-build-right mb-2">
                         <img src={bulefour} alt="icon" />
                       </div>
-                      <h5 className="asst-h">{summaryEstimatedAnnualLoad}</h5>
+                      <h5 className="asst-h">
+                        {summaryEstimatedAnnualLoad} kWh
+                      </h5>
                       <div className="usage-wrapper">
                         <small>
                           <b>ESTIMATED ANNUAL LOAD</b>
