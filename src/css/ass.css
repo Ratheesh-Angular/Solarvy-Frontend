@@ -2301,3 +2301,187 @@ textarea:not(.form-control):not(.ass-field-control):not(
     justify-content: flex-start;
   }
 }
+
+/* --- AI bill assist panel --- */
+.bill-ai-panel {
+  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 48%);
+}
+
+.bill-ai-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #eef4ff;
+  color: #174c90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bill-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #174c90;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.bill-ai-upload-col,
+.bill-ai-notes-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.bill-ai-upload {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 88px;
+  padding: 14px 16px;
+  border: 1.5px dashed #d6e2f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.bill-ai-upload:hover,
+.bill-ai-upload:focus-within {
+  border-color: #174c90;
+  background: #eef4ff;
+}
+
+.bill-ai-upload.has-file {
+  border-style: solid;
+  border-color: #c7d7f2;
+  background: #fff;
+}
+
+.bill-ai-upload.is-busy {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.bill-ai-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.bill-ai-upload-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e8edf5;
+  color: #174c90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bill-ai-upload-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bill-ai-upload-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2259;
+  line-height: 1.35;
+}
+
+.bill-ai-upload-name {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.bill-ai-analyze-btn {
+  margin-top: 12px;
+  width: 100%;
+  height: 45px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 30px;
+  background: #234e8f;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.bill-ai-analyze-btn:hover:not(:disabled) {
+  background: #1e3f73;
+}
+
+.bill-ai-analyze-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bill-ai-helper {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.bill-ai-notes {
+  flex: 1;
+  min-height: 148px !important;
+  height: 100%;
+}
+
+.bill-ai-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e8edf5;
+  border-radius: 12px;
+  background: #eef4ff;
+  color: #1a2259;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.bill-ai-banner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #174c90;
+}
+
+@media (max-width: 767px) {
+  .bill-ai-upload {
+    min-height: 80px;
+  }
+
+  .bill-ai-notes {
+    min-height: 112px !important;
+  }
+}

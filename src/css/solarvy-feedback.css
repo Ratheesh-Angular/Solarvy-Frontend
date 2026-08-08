@@ -60,6 +60,15 @@
   text-align: center;
 }
 
+.solarvy-loader-detail {
+  margin: -0.35rem 0 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #64748b;
+  text-align: center;
+}
+
 @keyframes solarvy-spin {
   to {
     transform: rotate(360deg);

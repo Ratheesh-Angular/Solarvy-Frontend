@@ -26,9 +26,11 @@ import {
   PlugZap,
   Receipt,
   School,
+  Sparkles,
   Sun,
   Trash2,
   Tv,
+  Upload,
   Wallet,
   Wrench,
   ChevronDown,
@@ -751,7 +753,7 @@ function Assesement() {
     {
       id: "bill",
       title: "Monthly Bill",
-      desc: "Enter kWh directly from your bill.",
+      desc: "Upload a bill and let AI fill your usage values.",
       Icon: Receipt,
     },
     {
@@ -813,6 +815,7 @@ function Assesement() {
 
   const [fileName, setFileName] = useState("No file chosen");
   const [billFile, setBillFile] = useState<File | null>(null);
+  const [billAiApplied, setBillAiApplied] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -1146,6 +1149,7 @@ function Assesement() {
     }
     setFileName(file.name);
     setBillFile(file);
+    setBillAiApplied(false);
     clearToast();
   };
 
@@ -1156,6 +1160,7 @@ function Assesement() {
     }
 
     setIsExtractingBill(true);
+    setBillAiApplied(false);
     clearToast();
 
     try {
@@ -1175,6 +1180,10 @@ function Assesement() {
       if (extracted.gridTariff !== null) {
         setGridTariff(String(extracted.gridTariff));
         filled += 1;
+      }
+
+      if (filled > 0) {
+        setBillAiApplied(true);
       }
 
       if (extracted.lowConfidence || filled === 0) {
@@ -1578,7 +1587,7 @@ function Assesement() {
     : isSavingDraft
       ? "Saving draft..."
       : isExtractingBill
-        ? "Analyzing Bill with AI..."
+        ? "AI is analyzing your bill…"
         : isPrefilling
           ? "Loading template..."
           : isLoadingDraft
@@ -1586,6 +1595,10 @@ function Assesement() {
             : isLoadingCatalogs
               ? "Loading form options..."
               : "Please wait...";
+
+  const loaderDetail = isExtractingBill
+    ? "Reading usage, spend, and tariff from your upload."
+    : undefined;
 
   const assessmentCtaBar = (
     <div className="d-flex gap-3 flex-wrap mt-3 mb-4 assessment-cta-bar">
@@ -1622,7 +1635,11 @@ function Assesement() {
 
   return (
     <div>
-      <SolarvyLoader open={isApiBusy} message={loaderMessage} />
+      <SolarvyLoader
+        open={isApiBusy}
+        message={loaderMessage}
+        detail={loaderDetail}
+      />
       <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
@@ -1993,57 +2010,90 @@ function Assesement() {
 
               {inputMethod === "bill" && (
                 <div className="monthbill-section-tab-1">
-                  <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
-                    <div className="row mt-2 g-3">
-                      <div className="col-md-6">
-                        <label className="form-label ass-field-label ass-field-label--section mb-2">
-                          Upload Bill (optional)
-                        </label>
-                        <div className="upload-box-ass text-center">
-                          <div className="file-upload">
-                            <label className="file-label">
-                              <span className="file-btn">
-                                {isExtractingBill
-                                  ? "Analyzing..."
-                                  : "Choose file"}
+                  <div className="p-4 shadow-sm rounded-4 ass-first mt-3 bill-ai-panel">
+                    <div className="d-flex align-items-start mb-3">
+                      <div className="bill-ai-icon-wrap me-3" aria-hidden>
+                        <Sparkles size={18} strokeWidth={2} />
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
+                          <h5 className="fw-bold mb-0 heading-ass">
+                            AI bill assist
+                          </h5>
+                          <span className="bill-ai-badge">AI</span>
+                        </div>
+                        <p className="text-muted small mb-0 para-ass">
+                          Upload a bill image or PDF. AI reads it and pre-fills
+                          your monthly usage, spend, and tariff below.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="row g-3 align-items-stretch">
+                      <div className="col-md-6 d-flex">
+                        <div className="bill-ai-upload-col w-100">
+                          <label className="form-label ass-field-label ass-field-label--section mb-2">
+                            Upload bill
+                          </label>
+                          <label
+                            className={`bill-ai-upload${billFile ? " has-file" : ""}${isExtractingBill ? " is-busy" : ""}`}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={handleFileChange}
+                              disabled={isExtractingBill}
+                            />
+                            <span className="bill-ai-upload-icon" aria-hidden>
+                              {billFile ? (
+                                <Receipt size={22} strokeWidth={2} />
+                              ) : (
+                                <Upload size={22} strokeWidth={2} />
+                              )}
+                            </span>
+                            <span className="bill-ai-upload-text">
+                              <span className="bill-ai-upload-title">
+                                {billFile
+                                  ? "Bill ready to analyze"
+                                  : "Choose PDF or image"}
                               </span>
-                              <span className="file-name">{fileName}</span>
-                              <input
-                                type="file"
-                                accept="image/*,.pdf"
-                                onChange={handleFileChange}
-                                disabled={isExtractingBill}
-                              />
-                            </label>
-                          </div>
+                              <span className="bill-ai-upload-name">
+                                {fileName}
+                              </span>
+                            </span>
+                          </label>
+
                           <button
                             type="button"
-                            className="btn btn-primary mt-3"
+                            className="bill-ai-analyze-btn"
                             disabled={!billFile || isExtractingBill}
                             onClick={handleAnalyzeBill}
                           >
-                            {isExtractingBill
-                              ? "Analyzing Bill with AI..."
-                              : "Analyze Bill"}
+                            <Sparkles size={16} strokeWidth={2} aria-hidden />
+                            <span>
+                              {isExtractingBill
+                                ? "Analyzing…"
+                                : "Analyze with AI"}
+                            </span>
                           </button>
-                          {isExtractingBill && (
-                            <p className="small text-muted mt-2 mb-0">
-                              Analyzing electricity bill...
-                            </p>
-                          )}
+                          <p className="bill-ai-helper mb-0">
+                            AI extracts monthly usage, spend, and tariff
+                          </p>
                         </div>
                       </div>
 
-                      <div className="col-md-6">
-                        <label className="form-label ass-field-label ass-field-label--section mb-2">
-                          Notes
-                        </label>
-                        <textarea
-                          className="form-control ass-field-control notes-box ass-text-area"
-                          placeholder="Any additional notes about the site, bill pattern, or load profile..."
-                          value={billNotes}
-                          onChange={(e) => setBillNotes(e.target.value)}
-                        />
+                      <div className="col-md-6 d-flex">
+                        <div className="bill-ai-notes-col w-100">
+                          <label className="form-label ass-field-label ass-field-label--section mb-2">
+                            Notes
+                          </label>
+                          <textarea
+                            className="form-control ass-field-control notes-box ass-text-area bill-ai-notes"
+                            placeholder="Any additional notes about the site, bill pattern, or load profile..."
+                            value={billNotes}
+                            onChange={(e) => setBillNotes(e.target.value)}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2060,8 +2110,23 @@ function Assesement() {
                         <h5 className="fw-bold mb-1 heading-ass">
                           Bill information
                         </h5>
+                        <p className="text-muted small mb-0 para-ass">
+                          {billAiApplied
+                            ? "These fields were filled by AI from your bill — review and edit if needed."
+                            : "Enter values manually, or use AI bill assist above to fill them."}
+                        </p>
                       </div>
                     </div>
+
+                    {billAiApplied && (
+                      <div className="bill-ai-banner mb-3" role="status">
+                        <Sparkles size={16} strokeWidth={2} aria-hidden />
+                        <span>
+                          AI filled usage, spend, and tariff from your bill.
+                          Double-check before calculating.
+                        </span>
+                      </div>
+                    )}
 
                     <div className="container mt-4">
                       <div className="row g-3">

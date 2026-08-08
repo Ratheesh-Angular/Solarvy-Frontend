@@ -72,7 +72,9 @@ export default function AdminBillInput() {
       <FeedbackToast toast={toast} onClose={clearToast} />
 
       <div className="mb-4">
-        <h1 className="h4 fw-bold mb-1">Bill Input — AI training prompt</h1>
+        <h1 className="h4 fw-bold mb-1">
+          Bill Input Analyzer : AI training prompt
+        </h1>
         <p className="text-muted small mb-0">
           This system prompt trains the OpenAI bill analyzer used on the
           assessment Monthly Bill upload. Changes apply to the next Analyze Bill

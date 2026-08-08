@@ -812,10 +812,7 @@ function AssessmentReportDocument({
     { label: "Grid", value: gridCost },
     { label: "Diesel", value: dieselCost },
   ];
-  const costYMax = niceYMax(
-    Math.max(solarCost, gridCost, dieselCost, 1),
-    100,
-  );
+  const costYMax = niceYMax(Math.max(solarCost, gridCost, dieselCost, 1), 100);
 
   const solarSharePct = toPercent(results.solarShare) ?? 0;
   const gridOtherPct = Math.max(0, 100 - solarSharePct);
@@ -1137,6 +1134,51 @@ function AssessmentReportDocument({
           />
         </View>
 
+        <View style={styles.disclaimer}>
+          <Text style={styles.disclaimerTitle}>
+            Recomendation Narrative and Steps
+          </Text>
+          <Text
+            style={[
+              styles.disclaimerText,
+              { fontSize: 10, fontFamily: "Helvetica" },
+            ]}
+          >
+            Recomendation Insight <br />A hybrid solar plus battery system is
+            recommended because generator dependence appears significant and the
+            example model indicates strong fuel-saving potential. Battery
+            storage is included primarily to reduce generator runtime and
+            support continuity of supply during outages. The recommended system
+            should be treated as a preliminary assessment rather than a final
+            design package.
+          </Text>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderText, { flex: 1.4 }]}>
+              Recommended Next Steps
+            </Text>
+            <Text
+              style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
+            >
+              Why it matters
+            </Text>
+          </View>
+          <TableRow
+            label="Request detailed technical review"
+            value="Validate load assumptions, battery sizing, and real operating profile before procurement."
+          />
+          <TableRow
+            label="Obtain installer quotations"
+            value="Compare implementation options against the preliminary system recommendation."
+          />
+          <TableRow
+            label="Review commercial assumptions"
+            value="Check tariff, diesel price, and operating profile against actual site data."
+          />
+        </View>
+
         <ReportFooter assessmentId={assessmentId} pageLabel="Page 2 of 3" />
       </Page>
 
@@ -1145,12 +1187,15 @@ function AssessmentReportDocument({
         <ReportHeader logoSrc={logoSrc} assessmentId={assessmentId} />
 
         <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerTitle}>Disclaimer</Text>
-          <Text style={styles.disclaimerText}>{disclaimer}</Text>
+          <Text style={styles.disclaimerTitle}>CTA</Text>
+          <Text style={styles.disclaimerText}>
+            Request a detailed review from SAEK Energy or Get matched with
+            supplier and installer option
+          </Text>
         </View>
 
         <View style={styles.ctaBox}>
-          <Text style={styles.ctaTitle}>Next step</Text>
+          <Text style={styles.ctaTitle}>Disclaimer</Text>
           <Text style={styles.ctaText}>
             This report is an indicative assessment generated from example
             inputs and simplified assumptions. Final design, procurement,

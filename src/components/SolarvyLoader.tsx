@@ -4,11 +4,13 @@ import sunBlue from "../assets/images/icon/sun-blue.svg";
 type SolarvyLoaderProps = {
   open: boolean;
   message?: string;
+  detail?: string;
 };
 
 export default function SolarvyLoader({
   open,
   message = "Please wait...",
+  detail,
 }: SolarvyLoaderProps) {
   if (!open || typeof document === "undefined") return null;
 
@@ -18,7 +20,7 @@ export default function SolarvyLoader({
       role="status"
       aria-live="polite"
       aria-busy="true"
-      aria-label={message}
+      aria-label={detail ? `${message} ${detail}` : message}
     >
       <div className="solarvy-loader-card">
         <div className="solarvy-loader-spinner-wrap">
@@ -31,6 +33,7 @@ export default function SolarvyLoader({
           />
         </div>
         <p className="solarvy-loader-message">{message}</p>
+        {detail ? <p className="solarvy-loader-detail">{detail}</p> : null}
       </div>
     </div>,
     document.body,
