@@ -176,36 +176,35 @@ export function resolveEstimatedAnnualDemandKwh(
 }
 
 // ---------------------------------------------------------------------------
-// Styles — charcoal + brand blue (Assessment Result theme)
+// Styles — minimal, print-friendly two-color theme
+// Only colors allowed:
+// - Blue: `#174c90` for titles/rules/borders
+// - Black: all other text
+// Page background stays white.
 // ---------------------------------------------------------------------------
 
 const colors = {
-  charcoal: "#1A1F2E",
-  charcoalMuted: "#3D4558",
   brand: "#174c90",
-  brandSoft: "#bfd0ea",
-  brandBg: "#eef4ff",
-  paper: "#FFFFFF",
+  text: "#000000",
   pageBg: "#FFFFFF",
-  line: "#e8edf5",
-  muted: "#6B7280",
-  value: "#111827",
+  paper: "#FFFFFF",
+  line: "#174c90",
 };
 
 const styles = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
     fontSize: 10,
-    color: colors.value,
+    color: colors.text,
     backgroundColor: colors.pageBg,
-    paddingTop: 40,
-    paddingBottom: 52,
-    paddingHorizontal: 40,
+    paddingTop: 34,
+    paddingBottom: 46,
+    paddingHorizontal: 36,
   },
   footer: {
     position: "absolute",
-    left: 40,
-    right: 40,
+    left: 36,
+    right: 36,
     bottom: 22,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -216,7 +215,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 8,
-    color: colors.muted,
+    color: colors.text,
   },
   headerRow: {
     flexDirection: "row",
@@ -232,7 +231,7 @@ const styles = StyleSheet.create({
   brandFallback: {
     fontSize: 18,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.text,
     letterSpacing: 0.5,
   },
   headerMeta: {
@@ -240,7 +239,7 @@ const styles = StyleSheet.create({
   },
   headerMetaLabel: {
     fontSize: 8,
-    color: colors.muted,
+    color: colors.brand,
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 2,
@@ -248,7 +247,7 @@ const styles = StyleSheet.create({
   headerMetaValue: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.text,
   },
   titleBlock: {
     marginBottom: 22,
@@ -262,42 +261,39 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   title: {
-    fontSize: 26,
+    fontSize: 18,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.brand,
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: 11,
-    color: colors.charcoalMuted,
+    fontSize: 10,
+    color: colors.text,
     lineHeight: 1.4,
     maxWidth: 420,
   },
   metaGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     marginBottom: 22,
   },
   metaItem: {
     width: "48%",
-    backgroundColor: colors.paper,
-    borderWidth: 1,
-    borderColor: colors.line,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
   },
   metaLabel: {
-    fontSize: 8,
-    color: colors.muted,
+    fontSize: 7.5,
+    color: colors.brand,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   metaValue: {
-    fontSize: 12,
+    fontSize: 10.5,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.text,
   },
   kpiRow: {
     flexDirection: "row",
@@ -306,59 +302,61 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     flex: 1,
-    backgroundColor: colors.charcoal,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 10,
+    borderWidth: 0,
+    backgroundColor: colors.paper,
   },
   kpiCardBrand: {
     flex: 1,
-    backgroundColor: colors.brand,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 10,
+    borderWidth: 0,
+    backgroundColor: colors.paper,
   },
   kpiLabel: {
     fontSize: 7,
-    color: "#D1D5DB",
+    color: colors.brand,
     textTransform: "uppercase",
     letterSpacing: 0.7,
     marginBottom: 6,
   },
   kpiLabelOnBrand: {
     fontSize: 7,
-    color: colors.paper,
+    color: colors.brand,
     textTransform: "uppercase",
     letterSpacing: 0.7,
     marginBottom: 6,
   },
   kpiValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
-    color: colors.paper,
+    color: colors.text,
   },
   kpiValueOnBrand: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
-    color: colors.paper,
+    color: colors.text,
   },
   section: {
     marginTop: 18,
     marginBottom: 4,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.brand,
     marginBottom: 4,
   },
   sectionRule: {
-    height: 2,
-    width: 36,
+    height: 1.5,
+    width: 34,
     backgroundColor: colors.brand,
     marginBottom: 12,
   },
   sectionIntro: {
-    fontSize: 9,
-    color: colors.muted,
+    fontSize: 8,
+    color: colors.text,
     marginBottom: 10,
     lineHeight: 1.4,
   },
@@ -366,44 +364,49 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     borderWidth: 1,
     borderColor: colors.line,
+    borderRadius: 4,
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: colors.brandBg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.brandSoft,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderBottomColor: colors.brand,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
   },
   tableHeaderText: {
-    fontSize: 8,
+    fontSize: 7.5,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.brand,
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderBottomColor: colors.brand,
+    paddingVertical: 6.5,
+    paddingHorizontal: 10,
   },
   tableRowLast: {
     flexDirection: "row",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 6.5,
+    paddingHorizontal: 10,
   },
   colLabel: {
+    fontSize: 9,
+    color: colors.text,
+  },
+  colLeftWrap: {
     flex: 1.4,
-    fontSize: 10,
-    color: colors.charcoalMuted,
+    borderRightWidth: 1,
+    borderRightColor: colors.brand,
+    paddingRight: 8,
   },
   colValue: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: colors.value,
+    color: colors.text,
     textAlign: "right",
   },
   demandBanner: {
@@ -418,15 +421,15 @@ const styles = StyleSheet.create({
   },
   demandLabel: {
     fontSize: 8,
-    color: colors.muted,
+    color: colors.brand,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   demandValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.text,
   },
   twoCol: {
     flexDirection: "row",
@@ -445,38 +448,40 @@ const styles = StyleSheet.create({
   disclaimerTitle: {
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.brand,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   disclaimerText: {
     fontSize: 8,
-    color: colors.muted,
+    color: colors.text,
     lineHeight: 1.45,
   },
   ctaBox: {
     marginTop: 14,
-    backgroundColor: colors.charcoal,
+    backgroundColor: colors.paper,
+    borderWidth: 1,
+    borderColor: colors.line,
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
   ctaTitle: {
     fontSize: 12,
     fontFamily: "Helvetica-Bold",
-    color: colors.paper,
+    color: colors.brand,
     marginBottom: 4,
   },
   ctaText: {
     fontSize: 9,
-    color: "#D1D5DB",
+    color: colors.text,
     lineHeight: 1.4,
   },
   ctaAccent: {
     marginTop: 8,
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: colors.brandSoft,
+    color: colors.text,
   },
   archSection: {
     marginTop: 16,
@@ -493,7 +498,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   archBox: {
-    backgroundColor: colors.brandBg,
+    backgroundColor: colors.paper,
+    borderWidth: 1,
+    borderColor: colors.line,
     borderRadius: 6,
     paddingVertical: 10,
     paddingHorizontal: 10,
@@ -541,7 +548,7 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: colors.charcoal,
+    color: colors.brand,
     textAlign: "center",
     marginBottom: 6,
   },
@@ -556,7 +563,7 @@ const styles = StyleSheet.create({
   },
   chartYLabel: {
     fontSize: 5.5,
-    color: colors.muted,
+    color: colors.text,
     textAlign: "right",
     marginBottom: 4,
     lineHeight: 1.2,
@@ -567,7 +574,7 @@ const styles = StyleSheet.create({
   },
   chartYTick: {
     fontSize: 6,
-    color: colors.muted,
+    color: colors.text,
     textAlign: "right",
   },
   chartPlot: {
@@ -579,7 +586,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     borderLeftWidth: 1,
     borderBottomWidth: 1,
-    borderColor: colors.charcoal,
+    borderColor: colors.brand,
     paddingHorizontal: 4,
   },
   chartBarCol: {
@@ -602,7 +609,7 @@ const styles = StyleSheet.create({
   chartXLabel: {
     flex: 1,
     fontSize: 7,
-    color: colors.charcoal,
+    color: colors.text,
     textAlign: "center",
   },
 });
@@ -647,7 +654,9 @@ function TableRow({
 }) {
   return (
     <View style={last ? styles.tableRowLast : styles.tableRow}>
-      <Text style={styles.colLabel}>{label}</Text>
+      <View style={styles.colLeftWrap}>
+        <Text style={styles.colLabel}>{label}</Text>
+      </View>
       <Text style={styles.colValue}>{value}</Text>
     </View>
   );
@@ -919,11 +928,11 @@ function AssessmentReportDocument({
           </Text>
         </View>
 
-        <View style={[styles.table, { marginTop: 10 }]}>
+        <View style={[styles.table, { marginTop: 10 }]} wrap={false}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1.4 }]}>
-              Key Finding
-            </Text>
+            <View style={styles.colLeftWrap}>
+              <Text style={[styles.tableHeaderText]}>Key Finding</Text>
+            </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
             >
@@ -951,7 +960,7 @@ function AssessmentReportDocument({
           />
         </View>
 
-        <View style={styles.disclaimer}>
+        <View style={styles.disclaimer} break>
           <Text style={styles.disclaimerTitle}>Important Notes</Text>
           <Text
             style={[
@@ -966,9 +975,11 @@ function AssessmentReportDocument({
         </View>
 
         <SectionHeading title="Energy Profile" />
-        <View style={styles.table}>
+        <View style={styles.table} wrap={false}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1.4 }]}>Metric</Text>
+            <View style={styles.colLeftWrap}>
+              <Text style={styles.tableHeaderText}>Metric</Text>
+            </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
             >
@@ -1022,11 +1033,11 @@ function AssessmentReportDocument({
           </Text> */}
         </View>
 
-        <View style={styles.table}>
+        <View style={styles.table} wrap={false}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1.4 }]}>
-              Component
-            </Text>
+            <View style={styles.colLeftWrap}>
+              <Text style={styles.tableHeaderText}>Component</Text>
+            </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
             >
@@ -1048,40 +1059,16 @@ function AssessmentReportDocument({
         </View>
 
         <SectionHeading title="Metrics" intro="" />
-        <View style={styles.table}>
+        <View style={styles.table} wrap={false}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1.4 }]}>Metric</Text>
+            <View style={styles.colLeftWrap}>
+              <Text style={styles.tableHeaderText}>Metric</Text>
+            </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
             >
               Example Result
             </Text>
-          </View>
-          <View style={styles.table}>
-            <TableRow
-              label="Total estimated system cost"
-              value={formatNaira(results.estimatedSystemCost)}
-            />
-            <TableRow
-              label="Gross annual savings"
-              value={formatNaira(results.grossAnnualSavings)}
-            />
-            <TableRow
-              label="Annual O&M allowance"
-              value={formatNaira(results.annualOmAllowance)}
-            />
-            <TableRow
-              label="Net annual savings"
-              value={formatNaira(results.netAnnualSavings)}
-            />
-            <TableRow
-              label="Simple payback"
-              value={formatPaybackYears(results.simplePaybackYears)}
-            />
-            {/* PLACEHOLDER_NPV — Page 3 Financial summary */}
-            <TableRow label="NPV" value={PLACEHOLDER_NPV} />
-            {/* PLACEHOLDER_IRR — Page 3 Financial summary */}
-            <TableRow label="IRR" value={PLACEHOLDER_IRR} last />
           </View>
           {/* {ENERGY_PROFILE_ROWS.map((row, index) => (
             <TableRow
@@ -1091,14 +1078,40 @@ function AssessmentReportDocument({
               last={index === ENERGY_PROFILE_ROWS.length - 1}
             />
           ))} */}
+          <TableRow
+            label="Total estimated system cost"
+            value={formatNaira(results.estimatedSystemCost)}
+          />
+          <TableRow
+            label="Gross annual savings"
+            value={formatNaira(results.grossAnnualSavings)}
+          />
+          <TableRow
+            label="Annual O&M allowance"
+            value={formatNaira(results.annualOmAllowance)}
+          />
+          <TableRow
+            label="Net annual savings"
+            value={formatNaira(results.netAnnualSavings)}
+          />
+          <TableRow
+            label="Simple payback"
+            value={formatPaybackYears(results.simplePaybackYears)}
+          />
+          {/* PLACEHOLDER_NPV — Page 3 Financial summary */}
+          <TableRow label="NPV" value={PLACEHOLDER_NPV} />
+          {/* PLACEHOLDER_IRR — Page 3 Financial summary */}
+          <TableRow label="IRR" value={PLACEHOLDER_IRR} last />
         </View>
 
         <SectionHeading title="Hybrid Performance and Value Analysis" />
-        <View style={styles.table}>
+        <View style={styles.table} wrap={false}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1.4 }]}>
-              Performance Metric
-            </Text>
+            <View style={styles.colLeftWrap}>
+              <Text style={styles.tableHeaderText}>
+                Performance Metric
+              </Text>
+            </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
             >
@@ -1154,11 +1167,13 @@ function AssessmentReportDocument({
           </Text>
         </View>
 
-        <View style={styles.table}>
+        <View style={styles.table} wrap={false}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1.4 }]}>
-              Recommended Next Steps
-            </Text>
+            <View style={styles.colLeftWrap}>
+              <Text style={styles.tableHeaderText}>
+                Recommended Next Steps
+              </Text>
+            </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
             >
