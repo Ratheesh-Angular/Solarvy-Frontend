@@ -1,5 +1,6 @@
 import type { AssessmentFormData, LoadTableRow } from "../types/assessment";
-import { EMPTY_ASSESSMENT_FORM } from "../types/assessment";
+import { DEFAULT_GRID_TARIFF, EMPTY_ASSESSMENT_FORM } from "../types/assessment";
+import { formatUsageFromSpend } from "./assessmentConstants";
 
 const CUSTOM_EXCEL_START = 4;
 const CUSTOM_EXCEL_END = 23;
@@ -141,10 +142,14 @@ export function applyAssessmentFormData(
   if (merged.bill) {
     if (merged.bill.fileName) setters.setFileName(merged.bill.fileName);
     setters.setBillNotes(merged.bill.notes || "");
-    setters.setMonthlyUsage(merged.bill.monthlyUsage || "");
     setters.setUsageUnit(merged.bill.usageUnit || "kWh");
-    setters.setMonthlySpend(merged.bill.monthlySpend || "");
-    setters.setGridTariff(merged.bill.gridTariff || "");
+    const spend = merged.bill.monthlySpend || "";
+    const tariff = merged.bill.gridTariff || DEFAULT_GRID_TARIFF;
+    setters.setMonthlySpend(spend);
+    setters.setGridTariff(tariff);
+    setters.setMonthlyUsage(
+      merged.bill.monthlyUsage || formatUsageFromSpend(spend, tariff),
+    );
   }
 
   if (merged.appliance?.rows?.length) {

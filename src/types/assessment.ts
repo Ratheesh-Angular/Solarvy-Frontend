@@ -47,6 +47,8 @@ export type AssessmentFormData = {
   backupDuration: string;
 };
 
+export const DEFAULT_GRID_TARIFF = "209.50";
+
 export const EMPTY_ASSESSMENT_FORM: AssessmentFormData = {
   propertyType: "",
   template: "",
@@ -62,7 +64,7 @@ export const EMPTY_ASSESSMENT_FORM: AssessmentFormData = {
     monthlyUsage: "",
     usageUnit: "kWh",
     monthlySpend: "",
-    gridTariff: "",
+    gridTariff: DEFAULT_GRID_TARIFF,
   },
   appliance: { rows: [] },
   custom: { rows: [] },
@@ -148,6 +150,15 @@ export type AssessmentResults = {
   solarCostPerKwh?: number | null;
   systemClass?: string | null;
   calculationError?: string;
+  /** Strategy_Comparison website mapping B12:E16. */
+  strategyComparison?: Array<{
+    strategy: string;
+    annualCost?: number | null;
+    reliability?: string | null;
+    dieselUse?: string | null;
+    payback?: number | string | null;
+    recommended?: string | null;
+  }>;
   summary?: Record<
     string,
     Record<string, number | null> & {
@@ -161,6 +172,8 @@ export type LiveSummaryResponse = {
   estimatedAnnualLoadKwh: number | null;
   /** Outputs!B36 — Estimated Monthly Spend (bill method). */
   estimatedMonthlySpend?: number | null;
+  /** Outputs!B40 — Monthly energy (kWh). */
+  estimatedMonthlyEnergyKwh?: number | null;
   summary: AssessmentResults["summary"];
   /** Per-row Daily_kWh from Appliance_Input!G or Custom_Equipment!G. */
   rowDailyKwh?: Array<{ excelRow: number; dailyKwh: number | null }>;

@@ -1,4 +1,39 @@
 import type { AssessmentFormData, QuickAssessmentFormData } from "../types/assessment";
+import { DEFAULT_GRID_TARIFF } from "../types/assessment";
+
+export { DEFAULT_GRID_TARIFF };
+
+/** Parse UI number strings that may include grouping commas. */
+export function parseFormattedNumber(value: string): number {
+  if (!value) return NaN;
+  const n = Number(String(value).replace(/[^\d.-]/g, ""));
+  return n;
+}
+
+/** Keep digits only and group with commas: 234521 → 234,521. */
+export function formatIntegerWithCommas(value: string): string {
+  const digits = String(value).replace(/\D/g, "");
+  if (!digits) return "";
+  return Number(digits).toLocaleString("en-US");
+}
+
+/** Monthly usage kWh from spend ÷ tariff, rounded to 2 decimals. */
+export function formatUsageFromSpend(
+  spend: string,
+  tariff: string = DEFAULT_GRID_TARIFF,
+): string {
+  const spendNum = parseFormattedNumber(spend);
+  const tariffNum = parseFormattedNumber(tariff);
+  if (
+    !Number.isFinite(spendNum) ||
+    spendNum <= 0 ||
+    !Number.isFinite(tariffNum) ||
+    tariffNum <= 0
+  ) {
+    return "";
+  }
+  return String(Math.round((spendNum / tariffNum) * 100) / 100);
+}
 
 /** Home quick-form property value -> Excel property label (User_Inputs!B10). */
 export const PROPERTY_TYPE_TO_LABEL: Record<string, string> = {
@@ -47,14 +82,15 @@ export function quickFormToAssessmentForm(
   }
 
   if (quick.monthlyElectricityBill) {
-    partial.monthlyElectricityBill = quick.monthlyElectricityBill;
+    const spend = formatIntegerWithCommas(quick.monthlyElectricityBill);
+    partial.monthlyElectricityBill = spend;
     partial.bill = {
       fileName: "",
       notes: "",
-      monthlyUsage: "",
+      monthlyUsage: formatUsageFromSpend(spend, DEFAULT_GRID_TARIFF),
       usageUnit: "kWh",
-      monthlySpend: quick.monthlyElectricityBill,
-      gridTariff: "",
+      monthlySpend: spend,
+      gridTariff: DEFAULT_GRID_TARIFF,
     };
   }
 

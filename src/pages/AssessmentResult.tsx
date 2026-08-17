@@ -20,7 +20,10 @@ import FeedbackToast from "../components/FeedbackToast";
 import SolarvyLoader from "../components/SolarvyLoader";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { apiGet } from "../lib/api";
-import type { AssessmentFormData, AssessmentResults } from "../types/assessment";
+import type {
+  AssessmentFormData,
+  AssessmentResults,
+} from "../types/assessment";
 import {
   downloadAssessmentReport,
   formatAssessmentDate,
@@ -32,11 +35,14 @@ type AssessmentApiResponse = {
   data: {
     id: string;
     results: AssessmentResults | null;
-    formData?: Pick<AssessmentFormData, "inputMethod"> | AssessmentFormData | null;
+    formData?:
+      | Pick<AssessmentFormData, "inputMethod">
+      | AssessmentFormData
+      | null;
   };
 };
 
-const MISSING = "—";
+const MISSING = "N/A";
 
 const toNum = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return null;
@@ -86,8 +92,37 @@ const formatText = (value: unknown): string => {
   return String(value);
 };
 
-/** Excel may hold percentages as fractions (0.68) or whole numbers (68). */
+type StrategyComparisonRow = NonNullable<
+  AssessmentResults["strategyComparison"]
+>[number];
+
+const STRATEGY_FALLBACK_ROWS: StrategyComparisonRow[] = [
+  { strategy: "Grid Only" },
+  { strategy: "Grid + Generator" },
+  { strategy: "Solar + Grid" },
+  { strategy: "Solar + Battery + Generator" },
+];
+
+const isDash = (value: unknown): boolean => {
+  if (value === null || value === undefined || value === "") return true;
+  const s = String(value).trim();
+  return s === "—" || s === "-" || s === "–";
+};
+
+const formatStrategyPayback = (value: unknown): string => {
+  if (isDash(value) || toNum(value) === null) return "—";
+  return `${formatPaybackYears(value)} yrs`;
+};
+
+const isRecommendedStrategy = (value: unknown): boolean =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase() === "recommended";
+
+/** Excel may hold percentages as fractions (0.68) or whole numbers (68). 0% is valid. */
 const toPercent = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return 0;
+  if (value === "-" || value === "—") return 0;
   const n = toNum(value);
   if (n === null) return null;
   return Math.round(n <= 1 ? n * 100 : n);
@@ -141,7 +176,11 @@ function AssesementResult() {
         }
 
         const method = response.data.formData?.inputMethod;
-        if (method === "bill" || method === "appliance" || method === "custom") {
+        if (
+          method === "bill" ||
+          method === "appliance" ||
+          method === "custom"
+        ) {
           setInputMethod(method);
         }
 
@@ -221,6 +260,11 @@ function AssesementResult() {
   const disclaimer =
     results?.disclaimer ||
     "These results are indicative only. Final system design, procurement, and performance should be validated through a detailed review before investment or installation.";
+
+  const strategyComparisonRows =
+    results?.strategyComparison && results.strategyComparison.length > 0
+      ? results.strategyComparison
+      : STRATEGY_FALLBACK_ROWS;
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -320,10 +364,13 @@ function AssesementResult() {
               <div className="nav-bottom-section row align-items-center">
                 <div className="col-12 col-lg-12 text-white ">
                   <h1 className="bannr-text display-5 ass-page ass-result-banner-text">
-                    Your preliminary energy system recommendation
+                    Your preliminary energy{" "}
+                    <span className="ass-result-banner-phrase">
+                      system recommendation
+                    </span>
                   </h1>
 
-                  <p className="bannr-text-s text-light mt-2 mb-5 ass-page-two">
+                  <p className="bannr-text-s text-light mt-2 mb-5 ass-page-two ass-result-banner-desc">
                     Based on the information entered, Solarvy estimates the most
                     suitable solar, battery, and inverter configuration,
                     together with indicative savings and payback.
@@ -403,9 +450,9 @@ function AssesementResult() {
                           <b>Recommended Inverter</b>
                         </small>
 
-                        <div className="download-icon-mobile">
+                        {/* <div className="download-icon-mobile">
                           <img src={donw} alt="logo" />
-                        </div>
+                        </div> */}
                       </div>
 
                       <h2 className="fw-bold sun-head">
@@ -441,7 +488,7 @@ function AssesementResult() {
                 </div>
 
                 <div className="row">
-                  <div className="col-md-6 border-end">
+                  <div className="col-md-6 border-md-end">
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Estimated system cost</span>
                       <strong className="rang-head">{systemCost}</strong>
@@ -472,7 +519,7 @@ function AssesementResult() {
                     </div>
                   </div>
 
-                  <div className="col-md-6 ps-md-4 mt-4 mt-md-0">
+                  <div className="col-md-6 ps-md-4 mt-4 mt-md-0 d-none d-md-block">
                     <h6 className="left-rang fw-bold mb-3">% Energy Impact</h6>
 
                     <div className="mb-3">
@@ -525,101 +572,152 @@ function AssesementResult() {
                 </div>
               </div>
 
-              <div className="p-4 shadow-sm rounded-4 ass-first mt-4">
-                <div className="d-flex align-items-center mb-4">
-                  <div className="icon-box-maony-two me-3">
-                    <img src={buletwo} alt="icon" />
+              <div className="p-4 shadow-sm rounded-4 ass-resul-first mt-4 d-md-none">
+                <div className="mb-4">
+                  <h5 className="fw-bold mb-1 rang-head">Energy Impact</h5>
+                  <small className="text-muted">
+                    This shows how solar, grid, and generator power work
+                    together to supply your energy.
+                  </small>
+                </div>
+
+                <div className="mb-3">
+                  <div className="d-flex justify-content-between">
+                    <span className="rang-name">Solar share</span>
+                    <strong className="per-rang">
+                      {formatPercentLabel(results?.solarShare)}
+                    </strong>
                   </div>
-                  <div>
-                    <h5 className="fw-bold mb-1 rang-head">
-                      System Detail Breakdown
-                    </h5>
-                    <small className="text-muted">
-                      Understand why this recommendation was generated and the
-                      key technical parameters.
-                    </small>
+                  <div className="progress custom-progress">
+                    <div
+                      className="progress-bar bg-danger"
+                      style={{ width: `${solarSharePct ?? 0}%` }}
+                    ></div>
                   </div>
                 </div>
 
-                <div className="row">
-                  <div className="">
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Estimated system cost</span>
-                      <strong className="rang-head">{systemCost}</strong>
-                    </div>
+                <div className="mb-3">
+                  <div className="d-flex justify-content-between">
+                    <span className="rang-name">Grid offset</span>
+                    <strong className="per-rang">
+                      {formatPercentLabel(results?.gridOffset)}
+                    </strong>
+                  </div>
+                  <div className="progress custom-progress">
+                    <div
+                      className="progress-bar bg-primary"
+                      style={{ width: `${gridOffsetPct ?? 0}%` }}
+                    ></div>
+                  </div>
+                </div>
 
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Gross annual savings</span>
-                      <strong className="rang-head">{grossSavings}</strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Annual O&M allowance</span>
-                      <strong className="rang-head">{omAllowance}</strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Net annual savings</span>
-                      <strong className="rang-head">{netSavings}</strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between border-0">
-                      <span className="rang-name">Simple payback</span>
-                      <strong className="rang-head">
-                        {paybackYears === MISSING
-                          ? MISSING
-                          : `${paybackYears} years`}
-                      </strong>
-                    </div>
-                    {/* <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Annual PV generation</span>
-                      <strong className="rang-head">
-                        {annualPvGeneration === MISSING
-                          ? MISSING
-                          : `${annualPvGeneration} kWh`}
-                      </strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Usable solar</span>
-                      <strong className="rang-head">
-                        {usableSolar === MISSING
-                          ? MISSING
-                          : `${usableSolar} kWh`}
-                      </strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Diesel saved</span>
-                      <strong className="rang-head">{dieselSavedLitres}</strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Lead type</span>
-                      <strong className="rang-head">{leadType}</strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Recommended next step</span>
-                      <strong className="rang-head">
-                        {recommendedNextStep}
-                      </strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Primary recommendation</span>
-                      <strong className="rang-head">
-                        {primaryRecommendation}
-                      </strong>
-                    </div>
-
-                    <div className="summary-row d-flex justify-content-between border-0">
-                      <span className="rang-name">Confidence note</span>
-                      <strong className="rang-head">{confidenceNote}</strong>
-                    </div> */}
+                <div>
+                  <div className="d-flex justify-content-between">
+                    <span className="rang-name">Diesel reduction</span>
+                    <strong className="per-rang">
+                      {formatPercentLabel(results?.dieselReduction)}
+                    </strong>
+                  </div>
+                  <div className="progress custom-progress">
+                    <div
+                      className="progress-bar bg-success"
+                      style={{
+                        width: `${dieselReductionPct ?? 0}%`,
+                      }}
+                    ></div>
                   </div>
                 </div>
               </div>
+
+              <section className="container-fluid sample-page-section">
+                <div className="row align-items-start g-4">
+                  <div className="col-12 dashboard-container p-0">
+                    <h2 className="dashboard-title">
+                      Energy strategy comparison
+                    </h2>
+                    <p className="dashboard-subtitle p-0 m-0">
+                      This helps you assess your options and see which one gives
+                      you the best results.
+                    </p>
+                  </div>
+
+                  <div className="col-12 p-0">
+                    <div className="custom-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>STRATEGY</th>
+                            <th>ANNUAL COST</th>
+                            <th>RELIABILITY</th>
+                            <th>DIESEL USE</th>
+                            <th>PAYBACK</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {strategyComparisonRows.map((row) => {
+                            const recommended = isRecommendedStrategy(
+                              row.recommended,
+                            );
+
+                            return (
+                              <tr
+                                key={row.strategy}
+                                className={recommended ? "recommended-row" : undefined}
+                              >
+                                <td
+                                  className={
+                                    recommended
+                                      ? "text-color-b title-cell"
+                                      : undefined
+                                  }
+                                >
+                                  {recommended ? (
+                                    <>
+                                      <span className="title-text">
+                                        {row.strategy}
+                                      </span>
+                                      <span className="badge-recommended">
+                                        Recommended
+                                      </span>
+                                    </>
+                                  ) : (
+                                    row.strategy
+                                  )}
+                                </td>
+                                <td className={recommended ? "text-color-b" : undefined}>
+                                  {formatNaira(row.annualCost)}
+                                </td>
+                                <td
+                                  className={
+                                    recommended ? "strong text-color-b" : undefined
+                                  }
+                                >
+                                  {formatText(row.reliability)}
+                                </td>
+                                <td
+                                  className={
+                                    recommended ? "strong text-color-b" : undefined
+                                  }
+                                >
+                                  {formatText(row.dieselUse)}
+                                </td>
+                                <td
+                                  className={
+                                    recommended ? "strong text-color-b" : undefined
+                                  }
+                                >
+                                  {formatStrategyPayback(row.payback)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
               <div className="important-note d-flex align-items-center p-3 mt-4">
                 <div className="me-2 mt-0">

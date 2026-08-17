@@ -54,9 +54,24 @@ export async function getLiveSummary(formData: AssessmentFormData) {
   return response.data;
 }
 
-export async function extractBillValues(file: File) {
+export async function extractBillValues(
+  file: File,
+  options?: {
+    formData?: AssessmentFormData;
+    monthlyEnergyKwh?: number | null;
+  },
+) {
   const formData = new FormData();
   formData.append("bill", file);
+  if (options?.formData) {
+    formData.append("formData", JSON.stringify(options.formData));
+  }
+  if (
+    options?.monthlyEnergyKwh !== undefined &&
+    options?.monthlyEnergyKwh !== null
+  ) {
+    formData.append("monthlyEnergyKwh", String(options.monthlyEnergyKwh));
+  }
 
   const base = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
   const url = `${base}/api/bills/extract`;

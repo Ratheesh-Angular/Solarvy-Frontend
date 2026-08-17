@@ -124,6 +124,8 @@ const formatText = (value: unknown): string => {
 };
 
 const toPercent = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return 0;
+  if (value === "-" || value === "—") return 0;
   const n = toNum(value);
   if (n === null) return null;
   return Math.round(n <= 1 ? n * 100 : n);
@@ -936,7 +938,7 @@ function AssessmentReportDocument({
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
             >
-              Example Result
+              Results
             </Text>
           </View>
           <TableRow
@@ -1108,9 +1110,7 @@ function AssessmentReportDocument({
         <View style={styles.table} wrap={false}>
           <View style={styles.tableHeader}>
             <View style={styles.colLeftWrap}>
-              <Text style={styles.tableHeaderText}>
-                Performance Metric
-              </Text>
+              <Text style={styles.tableHeaderText}>Performance Metric</Text>
             </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
@@ -1170,9 +1170,7 @@ function AssessmentReportDocument({
         <View style={styles.table} wrap={false}>
           <View style={styles.tableHeader}>
             <View style={styles.colLeftWrap}>
-              <Text style={styles.tableHeaderText}>
-                Recommended Next Steps
-              </Text>
+              <Text style={styles.tableHeaderText}>Recommended Next Steps</Text>
             </View>
             <Text
               style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}

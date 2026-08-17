@@ -591,6 +591,15 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
   flex-wrap: nowrap;
 }
 
+.ass-result-banner-text {
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.ass-result-banner-phrase {
+  white-space: nowrap;
+}
+
 /* Mobile view */
 @media (max-width: 768px) {
   .ass-result-banner-text {
@@ -602,6 +611,19 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
   }
 
   .button-group button {
+    width: 100%;
+  }
+}
+
+/* iPhone 12 / 13 / 14 (390px) — keep the same 2-line title wrap as ~430px */
+@media (max-width: 429px) {
+  h1.bannr-text.display-5.ass-page.ass-result-banner-text {
+    font-size: 26px;
+    letter-spacing: -0.02em;
+  }
+
+  p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
+    font-size: 15px;
     width: 100%;
   }
 }

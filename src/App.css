@@ -960,6 +960,11 @@ input.form-control.select-text {
   text-align: left;
 }
 
+input.form-control.select-text::placeholder {
+  color: #bfbfbf;
+  opacity: 1;
+}
+
 .button.custom-btn.other-section {
   display: flex;
   align-items: center;

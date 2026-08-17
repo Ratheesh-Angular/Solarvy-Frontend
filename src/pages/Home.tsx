@@ -19,8 +19,12 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { ApiError } from "../lib/api";
 import { createAssessmentDraft } from "../lib/assessmentApi";
-import { quickFormToAssessmentForm } from "../lib/assessmentConstants";
+import {
+  formatIntegerWithCommas,
+  quickFormToAssessmentForm,
+} from "../lib/assessmentConstants";
 import type { QuickAssessmentFormData } from "../types/assessment";
+import SolarvyLoader from "../components/SolarvyLoader";
 
 function Home() {
   const [open, setOpen] = useState(false);
@@ -40,7 +44,11 @@ function Home() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setQuickForm((prev) => ({ ...prev, [name]: value }));
+    const nextValue =
+      name === "monthlyElectricityBill"
+        ? formatIntegerWithCommas(value)
+        : value;
+    setQuickForm((prev) => ({ ...prev, [name]: nextValue }));
     e.target.style.color = "#000";
   };
 
@@ -95,6 +103,10 @@ function Home() {
 
   return (
     <div className="menu-div ">
+      <SolarvyLoader
+        open={isStartingAssessment}
+        message="Starting your assessment..."
+      />
       <section className="solar-hero-section">
         <div className="solar-hero-overlay"></div>
 
@@ -257,7 +269,8 @@ function Home() {
                     value={quickForm.monthlyElectricityBill}
                     onChange={handleQuickFormChange}
                     className="form-control select-text mb-2"
-                    placeholder=""
+                    placeholder="Enter"
+                    inputMode="numeric"
                   />
 
                   <div className="row g-2 mb-3">

@@ -138,6 +138,15 @@ p.dashboard-subtitle {
   font-weight: 600;
 }
 
+.custom-table tbody tr:last-child {
+  background: #eef3fb;
+}
+
+.custom-table tbody tr:last-child td {
+  background: #eef3fb;
+  color: #174c90 !important;
+}
+
 .custom-table tbody tr:last-child td:first-child {
   border-bottom-left-radius: 14px;
 }

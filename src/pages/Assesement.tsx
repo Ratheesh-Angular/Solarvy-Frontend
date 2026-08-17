@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import logo from "../assets/images/logo.png";
@@ -10,26 +10,34 @@ import buleone from "../assets/images/icon/bule1.svg";
 import buletwo from "../assets/images/icon/bule2.svg";
 import bulethree from "../assets/images/icon/bule3.svg";
 import bulefour from "../assets/images/icon/sun-blue.svg";
+import iconBulb from "../assets/appliances-icons/bulb-with-bolt-svgrepo-com.svg";
+import iconFan from "../assets/appliances-icons/fan-circled-svgrepo-com.svg";
+import iconTv from "../assets/appliances-icons/tv-television-svgrepo-com.svg";
+import iconAc from "../assets/appliances-icons/air-conditioner-svgrepo-com (1).svg";
+import iconFridge from "../assets/appliances-icons/fridge-kitchen-svgrepo-com.svg";
+import iconFreezer from "../assets/appliances-icons/freezer-svgrepo-com.svg";
+import iconRouter from "../assets/appliances-icons/router-svgrepo-com.svg";
+import iconComputer from "../assets/appliances-icons/computer-svgrepo-com.svg";
+import iconCctv from "../assets/appliances-icons/cctv-svgrepo-com.svg";
+import iconCompressor from "../assets/appliances-icons/compressor-svgrepo-com.svg";
+import iconMotor from "../assets/appliances-icons/motor-alt-svgrepo-com.svg";
+import iconMedical from "../assets/appliances-icons/medical-kit-svgrepo-com.svg";
 import {
-  AirVent,
   BatteryCharging,
   Building2,
   Calculator,
   Factory,
-  Fan,
   Fuel,
   Home,
   Hospital,
   Hotel,
   LayoutGrid,
-  Lightbulb,
   PlugZap,
   Receipt,
   School,
   Sparkles,
   Sun,
   Trash2,
-  Tv,
   Upload,
   Wallet,
   Wrench,
@@ -42,6 +50,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import FeedbackToast from "../components/FeedbackToast";
 import SolarvyLoader from "../components/SolarvyLoader";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
+import { useSyncedProgress } from "../hooks/useSyncedProgress";
 import { ApiError } from "../lib/api";
 import {
   completeAssessment,
@@ -54,6 +63,12 @@ import {
   applyAssessmentFormData,
   buildAssessmentFormData,
 } from "../lib/assessmentFormHelpers";
+import {
+  DEFAULT_GRID_TARIFF,
+  formatIntegerWithCommas,
+  formatUsageFromSpend,
+  parseFormattedNumber,
+} from "../lib/assessmentConstants";
 import {
   extractBillValues,
   getExcelCatalogs,
@@ -74,25 +89,83 @@ type ApplianceCatalogItem = {
   defaultHours: number;
   /** Duty cycle as 0–1 from Equipment Default. */
   defaultDutyCycle: number;
-  Icon: LucideIcon;
+  iconSrc: string | null;
 };
 
-/** Icon lookup for equipment names coming from the Excel "Equipment Default" sheet. */
-const EQUIPMENT_ICON_RULES: Array<[RegExp, LucideIcon]> = [
-  [/bulb|light|led/i, Lightbulb],
-  [/fan/i, Fan],
-  [/tv|television|display/i, Tv],
-  [/ac\b|a\/c|air/i, AirVent],
-  [/fridge|refrigerator|freezer|cold/i, BatteryCharging],
-  [/router|wifi|cctv|computer|pos|charger/i, PlugZap],
-  [/pump|motor|compressor|machine|cnc/i, Wrench],
+/** Distinct SVG lookup — most specific patterns first. Unmatched names get no pictogram. */
+const EQUIPMENT_ICON_RULES: Array<[RegExp, string]> = [
+  [/freezer/i, iconFreezer],
+  [/fridge|refrigerator/i, iconFridge],
+  [/bulb|light|led/i, iconBulb],
+  [/fan/i, iconFan],
+  [/cctv|camera/i, iconCctv],
+  [/\btv\b|television|display/i, iconTv],
+  [/\bac\b|a\/c|air[-\s]?condit/i, iconAc],
+  [/router|wifi|wlan/i, iconRouter],
+  [/computer|laptop|\bpc\b|desktop/i, iconComputer],
+  [/compressor/i, iconCompressor],
+  [/motor|pump/i, iconMotor],
+  [/medical|first[-\s]?aid/i, iconMedical],
 ];
 
-function iconForEquipment(name: string): LucideIcon {
-  for (const [pattern, Icon] of EQUIPMENT_ICON_RULES) {
-    if (pattern.test(name)) return Icon;
+function iconForEquipment(name: string): string | null {
+  for (const [pattern, src] of EQUIPMENT_ICON_RULES) {
+    if (pattern.test(name)) return src;
   }
-  return PlugZap;
+  return null;
+}
+
+function applianceNameAbbreviation(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
+  }
+  const compact = name.trim().replace(/[^a-zA-Z0-9]/g, "");
+  return compact.slice(0, 2).toUpperCase() || "—";
+}
+
+/** Excel-relevant row fields only; omit derived dailyKwhExcel so writeback does not retrigger live-summary. */
+function equipmentLiveSummarySignature(rows: LoadTableRow[]) {
+  return rows.map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    qty: row.qty,
+    hours: row.hours,
+    power: row.power,
+    loadFactorPct: row.loadFactorPct ?? 100,
+    excelRow: row.excelRow ?? null,
+    source: row.source ?? null,
+    removed: Boolean(row.removed),
+  }));
+}
+
+function LiveSummaryCardSkeleton({
+  variant,
+}: {
+  variant: "desktop" | "mobile";
+}) {
+  if (variant === "mobile") {
+    return (
+      <div
+        className="assessment-summary-mobile-row live-summary-card-skeleton"
+        aria-hidden
+      >
+        <span className="live-summary-skeleton-circle" />
+        <div className="live-summary-skeleton-lines">
+          <span className="live-summary-skeleton-bar live-summary-skeleton-bar--value" />
+          <span className="live-summary-skeleton-bar live-summary-skeleton-bar--label" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="stat-card text-center live-summary-card-skeleton" aria-hidden>
+      <span className="live-summary-skeleton-circle" />
+      <span className="live-summary-skeleton-bar live-summary-skeleton-bar--value" />
+      <span className="live-summary-skeleton-bar live-summary-skeleton-bar--label" />
+    </div>
+  );
 }
 
 /** Build the appliance dropdown catalog from the Excel equipment list. */
@@ -108,7 +181,7 @@ function catalogFromEquipment(
       Number.isFinite(item.dutyCycle) && item.dutyCycle > 0
         ? item.dutyCycle
         : 1,
-    Icon: iconForEquipment(item.name),
+    iconSrc: iconForEquipment(item.name),
   }));
 }
 
@@ -119,7 +192,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 10,
     defaultHours: 6,
     defaultDutyCycle: 1,
-    Icon: Lightbulb,
+    iconSrc: iconBulb,
   },
   {
     kind: "Fan",
@@ -127,7 +200,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 60,
     defaultHours: 8,
     defaultDutyCycle: 1,
-    Icon: Fan,
+    iconSrc: iconFan,
   },
   {
     kind: "TV",
@@ -135,7 +208,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 100,
     defaultHours: 6,
     defaultDutyCycle: 1,
-    Icon: Tv,
+    iconSrc: iconTv,
   },
   {
     kind: "AC 1HP",
@@ -143,7 +216,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 900,
     defaultHours: 5,
     defaultDutyCycle: 0.6,
-    Icon: AirVent,
+    iconSrc: iconAc,
   },
 ];
 
@@ -330,19 +403,27 @@ function TablePagination({
 const newRowId = (prefix: string) =>
   `${prefix}-${typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`}`;
 
+/** Equipment Default duty cycle (0–1, or 0–100) → UI loadFactorPct 0–100. */
+const loadFactorPctFromDuty = (duty: number): number => {
+  if (!Number.isFinite(duty) || duty <= 0) return 100;
+  return Math.round((duty <= 1 ? duty : duty / 100) * 100);
+};
+
+const catalogNumericPrefill = (item: ApplianceCatalogItem) => ({
+  qty: 1,
+  hours: item.defaultHours,
+  power: item.defaultPower,
+  loadFactorPct: loadFactorPctFromDuty(item.defaultDutyCycle),
+});
+
 const rowFromCatalogItem = (
   prefix: string,
   item: ApplianceCatalogItem,
-  customEquipment = false,
 ): LoadTableRow => {
   return {
     id: newRowId(prefix),
     kind: item.kind,
-    qty: 0,
-    hours: 0,
-    power: 0,
-    // Custom: user enters all numerics. Appliance: default full duty until edited.
-    loadFactorPct: customEquipment ? 0 : 100,
+    ...catalogNumericPrefill(item),
     source: "user",
   };
 };
@@ -352,18 +433,13 @@ const rowsFromAppliancePrefill = (
   prefillRows: TemplatePrefillRow[],
 ): LoadTableRow[] =>
   prefillRows.map((row) => {
-    const duty = Number(row.dutyCycle);
-    const loadFactorPct =
-      Number.isFinite(duty) && duty > 0
-        ? Math.round((duty <= 1 ? duty : duty / 100) * 100)
-        : 100;
     return {
       id: newRowId("ap"),
       kind: row.name,
       qty: Number(row.qty) || 0,
       hours: Number(row.hours) || 0,
       power: Number(row.watts) || 0,
-      loadFactorPct,
+      loadFactorPct: loadFactorPctFromDuty(Number(row.dutyCycle)),
       excelRow: row.excelRow,
       source: "template" as const,
       dailyKwhExcel:
@@ -373,31 +449,9 @@ const rowsFromAppliancePrefill = (
     };
   });
 
-/** Ensure Appliance_Input names appear in the kind dropdown even if absent from Equipment Default. */
-const mergeCatalogWithKinds = (
-  catalog: ApplianceCatalogItem[],
-  kinds: string[],
-): ApplianceCatalogItem[] => {
-  const byKind = new Map(catalog.map((item) => [item.kind, item]));
-  for (const kind of kinds) {
-    const trimmed = kind?.trim();
-    if (!trimmed || byKind.has(trimmed)) continue;
-    byKind.set(trimmed, {
-      kind: trimmed,
-      label: trimmed,
-      defaultPower: 0,
-      defaultHours: 8,
-      defaultDutyCycle: 1,
-      Icon: iconForEquipment(trimmed),
-    });
-  }
-  return Array.from(byKind.values());
-};
-
 const defaultRowFromCatalog = (
   prefix: string,
   catalog: ApplianceCatalogItem[],
-  customEquipment: boolean,
   preferredKind?: string,
 ): LoadTableRow => {
   const source = catalog.length ? catalog : FALLBACK_EQUIPMENT_CATALOG;
@@ -407,7 +461,7 @@ const defaultRowFromCatalog = (
       : undefined) ??
     source[0] ??
     FALLBACK_EQUIPMENT_CATALOG[0];
-  return rowFromCatalogItem(prefix, item, customEquipment);
+  return rowFromCatalogItem(prefix, item);
 };
 
 function ApplianceKindSelect({
@@ -440,7 +494,7 @@ function ApplianceKindSelect({
   const selected = catalog.find((o) => o.kind === valueKind);
   const isCustomKind = Boolean(allowCustomName && valueKind && !selected);
   const isOpen = openRow === rowIndex;
-  const TriggerIcon = selected?.Icon ?? Lightbulb;
+  const triggerIconSrc = selected?.iconSrc ?? null;
   const triggerLabel = selected?.label ?? (valueKind?.trim() || "—");
 
   const filteredCatalog = (() => {
@@ -522,12 +576,20 @@ function ApplianceKindSelect({
       >
         <span className="appliance-select-trigger-inner">
           <span className="tables-icon-box-custom appliance-select-icon-wrap">
-            <TriggerIcon
-              size={18}
-              strokeWidth={2}
-              aria-hidden
-              className="appliance-select-trigger-icon"
-            />
+            {triggerIconSrc ? (
+              <img
+                src={triggerIconSrc}
+                alt=""
+                aria-hidden
+                width={20}
+                height={20}
+                className="appliance-select-trigger-icon"
+              />
+            ) : (
+              <span className="appliance-select-icon-fallback" aria-hidden>
+                {applianceNameAbbreviation(triggerLabel)}
+              </span>
+            )}
           </span>
           <span className="appliance-select-label">{triggerLabel}</span>
           <ChevronDown
@@ -585,7 +647,6 @@ function ApplianceKindSelect({
                     </li>
                   ) : (
                     filteredCatalog.map((opt) => {
-                      const OptionIcon = opt.Icon;
                       const active = opt.kind === valueKind;
                       return (
                         <li key={opt.kind} role="none">
@@ -603,11 +664,23 @@ function ApplianceKindSelect({
                             }}
                           >
                             <span className="tables-icon-box-custom appliance-select-icon-wrap">
-                              <OptionIcon
-                                size={18}
-                                strokeWidth={2}
-                                aria-hidden
-                              />
+                              {opt.iconSrc ? (
+                                <img
+                                  src={opt.iconSrc}
+                                  alt=""
+                                  aria-hidden
+                                  width={20}
+                                  height={20}
+                                  className="appliance-select-trigger-icon"
+                                />
+                              ) : (
+                                <span
+                                  className="appliance-select-icon-fallback"
+                                  aria-hidden
+                                >
+                                  {applianceNameAbbreviation(opt.label)}
+                                </span>
+                              )}
                             </span>
                             <span className="appliance-select-option-label">
                               {opt.label}
@@ -721,20 +794,50 @@ function Assesement() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftIdParam));
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingLiveSummary, setIsLoadingLiveSummary] = useState(false);
+  const isSlowApi = isExtractingBill || isSubmitting;
+  const isApiBusy =
+    isLoadingCatalogs ||
+    isLoadingDraft ||
+    isPrefilling ||
+    isExtractingBill ||
+    isSavingDraft ||
+    isSubmitting;
+  const loaderExpectedMs = isSubmitting ? 4000 : isExtractingBill ? 6000 : 700;
+  const {
+    open: loaderOpen,
+    progress: loaderProgress,
+    finishLoader,
+    abortLoader,
+  } = useSyncedProgress(isSlowApi, loaderExpectedMs);
   const [excelEstimatedAnnualLoad, setExcelEstimatedAnnualLoad] = useState<
     number | null
   >(null);
   const [excelEstimatedMonthlySpend, setExcelEstimatedMonthlySpend] = useState<
     number | null
   >(null);
+  const [excelEstimatedMonthlyEnergy, setExcelEstimatedMonthlyEnergy] =
+    useState<number | null>(null);
   const liveSummaryRequestRef = useRef(0);
+  const lastLiveSummaryKeyRef = useRef<string | null>(null);
   const { toast, showSuccess, showError, clearToast } = useFeedbackToast();
   const [billNotes, setBillNotes] = useState("");
   const [monthlyUsage, setMonthlyUsage] = useState("");
   const [usageUnit, setUsageUnit] = useState("kWh");
   const [monthlySpend, setMonthlySpend] = useState("");
-  const [gridTariff, setGridTariff] = useState("");
+  const [gridTariff, setGridTariff] = useState(DEFAULT_GRID_TARIFF);
   const [monthlyElectricityBill, setMonthlyElectricityBill] = useState("");
+  const monthlyUsageTouchedRef = useRef(false);
+  type CalculateFieldErrors = {
+    country?: string;
+    state?: string;
+    powerSetup?: string;
+    backupDuration?: string;
+    mainObjective?: string;
+  };
+  const [calculateErrors, setCalculateErrors] = useState<CalculateFieldErrors>(
+    {},
+  );
   const [roofArea, setRoofArea] = useState("200");
   const [backupDuration, setBackupDuration] = useState("");
   const templatePromptHandledRef = useRef(false);
@@ -832,17 +935,29 @@ function Assesement() {
       }
       return { ...prev, [name]: value };
     });
+
+    setCalculateErrors((prev) => {
+      if (name !== "country" && name !== "state") return prev;
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
+
+  const clearCalculateError = (key: keyof CalculateFieldErrors) => {
+    setCalculateErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const [applianceRows, setApplianceRows] = useState<LoadTableRow[]>([]);
   const [customRows, setCustomRows] = useState<LoadTableRow[]>([]);
   const [appliancePage, setAppliancePage] = useState(1);
   const [customPage, setCustomPage] = useState(1);
-
-  const applianceKindCatalog = mergeCatalogWithKinds(
-    equipmentCatalog,
-    visibleEquipmentRows(applianceRows).map((row) => row.kind),
-  );
 
   // Load dropdown catalogs from the Excel workbook (auto-refreshes when the
   // client uploads an updated template — backend caches by file mtime).
@@ -877,7 +992,7 @@ function Assesement() {
         ? prev
         : [
             {
-              ...defaultRowFromCatalog("ce", equipmentCatalog, true),
+              ...defaultRowFromCatalog("ce", equipmentCatalog),
               excelRow: CUSTOM_EXCEL_START,
               source: "user" as const,
             },
@@ -916,6 +1031,7 @@ function Assesement() {
 
     try {
       const prefill = await getTemplatePrefill(selectedProperty, template);
+      await finishLoader();
       const templateRows = rowsFromAppliancePrefill(
         prefill.applianceRows || [],
       );
@@ -931,6 +1047,7 @@ function Assesement() {
         "Template applied",
       );
     } catch (error) {
+      abortLoader();
       showError(
         error instanceof ApiError
           ? error.message
@@ -998,9 +1115,10 @@ function Assesement() {
           dailyKwhExcel: undefined,
         };
       } else if (field === "kind") {
+        const nextKind = String(value);
         const next: LoadTableRow = {
           ...updatedRows[index],
-          kind: String(value),
+          kind: nextKind,
           dailyKwhExcel: undefined,
         };
         // Changing kind on a template row moves it to A21+ so we do not
@@ -1012,11 +1130,11 @@ function Assesement() {
         } else {
           next.source = next.source || "user";
         }
-        // Never autofill from catalog/library — customer enters power/hours.
-        // Appliance: reset power/hours to 0 on kind change. Custom: name only.
-        if (inputMethod !== "custom") {
-          next.power = 0;
-          next.hours = 0;
+        const catalogItem = equipmentCatalog.find(
+          (entry) => entry.kind === nextKind,
+        );
+        if (catalogItem) {
+          Object.assign(next, catalogNumericPrefill(catalogItem));
         }
         updatedRows[index] = next;
       }
@@ -1046,10 +1164,7 @@ function Assesement() {
           next[removedIndex] = {
             ...next[removedIndex],
             removed: false,
-            qty: 0,
-            hours: 0,
-            power: 0,
-            loadFactorPct: customEquipment ? 0 : 100,
+            ...catalogNumericPrefill(nextUnused),
             dailyKwhExcel: undefined,
           };
           setPage(Math.ceil((visible.length + 1) / ROWS_PER_PAGE));
@@ -1063,15 +1178,10 @@ function Assesement() {
       if (excelRow === null) return prev;
 
       const row = nextUnused
-        ? rowFromCatalogItem(
-            customEquipment ? "ce" : "ap",
-            nextUnused,
-            customEquipment,
-          )
+        ? rowFromCatalogItem(customEquipment ? "ce" : "ap", nextUnused)
         : defaultRowFromCatalog(
             customEquipment ? "ce" : "ap",
             equipmentCatalog,
-            customEquipment,
           );
 
       const next = [...prev, { ...row, source: "user" as const, excelRow }];
@@ -1164,11 +1274,16 @@ function Assesement() {
     clearToast();
 
     try {
-      const extracted = await extractBillValues(billFile);
+      const extracted = await extractBillValues(billFile, {
+        formData: getFormPayload(),
+        monthlyEnergyKwh: excelEstimatedMonthlyEnergy,
+      });
+      await finishLoader();
       let filled = 0;
 
       if (extracted.monthlyUsage !== null) {
         setMonthlyUsage(String(extracted.monthlyUsage));
+        monthlyUsageTouchedRef.current = true;
         setUsageUnit("kWh");
         filled += 1;
       }
@@ -1198,6 +1313,7 @@ function Assesement() {
         );
       }
     } catch (error) {
+      abortLoader();
       showError(
         error instanceof ApiError
           ? error.message
@@ -1235,6 +1351,15 @@ function Assesement() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    if (isLoadingDraft || isExtractingBill) return;
+    if (monthlyUsageTouchedRef.current) return;
+    const usage = formatUsageFromSpend(monthlySpend, gridTariff);
+    if (usage) {
+      setMonthlyUsage((prev) => (prev === usage ? prev : usage));
+    }
+  }, [monthlySpend, gridTariff, isLoadingDraft, isExtractingBill]);
+
   const getFormPayload = () =>
     buildAssessmentFormData({
       selectedProperty,
@@ -1256,6 +1381,58 @@ function Assesement() {
       backupDuration,
     });
 
+  const liveSummaryKey = useMemo(
+    () =>
+      JSON.stringify({
+        selectedProperty,
+        selectedTemplate,
+        selectedPower,
+        inputMethod,
+        selectedObjective,
+        country: formData.country,
+        state: formData.state,
+        fileName,
+        billNotes,
+        monthlyUsage,
+        usageUnit,
+        monthlySpend,
+        gridTariff,
+        monthlyElectricityBill,
+        applianceRows: equipmentLiveSummarySignature(applianceRows),
+        customRows: equipmentLiveSummarySignature(customRows),
+        roofArea,
+        backupDuration,
+      }),
+    [
+      selectedProperty,
+      selectedTemplate,
+      selectedPower,
+      inputMethod,
+      selectedObjective,
+      formData.country,
+      formData.state,
+      fileName,
+      billNotes,
+      monthlyUsage,
+      usageUnit,
+      monthlySpend,
+      gridTariff,
+      monthlyElectricityBill,
+      applianceRows,
+      customRows,
+      roofArea,
+      backupDuration,
+    ],
+  );
+
+  const hasLiveSummaryMinimumInputs =
+    Boolean(selectedProperty && selectedTemplate) &&
+    (inputMethod === "bill"
+      ? Boolean(monthlyUsage && parseFormattedNumber(monthlyUsage) > 0)
+      : inputMethod === "appliance"
+        ? applianceRows.some((row) => !row.removed)
+        : customRows.some((row) => !row.removed));
+
   useEffect(() => {
     if (
       isLoadingCatalogs ||
@@ -1264,30 +1441,37 @@ function Assesement() {
       isSubmitting ||
       isExtractingBill
     ) {
+      setIsLoadingLiveSummary(false);
       return;
     }
 
-    const hasMinimumInputs =
-      Boolean(selectedProperty && selectedTemplate) &&
-      (inputMethod === "bill"
-        ? Boolean(monthlyUsage && Number(monthlyUsage) > 0)
-        : inputMethod === "appliance"
-          ? applianceRows.some((row) => !row.removed)
-          : customRows.some((row) => !row.removed));
-
-    if (!hasMinimumInputs) {
+    if (!hasLiveSummaryMinimumInputs) {
+      lastLiveSummaryKeyRef.current = null;
+      setIsLoadingLiveSummary(false);
       setExcelEstimatedAnnualLoad(null);
       setExcelEstimatedMonthlySpend(null);
+      setExcelEstimatedMonthlyEnergy(null);
+      return;
+    }
+
+    if (lastLiveSummaryKeyRef.current === liveSummaryKey) {
+      liveSummaryRequestRef.current += 1;
+      setIsLoadingLiveSummary(false);
       return;
     }
 
     const requestId = ++liveSummaryRequestRef.current;
     const timer = window.setTimeout(async () => {
+      setIsLoadingLiveSummary(true);
       try {
         const summary = await getLiveSummary(getFormPayload());
         if (liveSummaryRequestRef.current !== requestId) return;
+        lastLiveSummaryKeyRef.current = liveSummaryKey;
         setExcelEstimatedAnnualLoad(summary.estimatedAnnualLoadKwh);
         setExcelEstimatedMonthlySpend(summary.estimatedMonthlySpend ?? null);
+        setExcelEstimatedMonthlyEnergy(
+          summary.estimatedMonthlyEnergyKwh ?? null,
+        );
 
         const rowDaily = summary.rowDailyKwh;
         if (
@@ -1337,8 +1521,13 @@ function Assesement() {
         if (liveSummaryRequestRef.current !== requestId) return;
         setExcelEstimatedAnnualLoad(null);
         setExcelEstimatedMonthlySpend(null);
+        setExcelEstimatedMonthlyEnergy(null);
+      } finally {
+        if (liveSummaryRequestRef.current === requestId) {
+          setIsLoadingLiveSummary(false);
+        }
       }
-    }, 2000);
+    }, 400);
 
     return () => {
       window.clearTimeout(timer);
@@ -1349,23 +1538,8 @@ function Assesement() {
     isPrefilling,
     isSubmitting,
     isExtractingBill,
-    selectedProperty,
-    selectedTemplate,
-    selectedPower,
-    inputMethod,
-    selectedObjective,
-    formData,
-    fileName,
-    billNotes,
-    monthlyUsage,
-    usageUnit,
-    monthlySpend,
-    gridTariff,
-    monthlyElectricityBill,
-    applianceRows,
-    customRows,
-    roofArea,
-    backupDuration,
+    hasLiveSummaryMinimumInputs,
+    liveSummaryKey,
   ]);
 
   useEffect(() => {
@@ -1407,6 +1581,9 @@ function Assesement() {
           setRoofArea,
           setBackupDuration,
         });
+        monthlyUsageTouchedRef.current = Boolean(
+          draft.formData?.bill?.monthlyUsage,
+        );
 
         const savedApplianceRows = draft.formData?.appliance?.rows;
         const property = draft.formData?.propertyType;
@@ -1432,6 +1609,7 @@ function Assesement() {
         }
       } catch (error) {
         if (!cancelled) {
+          abortLoader();
           showError(
             error instanceof ApiError
               ? error.message
@@ -1457,14 +1635,17 @@ function Assesement() {
 
       if (draftId) {
         await updateAssessmentDraft(draftId, payload);
+        await finishLoader();
         showSuccess("Draft saved successfully.");
       } else {
         const draft = await createAssessmentDraft(payload);
+        await finishLoader();
         setDraftId(draft.id);
         setSearchParams({ draft: String(draft.id) });
         showSuccess("Draft created and saved.");
       }
     } catch (error) {
+      abortLoader();
       showError(
         error instanceof ApiError
           ? error.message
@@ -1476,6 +1657,37 @@ function Assesement() {
   };
 
   const handleCompleteAssessment = async () => {
+    const errors: CalculateFieldErrors = {};
+    if (!formData.country.trim()) {
+      errors.country = "Please select a country.";
+    }
+    if (!formData.state.trim()) {
+      errors.state = "Please select a state.";
+    }
+    if (!selectedPower) {
+      errors.powerSetup = "Please select your current power setup.";
+    }
+    if (!backupDuration) {
+      errors.backupDuration = "Please select a backup duration.";
+    }
+    if (!selectedObjective) {
+      errors.mainObjective = "Please select a main objective.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setCalculateErrors(errors);
+      const firstKey = (
+        ["country", "state", "powerSetup", "backupDuration", "mainObjective"] as const
+      ).find((key) => errors[key]);
+      if (firstKey) {
+        document
+          .getElementById(`ass-field-${firstKey}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    setCalculateErrors({});
     setIsSubmitting(true);
     clearToast();
 
@@ -1485,8 +1697,10 @@ function Assesement() {
         ? await completeAssessmentDraft(draftId, payload)
         : await completeAssessment(payload);
 
+      await finishLoader();
       navigate(`/assesement-result?assessment=${result.id}`);
     } catch (error) {
+      abortLoader();
       showError(
         error instanceof ApiError
           ? error.message
@@ -1553,6 +1767,11 @@ function Assesement() {
   const liveDailyKwh = sumDailyKwh(activeRows);
   const liveMonthlyKwh = liveDailyKwh * 30;
 
+  const clientAnnualLoad =
+    inputMethod === "bill"
+      ? parseFormattedNumber(monthlyUsage) * 12
+      : liveMonthlyKwh * 12;
+
   const summaryFirstMetricValue =
     inputMethod === "bill" ? monthlyUsage || "0" : liveDailyKwh.toFixed(2);
 
@@ -1571,23 +1790,19 @@ function Assesement() {
   const summaryEstimatedAnnualLoad =
     excelEstimatedAnnualLoad !== null &&
     Number.isFinite(Number(excelEstimatedAnnualLoad))
-      ? String(Math.round(Number(excelEstimatedAnnualLoad)))
-      : "—";
-
-  const isApiBusy =
-    isLoadingCatalogs ||
-    isLoadingDraft ||
-    isPrefilling ||
-    isExtractingBill ||
-    isSavingDraft ||
-    isSubmitting;
+      ? formatIntegerWithCommas(
+          String(Math.round(Number(excelEstimatedAnnualLoad))),
+        )
+      : Number.isFinite(clientAnnualLoad) && clientAnnualLoad > 0
+        ? formatIntegerWithCommas(String(Math.round(clientAnnualLoad)))
+        : "N/A";
 
   const loaderMessage = isSubmitting
     ? "Calculating your system..."
-    : isSavingDraft
-      ? "Saving draft..."
-      : isExtractingBill
-        ? "AI is analyzing your bill…"
+    : isExtractingBill
+      ? "AI is analyzing your bill…"
+      : isSavingDraft
+        ? "Saving draft..."
         : isPrefilling
           ? "Loading template..."
           : isLoadingDraft
@@ -1606,7 +1821,7 @@ function Assesement() {
         type="button"
         className="btn-primary-custom calu"
         onClick={handleCompleteAssessment}
-        disabled={isApiBusy}
+        disabled={isApiBusy || loaderOpen}
       >
         <span className="icon-sun">
           <img src={sunone} alt="icon" />
@@ -1623,7 +1838,7 @@ function Assesement() {
         type="button"
         className="btn-outline-custom2 calu-2"
         onClick={handleSaveDraft}
-        disabled={isApiBusy}
+        disabled={isApiBusy || loaderOpen}
       >
         <span className="icon-sun">
           <img src={save} alt="icon" />
@@ -1636,9 +1851,10 @@ function Assesement() {
   return (
     <div>
       <SolarvyLoader
-        open={isApiBusy}
+        open={loaderOpen || (!isSlowApi && isApiBusy)}
         message={loaderMessage}
         detail={loaderDetail}
+        progress={isSlowApi || loaderOpen ? loaderProgress : undefined}
       />
       <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="full-body-color">
@@ -1857,7 +2073,7 @@ function Assesement() {
                 )}
 
                 <div className="row g-3 align-items-center">
-                  <div className="col-md-6">
+                  <div className="col-md-6" id="ass-field-country">
                     <label className="form-label ass-field-label">
                       COUNTRY
                     </label>
@@ -1865,7 +2081,10 @@ function Assesement() {
                       name="country"
                       value={formData.country}
                       onChange={handleChange}
-                      className="form-select ass-field-control"
+                      className={`form-select ass-field-control${
+                        calculateErrors.country ? " is-invalid" : ""
+                      }`}
+                      aria-invalid={Boolean(calculateErrors.country)}
                     >
                       <option value="">Select country</option>
                       {(catalogs?.countries?.length
@@ -1877,9 +2096,14 @@ function Assesement() {
                         </option>
                       ))}
                     </select>
+                    {calculateErrors.country && (
+                      <p className="ass-field-error" role="alert">
+                        {calculateErrors.country}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="col-md-6">
+                  <div className="col-md-6" id="ass-field-state">
                     <label className="form-label ass-field-label">State</label>
                     <select
                       name="state"
@@ -1887,7 +2111,10 @@ function Assesement() {
                         formData.country === "Nigeria" ? formData.state : ""
                       }
                       onChange={handleChange}
-                      className="form-select ass-field-control"
+                      className={`form-select ass-field-control${
+                        calculateErrors.state ? " is-invalid" : ""
+                      }`}
+                      aria-invalid={Boolean(calculateErrors.state)}
                     >
                       <option value="">Select State</option>
                       {(catalogs?.states?.length
@@ -1899,11 +2126,19 @@ function Assesement() {
                         </option>
                       ))}
                     </select>
+                    {calculateErrors.state && (
+                      <p className="ass-field-error" role="alert">
+                        {calculateErrors.state}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
+              <div
+                className="p-4 shadow-sm rounded-4 ass-first mt-3"
+                id="ass-field-powerSetup"
+              >
                 <div className="d-flex align-items-center mb-3">
                   <div className="step-box me-3">2</div>
                   <div>
@@ -1921,7 +2156,10 @@ function Assesement() {
                   <div className="parent-container onlt-this" key={item.title}>
                     <div
                       className={`property-card  ${selectedPower === item.title ? "active" : ""}`}
-                      onClick={() => setSelectedPower(item.title)}
+                      onClick={() => {
+                        setSelectedPower(item.title);
+                        clearCalculateError("powerSetup");
+                      }}
                     >
                       <div className="d-flex align-items-center justify-content-between w-100">
                         <div className="d-flex align-items-center gap-3">
@@ -1948,6 +2186,11 @@ function Assesement() {
                     </div>
                   </div>
                 ))}
+                {calculateErrors.powerSetup && (
+                  <p className="ass-field-error mt-2 mb-0" role="alert">
+                    {calculateErrors.powerSetup}
+                  </p>
+                )}
               </div>
               <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
                 <div className="d-flex align-items-center">
@@ -1973,11 +2216,14 @@ function Assesement() {
                           className={`option-card w-100 ${
                             inputMethod === item.id ? "active" : ""
                           }`}
-                          onClick={() =>
-                            setInputMethod(
-                              item.id as "bill" | "appliance" | "custom",
-                            )
-                          }
+                          onClick={() => {
+                            const next = item.id as
+                              | "bill"
+                              | "appliance"
+                              | "custom";
+                            if (next === inputMethod) return;
+                            setInputMethod(next);
+                          }}
                         >
                           <div className="d-flex align-items-start">
                             <div className="icon-box-topss me-2 icon-box-topss-choose-input-method">
@@ -2139,7 +2385,10 @@ function Assesement() {
                             className="form-control ass-field-control"
                             placeholder=""
                             value={monthlyUsage}
-                            onChange={(e) => setMonthlyUsage(e.target.value)}
+                            onChange={(e) => {
+                              monthlyUsageTouchedRef.current = true;
+                              setMonthlyUsage(e.target.value);
+                            }}
                           />
                         </div>
 
@@ -2256,7 +2505,7 @@ function Assesement() {
                                   <td className="appliance-cell py-2">
                                     <ApplianceKindSelect
                                       rowIndex={index}
-                                      catalog={applianceKindCatalog}
+                                      catalog={equipmentCatalog}
                                       valueKind={item.kind}
                                       onPick={(kind) =>
                                         handleRowChange(index, "kind", kind)
@@ -2384,7 +2633,6 @@ function Assesement() {
                             <th>RATED POWER (W)</th>
                             <th>QTY</th>
                             <th>Hrs/Day</th>
-                            <th>LOAD FACTOR %</th>
                             <th>DAILY KWH</th>
                             <th>ACTION</th>
                             <th
@@ -2461,23 +2709,6 @@ function Assesement() {
                                       handleRowChange(
                                         index,
                                         "hours",
-                                        Number(e.target.value),
-                                      )
-                                    }
-                                  />
-                                </td>
-
-                                <td className="text-center">
-                                  <input
-                                    className="form-control ass-field-control ass-field-control--table"
-                                    type="number"
-                                    min={0}
-                                    max={100}
-                                    value={item.loadFactorPct ?? 100}
-                                    onChange={(e) =>
-                                      handleRowChange(
-                                        index,
-                                        "loadFactorPct",
                                         Number(e.target.value),
                                       )
                                     }
@@ -2567,15 +2798,21 @@ function Assesement() {
                       </div>
                     </div>
 
-                    <div className="col-md-6">
+                    <div className="col-md-6" id="ass-field-backupDuration">
                       <label className="form-label ass-field-label">
                         Backup Duration Required
                       </label>
                       <select
                         name="backupDuration"
-                        className="form-select ass-field-control"
+                        className={`form-select ass-field-control${
+                          calculateErrors.backupDuration ? " is-invalid" : ""
+                        }`}
                         value={backupDuration}
-                        onChange={(e) => setBackupDuration(e.target.value)}
+                        aria-invalid={Boolean(calculateErrors.backupDuration)}
+                        onChange={(e) => {
+                          setBackupDuration(e.target.value);
+                          clearCalculateError("backupDuration");
+                        }}
                       >
                         <option value="">Select Duration Required</option>
                         {(catalogs?.backupDurations?.length
@@ -2588,8 +2825,16 @@ function Assesement() {
                           </option>
                         ))}
                       </select>
+                      {calculateErrors.backupDuration && (
+                        <p className="ass-field-error" role="alert">
+                          {calculateErrors.backupDuration}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-muted small mb-0 para-ass">
+                    <p
+                      className="text-muted small mb-0 para-ass"
+                      id="ass-field-mainObjective"
+                    >
                       Main Objective
                     </p>
 
@@ -2599,7 +2844,10 @@ function Assesement() {
                           className={`option-card option-card-main-objective ${
                             selectedObjective === item.title ? "active" : ""
                           }`}
-                          onClick={() => setSelectedObjective(item.title)}
+                          onClick={() => {
+                            setSelectedObjective(item.title);
+                            clearCalculateError("mainObjective");
+                          }}
                         >
                           <div className="d-flex option-card-main-objective-individual">
                             <div className="icon-box-topsss me-2 ">
@@ -2626,6 +2874,13 @@ function Assesement() {
                         </div>
                       </div>
                     ))}
+                    {calculateErrors.mainObjective && (
+                      <div className="col-12">
+                        <p className="ass-field-error mb-0" role="alert">
+                          {calculateErrors.mainObjective}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2634,9 +2889,14 @@ function Assesement() {
             </div>
 
             <div className="col-lg-4">
-              <div className="assessment-summary-metrics-mobile d-lg-none">
+              <div
+                className="assessment-summary-metrics-mobile d-lg-none"
+                aria-busy={isLoadingLiveSummary}
+              >
                 <div
-                  className="assessment-summary-mobile-live-head"
+                  className={`assessment-summary-mobile-live-head${
+                    isLoadingLiveSummary ? " is-updating" : ""
+                  }`}
                   role="status"
                   aria-live="polite"
                 >
@@ -2645,76 +2905,91 @@ function Assesement() {
                     aria-hidden
                   />
                   <span className="assessment-summary-mobile-live-title">
-                    Live summary
+                    {isLoadingLiveSummary
+                      ? "Updating live summary"
+                      : "Live summary"}
                   </span>
                 </div>
                 <p className="assessment-summary-mobile-live-hint">
                   Key figures update as you enter your assessment.
                 </p>
 
-                <div className="assessment-summary-mobile-row">
-                  <div className="assessment-summary-mobile-icon-wrap">
-                    <img src={buleone} alt="" />
-                  </div>
-                  <div className="assessment-summary-mobile-body">
-                    <div className="assessment-summary-mobile-value">
-                      {summaryFirstMetricValue}
+                {isLoadingLiveSummary ? (
+                  <>
+                    <LiveSummaryCardSkeleton variant="mobile" />
+                    <LiveSummaryCardSkeleton variant="mobile" />
+                    <LiveSummaryCardSkeleton variant="mobile" />
+                    <LiveSummaryCardSkeleton variant="mobile" />
+                  </>
+                ) : (
+                  <>
+                    <div className="assessment-summary-mobile-row">
+                      <div className="assessment-summary-mobile-icon-wrap">
+                        <img src={buleone} alt="" />
+                      </div>
+                      <div className="assessment-summary-mobile-body">
+                        <div className="assessment-summary-mobile-value">
+                          {summaryFirstMetricValue}
+                        </div>
+                        <div className="assessment-summary-mobile-labels">
+                          <span>{summaryFirstMetricUnit}</span>
+                          <span className="fw-bold">
+                            {summaryFirstMetricLabel}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="assessment-summary-mobile-labels">
-                      <span>{summaryFirstMetricUnit}</span>
-                      <span className="fw-bold">{summaryFirstMetricLabel}</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="assessment-summary-mobile-row">
-                  <div className="assessment-summary-mobile-icon-wrap">
-                    <img src={buletwo} alt="" />
-                  </div>
-                  <div className="assessment-summary-mobile-body">
-                    <div className="assessment-summary-mobile-value">
-                      {summarySecondMetricValue}
+                    <div className="assessment-summary-mobile-row">
+                      <div className="assessment-summary-mobile-icon-wrap">
+                        <img src={buletwo} alt="" />
+                      </div>
+                      <div className="assessment-summary-mobile-body">
+                        <div className="assessment-summary-mobile-value">
+                          {summarySecondMetricValue}
+                        </div>
+                        <div className="assessment-summary-mobile-labels">
+                          {inputMethod !== "bill" && <span>kWh/month</span>}
+                          <span className="fw-bold">
+                            {summarySecondMetricLabel}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="assessment-summary-mobile-labels">
-                      {inputMethod !== "bill" && <span>kWh/month</span>}
-                      <span className="fw-bold">
-                        {summarySecondMetricLabel}
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="assessment-summary-mobile-row">
-                  <div className="assessment-summary-mobile-icon-wrap">
-                    <img src={bulefour} alt="" />
-                  </div>
-                  <div className="assessment-summary-mobile-body">
-                    <div className="assessment-summary-mobile-value">
-                      {summaryEstimatedAnnualLoad}
+                    <div className="assessment-summary-mobile-row">
+                      <div className="assessment-summary-mobile-icon-wrap">
+                        <img src={bulefour} alt="" />
+                      </div>
+                      <div className="assessment-summary-mobile-body">
+                        <div className="assessment-summary-mobile-value">
+                          {summaryEstimatedAnnualLoad}
+                        </div>
+                        <div className="assessment-summary-mobile-labels">
+                          <span className="fw-bold text-uppercase">
+                            ESTIMATED ANNUAL LOAD
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="assessment-summary-mobile-labels">
-                      <span className="fw-bold text-uppercase">
-                        ESTIMATED ANNUAL LOAD
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="assessment-summary-mobile-row">
-                  <div className="assessment-summary-mobile-icon-wrap">
-                    <img src={bulethree} alt="" />
-                  </div>
-                  <div className="assessment-summary-mobile-body">
-                    <div className="assessment-summary-mobile-value">
-                      {summaryAssessmentPathTitle}
+                    <div className="assessment-summary-mobile-row">
+                      <div className="assessment-summary-mobile-icon-wrap">
+                        <img src={bulethree} alt="" />
+                      </div>
+                      <div className="assessment-summary-mobile-body">
+                        <div className="assessment-summary-mobile-value">
+                          {summaryAssessmentPathTitle}
+                        </div>
+                        <div className="assessment-summary-mobile-labels">
+                          <span className="fw-bold text-uppercase">
+                            ASSESSMENT PATH
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="assessment-summary-mobile-labels">
-                      <span className="fw-bold text-uppercase">
-                        ASSESSMENT PATH
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
               <div className="d-lg-none">{assessmentCtaBar}</div>
@@ -2737,68 +3012,95 @@ function Assesement() {
                   </div>
                 </div>
 
-                <div className="row g-3 flex-wrap">
-                  <div className="col-6">
-                    <div className="stat-card text-center">
-                      <div className="icon-box-build-right mb-2">
-                        <img src={buleone} alt="icon" />
+                <div
+                  className="row g-3 flex-wrap"
+                  aria-busy={isLoadingLiveSummary}
+                >
+                  {isLoadingLiveSummary ? (
+                    [0, 1, 2, 3].map((key) => (
+                      <div className="col-6" key={key}>
+                        <LiveSummaryCardSkeleton variant="desktop" />
                       </div>
-                      <h5 className="asst-h">{summaryFirstMetricValue}</h5>
-                      <div className="usage-wrapper">
-                        <small>{summaryFirstMetricUnit}</small>
-                        <small>
-                          <b>{summaryFirstMetricLabel}</b>
-                        </small>
+                    ))
+                  ) : (
+                    <>
+                      <div className="col-6">
+                        <div className="stat-card text-center">
+                          <div className="icon-box-build-right mb-2">
+                            <img src={buleone} alt="icon" />
+                          </div>
+                          <h5 className="asst-h">{summaryFirstMetricValue}</h5>
+                          <div className="usage-wrapper">
+                            <small>{summaryFirstMetricUnit}</small>
+                            <small>
+                              <b>{summaryFirstMetricLabel}</b>
+                            </small>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="col-6">
-                    <div className="stat-card text-center">
-                      <div className="icon-box-build-right  mb-2">
-                        <img src={buletwo} alt="icon" />
+                      <div className="col-6">
+                        <div className="stat-card text-center">
+                          <div className="icon-box-build-right  mb-2">
+                            <img src={buletwo} alt="icon" />
+                          </div>
+                          <h5 className="asst-h">{summarySecondMetricValue}</h5>
+                          <div className="usage-wrapper">
+                            {inputMethod !== "bill" && (
+                              <small>kWh/month</small>
+                            )}
+                            <small>
+                              <b>{summarySecondMetricLabel}</b>
+                            </small>
+                          </div>
+                        </div>
                       </div>
-                      <h5 className="asst-h">{summarySecondMetricValue}</h5>
-                      <div className="usage-wrapper">
-                        {inputMethod !== "bill" && <small>kWh/month</small>}
-                        <small>
-                          <b>{summarySecondMetricLabel}</b>
-                        </small>
+                      <div className="col-6">
+                        <div className="stat-card text-center">
+                          <div className="icon-box-build-right mb-2">
+                            <img src={bulefour} alt="icon" />
+                          </div>
+                          <h5 className="asst-h">
+                            {summaryEstimatedAnnualLoad === "N/A"
+                              ? "N/A"
+                              : `${summaryEstimatedAnnualLoad} kWh`}
+                          </h5>
+                          <div className="usage-wrapper">
+                            <small>
+                              <b>ESTIMATED ANNUAL LOAD</b>
+                            </small>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="col-6">
-                    <div className="stat-card text-center">
-                      <div className="icon-box-build-right mb-2">
-                        <img src={bulefour} alt="icon" />
+                      <div className="col-6">
+                        <div className="stat-card text-center">
+                          <div className="icon-box-build-right mb-2">
+                            <img src={bulethree} alt="icon" />
+                          </div>
+                          <h5 className="asst-h">
+                            {summaryAssessmentPathTitle}
+                          </h5>
+                          <small>
+                            <b>ASSESSMENT PATH</b>
+                          </small>
+                        </div>
                       </div>
-                      <h5 className="asst-h">
-                        {summaryEstimatedAnnualLoad} kWh
-                      </h5>
-                      <div className="usage-wrapper">
-                        <small>
-                          <b>ESTIMATED ANNUAL LOAD</b>
-                        </small>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-6">
-                    <div className="stat-card text-center">
-                      <div className="icon-box-build-right mb-2">
-                        <img src={bulethree} alt="icon" />
-                      </div>
-                      <h5 className="asst-h">{summaryAssessmentPathTitle}</h5>
-                      <small>
-                        <b>ASSESSMENT PATH</b>
-                      </small>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="summary-box">
-                  <div className="live-header">
+                  <div
+                    className={`live-header${
+                      isLoadingLiveSummary ? " is-updating" : ""
+                    }`}
+                  >
                     <span className="dot"></span>
-                    <span className="live-text">Live summary panel</span>
+                    <span className="live-text">
+                      {isLoadingLiveSummary
+                        ? "Updating live summary…"
+                        : "Live summary panel"}
+                    </span>
                   </div>
 
                   <p className="summary-desc">
