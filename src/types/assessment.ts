@@ -10,6 +10,8 @@ export type LoadTableRow = {
   excelRow?: number;
   /** template = from Appliance_Input A4:A20; user = Add Equipment (A21+). */
   source?: "template" | "user";
+  /** Appliance Calculator: true only for rows created via Add Equipment (not catalog seed). */
+  addedByUser?: boolean;
   /** Daily kWh from Excel column G at prefill time. */
   dailyKwhExcel?: number;
   /** Hidden from UI; written to Excel with qty=0. */

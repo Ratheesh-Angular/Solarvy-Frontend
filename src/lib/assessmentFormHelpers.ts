@@ -33,7 +33,7 @@ function backfillExcelRows(
 }
 
 function normalizeApplianceRows(rows: LoadTableRow[]): LoadTableRow[] {
-  return backfillExcelRows(
+  const withSlots = backfillExcelRows(
     rows,
     APPLIANCE_USER_EXCEL_START,
     APPLIANCE_USER_EXCEL_END,
@@ -41,6 +41,9 @@ function normalizeApplianceRows(rows: LoadTableRow[]): LoadTableRow[] {
       row.source === "user" ||
       (Number.isFinite(row.excelRow) &&
         Number(row.excelRow) >= APPLIANCE_USER_EXCEL_START),
+  );
+  return withSlots.map((row) =>
+    row.source === "user" ? { ...row, addedByUser: true } : row,
   );
 }
 

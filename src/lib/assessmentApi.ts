@@ -52,3 +52,8 @@ export async function completeAssessment(formData: AssessmentFormData) {
   });
   return response.data;
 }
+
+export async function getAssessment(id: string) {
+  const response = await apiGet<AssessmentResponse>(`/assessments/${id}`);
+  return response.data;
+}

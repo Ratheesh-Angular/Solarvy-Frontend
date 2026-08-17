@@ -933,7 +933,13 @@ function AssesementResult() {
                 <button
                   className="btn-outline-customss2 "
                   style={{ height: "45px" }}
-                  onClick={() => navigate("/start-assesement")}
+                  onClick={() =>
+                    navigate(
+                      assessmentId
+                        ? `/start-assesement?assessment=${encodeURIComponent(assessmentId)}`
+                        : "/start-assesement",
+                    )
+                  }
                 >
                   <span className="icon-get">
                     <i className="bi bi-arrow-left"></i>

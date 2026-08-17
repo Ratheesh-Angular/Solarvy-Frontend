@@ -56,6 +56,7 @@ import {
   completeAssessment,
   completeAssessmentDraft,
   createAssessmentDraft,
+  getAssessment,
   getAssessmentDraft,
   updateAssessmentDraft,
 } from "../lib/assessmentApi";
@@ -99,7 +100,7 @@ const EQUIPMENT_ICON_RULES: Array<[RegExp, string]> = [
   [/bulb|light|led/i, iconBulb],
   [/fan/i, iconFan],
   [/cctv|camera/i, iconCctv],
-  [/\btv\b|television|display/i, iconTv],
+  [/\btv\b|television|display|decoder/i, iconTv],
   [/\bac\b|a\/c|air[-\s]?condit/i, iconAc],
   [/router|wifi|wlan/i, iconRouter],
   [/computer|laptop|\bpc\b|desktop/i, iconComputer],
@@ -113,6 +114,21 @@ function iconForEquipment(name: string): string | null {
     if (pattern.test(name)) return src;
   }
   return null;
+}
+
+/** Icon for a row kind even when Excel library names differ from catalog kinds. */
+function resolveApplianceIconSrc(
+  kind: string,
+  catalog: ApplianceCatalogItem[],
+): string | null {
+  const trimmed = kind.trim();
+  if (!trimmed) return null;
+  const exact = catalog.find((o) => o.kind === trimmed);
+  if (exact?.iconSrc) return exact.iconSrc;
+  const lower = trimmed.toLowerCase();
+  const ci = catalog.find((o) => o.kind.toLowerCase() === lower);
+  if (ci?.iconSrc) return ci.iconSrc;
+  return iconForEquipment(trimmed);
 }
 
 function applianceNameAbbreviation(name: string): string {
@@ -318,6 +334,10 @@ function visibleEquipmentRows(rows: LoadTableRow[]): LoadTableRow[] {
   return rows.filter((row) => !row.removed);
 }
 
+function isAddedApplianceExtra(row: LoadTableRow): boolean {
+  return row.source === "user" && Boolean(row.addedByUser);
+}
+
 function getPaginationMeta(totalRows: number, page: number) {
   if (totalRows === 0) {
     return {
@@ -428,26 +448,39 @@ const rowFromCatalogItem = (
   };
 };
 
+const EXCEL_ERROR_NAME_RE =
+  /^#(REF|N\/A|VALUE|DIV\/0|NAME\?|NUM|NULL|GETTING_DATA)!?$/i;
+
+function isUsableAppliancePrefillName(name: unknown): boolean {
+  if (name === null || name === undefined) return false;
+  const trimmed = String(name).trim();
+  if (!trimmed) return false;
+  if (EXCEL_ERROR_NAME_RE.test(trimmed)) return false;
+  return true;
+}
+
 /** Map Appliance_Input prefill rows into UI table rows. */
 const rowsFromAppliancePrefill = (
   prefillRows: TemplatePrefillRow[],
 ): LoadTableRow[] =>
-  prefillRows.map((row) => {
-    return {
-      id: newRowId("ap"),
-      kind: row.name,
-      qty: Number(row.qty) || 0,
-      hours: Number(row.hours) || 0,
-      power: Number(row.watts) || 0,
-      loadFactorPct: loadFactorPctFromDuty(Number(row.dutyCycle)),
-      excelRow: row.excelRow,
-      source: "template" as const,
-      dailyKwhExcel:
-        row.dailyKwh === null || row.dailyKwh === undefined
-          ? undefined
-          : Number(row.dailyKwh),
-    };
-  });
+  prefillRows
+    .filter((row) => isUsableAppliancePrefillName(row.name))
+    .map((row) => {
+      return {
+        id: newRowId("ap"),
+        kind: row.name,
+        qty: Number(row.qty) || 0,
+        hours: Number(row.hours) || 0,
+        power: Number(row.watts) || 0,
+        loadFactorPct: loadFactorPctFromDuty(Number(row.dutyCycle)),
+        excelRow: row.excelRow,
+        source: "template" as const,
+        dailyKwhExcel:
+          row.dailyKwh === null || row.dailyKwh === undefined
+            ? undefined
+            : Number(row.dailyKwh),
+      };
+    });
 
 const defaultRowFromCatalog = (
   prefix: string,
@@ -494,7 +527,7 @@ function ApplianceKindSelect({
   const selected = catalog.find((o) => o.kind === valueKind);
   const isCustomKind = Boolean(allowCustomName && valueKind && !selected);
   const isOpen = openRow === rowIndex;
-  const triggerIconSrc = selected?.iconSrc ?? null;
+  const triggerIconSrc = resolveApplianceIconSrc(valueKind, catalog);
   const triggerLabel = selected?.label ?? (valueKind?.trim() || "—");
 
   const filteredCatalog = (() => {
@@ -788,10 +821,13 @@ function Assesement() {
   const [isExtractingBill, setIsExtractingBill] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const draftIdParam = searchParams.get("draft");
+  const assessmentIdParam = searchParams.get("assessment");
   const [draftId, setDraftId] = useState<number | null>(
     draftIdParam ? Number(draftIdParam) : null,
   );
-  const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftIdParam));
+  const [isLoadingDraft, setIsLoadingDraft] = useState(
+    Boolean(draftIdParam || assessmentIdParam),
+  );
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLiveSummary, setIsLoadingLiveSummary] = useState(false);
@@ -985,7 +1021,7 @@ function Assesement() {
   // Appliance Calculator rows come from Appliance_Input via template prefill.
   useEffect(() => {
     if (!equipmentCatalog.length) return;
-    if (draftIdParam && isLoadingDraft) return;
+    if ((draftIdParam || assessmentIdParam) && isLoadingDraft) return;
 
     setCustomRows((prev) =>
       prev.length
@@ -999,7 +1035,7 @@ function Assesement() {
           ],
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catalogs, draftIdParam, isLoadingDraft]);
+  }, [catalogs, draftIdParam, assessmentIdParam, isLoadingDraft]);
 
   /** Open template picker when property is pre-filled (e.g. from Home quick form) but no template yet. */
   useEffect(() => {
@@ -1036,7 +1072,7 @@ function Assesement() {
         prefill.applianceRows || [],
       );
       setApplianceRows((prev) => {
-        const userExtras = prev.filter((row) => row.source === "user");
+        const userExtras = prev.filter(isAddedApplianceExtra);
         return [...templateRows, ...userExtras].slice(0, MAX_EQUIP_ROWS);
       });
       setAppliancePage(1);
@@ -1125,6 +1161,7 @@ function Assesement() {
         // overwrite Appliance_Input name formulas.
         if (next.source === "template") {
           next.source = "user";
+          next.addedByUser = true;
           const others = updatedRows.filter((_, i) => i !== index);
           next.excelRow = nextApplianceExcelRow(others) ?? undefined;
         } else {
@@ -1166,6 +1203,7 @@ function Assesement() {
             removed: false,
             ...catalogNumericPrefill(nextUnused),
             dailyKwhExcel: undefined,
+            ...(customEquipment ? {} : { addedByUser: true }),
           };
           setPage(Math.ceil((visible.length + 1) / ROWS_PER_PAGE));
           return next;
@@ -1184,7 +1222,15 @@ function Assesement() {
             equipmentCatalog,
           );
 
-      const next = [...prev, { ...row, source: "user" as const, excelRow }];
+      const next = [
+        ...prev,
+        {
+          ...row,
+          source: "user" as const,
+          excelRow,
+          ...(customEquipment ? {} : { addedByUser: true }),
+        },
+      ];
       setPage(Math.ceil((visible.length + 1) / ROWS_PER_PAGE));
       return next;
     });
@@ -1543,13 +1589,13 @@ function Assesement() {
   ]);
 
   useEffect(() => {
-    if (!draftIdParam) {
+    if (!draftIdParam && !assessmentIdParam) {
       setIsLoadingDraft(false);
       return;
     }
 
-    const id = Number(draftIdParam);
-    if (!Number.isFinite(id)) {
+    const draftNumericId = draftIdParam ? Number(draftIdParam) : NaN;
+    if (draftIdParam && !Number.isFinite(draftNumericId)) {
       setIsLoadingDraft(false);
       return;
     }
@@ -1558,11 +1604,22 @@ function Assesement() {
 
     (async () => {
       try {
-        const draft = await getAssessmentDraft(id);
-        if (cancelled) return;
+        let formData;
+        if (draftIdParam) {
+          const draft = await getAssessmentDraft(draftNumericId);
+          if (cancelled) return;
+          setDraftId(draft.id);
+          formData = draft.formData;
+        } else {
+          const assessment = await getAssessment(assessmentIdParam!);
+          if (cancelled) return;
+          if (assessment.draftId != null) {
+            setDraftId(assessment.draftId);
+          }
+          formData = assessment.formData;
+        }
 
-        setDraftId(draft.id);
-        applyAssessmentFormData(draft.formData, {
+        applyAssessmentFormData(formData, {
           setSelectedProperty,
           setSelectedTemplate,
           setSelectedPower,
@@ -1581,13 +1638,12 @@ function Assesement() {
           setRoofArea,
           setBackupDuration,
         });
-        monthlyUsageTouchedRef.current = Boolean(
-          draft.formData?.bill?.monthlyUsage,
-        );
+        templatePromptHandledRef.current = true;
+        monthlyUsageTouchedRef.current = Boolean(formData?.bill?.monthlyUsage);
 
-        const savedApplianceRows = draft.formData?.appliance?.rows;
-        const property = draft.formData?.propertyType;
-        const template = draft.formData?.template;
+        const savedApplianceRows = formData?.appliance?.rows;
+        const property = formData?.propertyType;
+        const template = formData?.template;
         if (
           (!savedApplianceRows || savedApplianceRows.length === 0) &&
           property &&
@@ -1613,7 +1669,7 @@ function Assesement() {
           showError(
             error instanceof ApiError
               ? error.message
-              : "Unable to load saved assessment draft.",
+              : "Unable to load saved assessment.",
           );
         }
       } finally {
@@ -1624,7 +1680,7 @@ function Assesement() {
     return () => {
       cancelled = true;
     };
-  }, [draftIdParam, showError]);
+  }, [draftIdParam, assessmentIdParam, showError]);
 
   const handleSaveDraft = async () => {
     setIsSavingDraft(true);
@@ -1961,7 +2017,7 @@ function Assesement() {
                           setSelectedTemplate("");
                           setAppliancePage(1);
                           setApplianceRows((prev) =>
-                            prev.filter((row) => row.source === "user"),
+                            prev.filter(isAddedApplianceExtra),
                           );
                           setShowTemplatePopup(true);
                         }}
