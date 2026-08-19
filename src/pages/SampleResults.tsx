@@ -265,7 +265,9 @@ function SampleResults() {
 
                 <div className="row">
                   <div className="col-md-12  mt-0 mt-md-0">
-                    <h6 className="left-rang fw-bold mb-3">% Energy Impact</h6>
+                    <h6 className="left-rang fw-bold mb-3">
+                      % Your Energy Mix
+                    </h6>
 
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
@@ -360,7 +362,7 @@ function SampleResults() {
         <section className="container-fluid px-3 px-lg-4 sample-page-section">
           <div className="row align-items-start g-4">
             <div className="col-12 dashboard-container">
-              <h2 className="dashboard-title">Energy strategy comparison</h2>
+              <h2 className="dashboard-title">Compare Your Power Options</h2>
               <p className="dashboard-subtitle">
                 This helps you assess your options and see which one gives you
                 the best results.

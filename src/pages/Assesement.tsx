@@ -10,38 +10,31 @@ import buleone from "../assets/images/icon/bule1.svg";
 import buletwo from "../assets/images/icon/bule2.svg";
 import bulethree from "../assets/images/icon/bule3.svg";
 import bulefour from "../assets/images/icon/sun-blue.svg";
-import iconBulb from "../assets/appliances-icons/bulb-with-bolt-svgrepo-com.svg";
-import iconFan from "../assets/appliances-icons/fan-circled-svgrepo-com.svg";
-import iconTv from "../assets/appliances-icons/tv-television-svgrepo-com.svg";
-import iconAc from "../assets/appliances-icons/air-conditioner-svgrepo-com (1).svg";
-import iconFridge from "../assets/appliances-icons/fridge-kitchen-svgrepo-com.svg";
-import iconFreezer from "../assets/appliances-icons/freezer-svgrepo-com.svg";
-import iconRouter from "../assets/appliances-icons/router-svgrepo-com.svg";
-import iconComputer from "../assets/appliances-icons/computer-svgrepo-com.svg";
-import iconCctv from "../assets/appliances-icons/cctv-svgrepo-com.svg";
-import iconCompressor from "../assets/appliances-icons/compressor-svgrepo-com.svg";
-import iconMotor from "../assets/appliances-icons/motor-alt-svgrepo-com.svg";
-import iconMedical from "../assets/appliances-icons/medical-kit-svgrepo-com.svg";
 import {
+  AirVent,
   BatteryCharging,
   Building2,
   Calculator,
   Factory,
+  Fan,
   Fuel,
   Home,
   Hospital,
   Hotel,
   LayoutGrid,
+  Lightbulb,
   PlugZap,
   Receipt,
   School,
   Sparkles,
   Sun,
   Trash2,
+  Tv,
   Upload,
   Wallet,
   Wrench,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -90,54 +83,39 @@ type ApplianceCatalogItem = {
   defaultHours: number;
   /** Duty cycle as 0–1 from Equipment Default. */
   defaultDutyCycle: number;
-  iconSrc: string | null;
+  Icon: LucideIcon;
 };
 
-/** Distinct SVG lookup — most specific patterns first. Unmatched names get no pictogram. */
-const EQUIPMENT_ICON_RULES: Array<[RegExp, string]> = [
-  [/freezer/i, iconFreezer],
-  [/fridge|refrigerator/i, iconFridge],
-  [/bulb|light|led/i, iconBulb],
-  [/fan/i, iconFan],
-  [/cctv|camera/i, iconCctv],
-  [/\btv\b|television|display|decoder/i, iconTv],
-  [/\bac\b|a\/c|air[-\s]?condit/i, iconAc],
-  [/router|wifi|wlan/i, iconRouter],
-  [/computer|laptop|\bpc\b|desktop/i, iconComputer],
-  [/compressor/i, iconCompressor],
-  [/motor|pump/i, iconMotor],
-  [/medical|first[-\s]?aid/i, iconMedical],
+const EQUIPMENT_ICON_RULES: Array<[RegExp, LucideIcon]> = [
+  [/bulb|light|led/i, Lightbulb],
+  [/fan/i, Fan],
+  [/tv|television|display/i, Tv],
+  [/ac\b|a\/c|air/i, AirVent],
+  [/fridge|refrigerator|freezer|cold/i, BatteryCharging],
+  [/router|wifi|cctv|computer|pos|charger/i, PlugZap],
+  [/pump|motor|compressor|machine|cnc/i, Wrench],
 ];
 
-function iconForEquipment(name: string): string | null {
-  for (const [pattern, src] of EQUIPMENT_ICON_RULES) {
-    if (pattern.test(name)) return src;
+function iconForEquipment(name: string): LucideIcon {
+  for (const [pattern, Icon] of EQUIPMENT_ICON_RULES) {
+    if (pattern.test(name)) return Icon;
   }
-  return null;
+  return PlugZap;
 }
 
 /** Icon for a row kind even when Excel library names differ from catalog kinds. */
-function resolveApplianceIconSrc(
+function resolveApplianceIcon(
   kind: string,
   catalog: ApplianceCatalogItem[],
-): string | null {
+): LucideIcon {
   const trimmed = kind.trim();
-  if (!trimmed) return null;
+  if (!trimmed) return PlugZap;
   const exact = catalog.find((o) => o.kind === trimmed);
-  if (exact?.iconSrc) return exact.iconSrc;
+  if (exact?.Icon) return exact.Icon;
   const lower = trimmed.toLowerCase();
   const ci = catalog.find((o) => o.kind.toLowerCase() === lower);
-  if (ci?.iconSrc) return ci.iconSrc;
+  if (ci?.Icon) return ci.Icon;
   return iconForEquipment(trimmed);
-}
-
-function applianceNameAbbreviation(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length >= 2) {
-    return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
-  }
-  const compact = name.trim().replace(/[^a-zA-Z0-9]/g, "");
-  return compact.slice(0, 2).toUpperCase() || "—";
 }
 
 /** Excel-relevant row fields only; omit derived dailyKwhExcel so writeback does not retrigger live-summary. */
@@ -197,7 +175,7 @@ function catalogFromEquipment(
       Number.isFinite(item.dutyCycle) && item.dutyCycle > 0
         ? item.dutyCycle
         : 1,
-    iconSrc: iconForEquipment(item.name),
+    Icon: iconForEquipment(item.name),
   }));
 }
 
@@ -208,7 +186,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 10,
     defaultHours: 6,
     defaultDutyCycle: 1,
-    iconSrc: iconBulb,
+    Icon: Lightbulb,
   },
   {
     kind: "Fan",
@@ -216,7 +194,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 60,
     defaultHours: 8,
     defaultDutyCycle: 1,
-    iconSrc: iconFan,
+    Icon: Fan,
   },
   {
     kind: "TV",
@@ -224,7 +202,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 100,
     defaultHours: 6,
     defaultDutyCycle: 1,
-    iconSrc: iconTv,
+    Icon: Tv,
   },
   {
     kind: "AC 1HP",
@@ -232,7 +210,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 900,
     defaultHours: 5,
     defaultDutyCycle: 0.6,
-    iconSrc: iconAc,
+    Icon: AirVent,
   },
 ];
 
@@ -527,7 +505,7 @@ function ApplianceKindSelect({
   const selected = catalog.find((o) => o.kind === valueKind);
   const isCustomKind = Boolean(allowCustomName && valueKind && !selected);
   const isOpen = openRow === rowIndex;
-  const triggerIconSrc = resolveApplianceIconSrc(valueKind, catalog);
+  const TriggerIcon = resolveApplianceIcon(valueKind, catalog);
   const triggerLabel = selected?.label ?? (valueKind?.trim() || "—");
 
   const filteredCatalog = (() => {
@@ -609,20 +587,12 @@ function ApplianceKindSelect({
       >
         <span className="appliance-select-trigger-inner">
           <span className="tables-icon-box-custom appliance-select-icon-wrap">
-            {triggerIconSrc ? (
-              <img
-                src={triggerIconSrc}
-                alt=""
-                aria-hidden
-                width={20}
-                height={20}
-                className="appliance-select-trigger-icon"
-              />
-            ) : (
-              <span className="appliance-select-icon-fallback" aria-hidden>
-                {applianceNameAbbreviation(triggerLabel)}
-              </span>
-            )}
+            <TriggerIcon
+              size={18}
+              strokeWidth={2}
+              aria-hidden
+              className="appliance-select-trigger-icon"
+            />
           </span>
           <span className="appliance-select-label">{triggerLabel}</span>
           <ChevronDown
@@ -680,6 +650,7 @@ function ApplianceKindSelect({
                     </li>
                   ) : (
                     filteredCatalog.map((opt) => {
+                      const OptionIcon = opt.Icon;
                       const active = opt.kind === valueKind;
                       return (
                         <li key={opt.kind} role="none">
@@ -697,23 +668,11 @@ function ApplianceKindSelect({
                             }}
                           >
                             <span className="tables-icon-box-custom appliance-select-icon-wrap">
-                              {opt.iconSrc ? (
-                                <img
-                                  src={opt.iconSrc}
-                                  alt=""
-                                  aria-hidden
-                                  width={20}
-                                  height={20}
-                                  className="appliance-select-trigger-icon"
-                                />
-                              ) : (
-                                <span
-                                  className="appliance-select-icon-fallback"
-                                  aria-hidden
-                                >
-                                  {applianceNameAbbreviation(opt.label)}
-                                </span>
-                              )}
+                              <OptionIcon
+                                size={18}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                             </span>
                             <span className="appliance-select-option-label">
                               {opt.label}
@@ -725,30 +684,34 @@ function ApplianceKindSelect({
                   )}
                 </ul>
                 {allowCustomName && (
-                  <div className="appliance-select-search w-100 border-top pt-2 mt-1">
+                  <div className="appliance-select-custom">
                     <input
                       ref={customNameRef}
                       type="text"
-                      className="appliance-select-search-input w-100"
+                      className="appliance-select-search-input"
                       placeholder="custom"
                       aria-label="Custom equipment name"
                       value={customNameDraft}
                       onChange={(e) => setCustomNameDraft(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          commitCustomName();
-                        }
                         if (e.key === "Escape") {
                           e.stopPropagation();
                           onOpenChange(null);
                         }
                       }}
                     />
-                    <p className="small text-muted mb-0 mt-1 px-1">
-                      Press Enter to use a custom name
-                    </p>
+                    <button
+                      type="button"
+                      className="appliance-select-custom-add"
+                      aria-label="Add custom equipment"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        commitCustomName();
+                      }}
+                    >
+                      <Plus size={18} strokeWidth={2} aria-hidden />
+                    </button>
                   </div>
                 )}
               </div>
@@ -1837,7 +1800,7 @@ function Assesement() {
     inputMethod === "bill"
       ? `₦${Math.round(
           Number.isFinite(safeMonthlySpend) ? safeMonthlySpend : 0,
-        ).toLocaleString("en-IN", {
+        ).toLocaleString("en-NG", {
           maximumFractionDigits: 0,
           minimumFractionDigits: 0,
         })}`

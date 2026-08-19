@@ -277,7 +277,7 @@ function HowItWorks() {
                           <div className="feature-item">
                             <span className="dot-blue"></span>
                             <span className="dots-texts">
-                              Simple energy strategy comparison
+                              Compare Your Power Options
                             </span>
                           </div>
                         </div>

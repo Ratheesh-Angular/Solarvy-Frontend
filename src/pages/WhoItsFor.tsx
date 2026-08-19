@@ -37,73 +37,61 @@ function WhoItsFor() {
 
           <div className="container-fluid px-lg-4 px-3 position-relative z-1 menu-div ass-div">
             <div className="row align-items-start text-divs gx-3 gx-lg-4">
-                <div className="solar-top-navbar">
+              <div className="solar-top-navbar">
+                <nav
+                  className={`navbar navbar-expand-lg  ${scrolled ? "scrolled" : ""}`}
+                >
+                  <Link className="navbar-brand" to="/">
+                    <img src={logo} alt="logo" className="solar-logo-img" />
+                  </Link>
 
-            <nav className={`navbar navbar-expand-lg  ${scrolled ? "scrolled" : ""}`}>
+                  <button
+                    className="navbar-toggler"
+                    type="button"
+                    onClick={handleToggle}
+                  >
+                    <span className="navbar-toggler-icon"></span>
+                  </button>
 
-              <Link className="navbar-brand" to="/">
-                <img
-                  src={logo}
-                  alt="logo"
-                  className="solar-logo-img"
-                />
-              </Link>
+                  <div
+                    className={`collapse navbar-collapse ${open ? "show" : ""}`}
+                  >
+                    <ul className="navbar-nav ms-auto align-items-lg-center solar-nav-links">
+                      <li className="nav-item">
+                        <Link
+                          className="nav-link"
+                          to="/how-it-works"
+                          onClick={() => setOpen(false)}
+                        >
+                          How It Works
+                        </Link>
+                      </li>
 
- <button
-  className="navbar-toggler"
-  type="button"
-  onClick={handleToggle}
->
-  <span className="navbar-toggler-icon"></span>
-</button>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/sample-results">
+                          Sample Results
+                        </Link>
+                      </li>
 
-         <div className={`collapse navbar-collapse ${open ? "show" : ""}`}>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/who-its-for">
+                          Who It's For
+                        </Link>
+                      </li>
 
-                <ul className="navbar-nav ms-auto align-items-lg-center solar-nav-links">
-
-                  <li className="nav-item">
-              <Link className="nav-link" to="/how-it-works" onClick={() => setOpen(false)}>
-  How It Works
-</Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/sample-results">
-                      Sample Results
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/who-its-for">
-                      Who It's For
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-
-                    <button
-                      className="solar-nav-btn"
-                      onClick={() => navigate("/start-assesement")}
-                    >
-
-                      Start Assessment
-
-                      <img
-                        src={bttnarrow}
-                        alt="arrow"
-                      />
-
-                    </button>
-
-                  </li>
-
-                </ul>
-
+                      <li className="nav-item">
+                        <button
+                          className="solar-nav-btn"
+                          onClick={() => navigate("/start-assesement")}
+                        >
+                          Start Assessment
+                          <img src={bttnarrow} alt="arrow" />
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </nav>
               </div>
-
-            </nav>
-
-          </div>
               <div className="nav-bottom-section row align-items-center home-page">
                 <div className="col-12 col-lg-12 text-white ">
                   <h1 className="bannr-text display-5 ass-page ">
@@ -204,7 +192,7 @@ function WhoItsFor() {
                       Developers & advisors
                     </h5>
                     <p className="text-muted small">
-                      For early-stage feasibility, energy strategy comparison,
+                      For early-stage feasibility, Compare Your Power Options,
                       and clearer technical-financial understanding before
                       deeper study.
                     </p>

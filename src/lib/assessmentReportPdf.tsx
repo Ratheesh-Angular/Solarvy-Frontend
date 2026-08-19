@@ -92,7 +92,7 @@ const formatNaira = (value: unknown): string => {
   const n = toNum(value);
   if (n === null) return MISSING;
   // Helvetica lacks the ₦ glyph — use ASCII "NGN" for reliable PDF rendering.
-  return `NGN ${Math.round(n).toLocaleString("en-IN", {
+  return `NGN ${Math.round(n).toLocaleString("en-NG", {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   })}`;

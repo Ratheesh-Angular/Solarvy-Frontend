@@ -9,6 +9,7 @@ import Sun from "../assets/images/icon/sun-red.svg";
 import halfSun from "../assets/images/icon/half-s.svg";
 import batt from "../assets/images/icon/batt.svg";
 import money from "../assets/images/icon/money-bag.svg";
+import thunder from "../assets/images/icon/thunder.svg";
 import imp from "../assets/images/icon/imporent.svg";
 import donw from "../assets/images/icon/d11.svg";
 import save from "../assets/images/icon/saves.svg";
@@ -50,11 +51,11 @@ const toNum = (value: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-/** Naira — Excel Outputs B15–B18 use ₦#,##0 (whole naira, lakh grouping). */
+/** Naira — Excel Outputs B15–B18 use ₦#,##0 (whole naira, groups of three). */
 const formatNaira = (value: unknown): string => {
   const n = toNum(value);
   if (n === null) return MISSING;
-  return `₦${Math.round(n).toLocaleString("en-IN", {
+  return `₦${Math.round(n).toLocaleString("en-NG", {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   })}`;
@@ -442,7 +443,7 @@ function AssesementResult() {
                 <div className="col-md-4">
                   <div className="card custom-card h-100">
                     <div className="card-body pad">
-                      <div className="d-flex align-items-center justify-content-between mb-2 gap-2">
+                      <div className="d-flex align-items-center mb-2 gap-2">
                         <div className="icon-box-act">
                           <img src={halfSun} alt="icon" />
                         </div>
@@ -520,7 +521,9 @@ function AssesementResult() {
                   </div>
 
                   <div className="col-md-6 ps-md-4 mt-4 mt-md-0 d-none d-md-block">
-                    <h6 className="left-rang fw-bold mb-3">% Energy Impact</h6>
+                    <h6 className="left-rang fw-bold mb-3">
+                      % Your Energy Mix
+                    </h6>
 
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
@@ -573,12 +576,17 @@ function AssesementResult() {
               </div>
 
               <div className="p-4 shadow-sm rounded-4 ass-resul-first mt-4 d-md-none">
-                <div className="mb-4">
-                  <h5 className="fw-bold mb-1 rang-head">Energy Impact</h5>
-                  <small className="text-muted">
-                    This shows how solar, grid, and generator power work
-                    together to supply your energy.
-                  </small>
+                <div className="d-flex align-items-start mb-4">
+                  <div className="icon-box-maony me-3">
+                    <img src={thunder} alt="" />
+                  </div>
+                  <div>
+                    <h5 className="fw-bold mb-1 rang-head">Your Energy Mix</h5>
+                    <small className="text-muted">
+                      This shows how solar, grid, and generator power work
+                      together to supply your energy.
+                    </small>
+                  </div>
                 </div>
 
                 <div className="mb-3">
@@ -633,7 +641,7 @@ function AssesementResult() {
                 <div className="row align-items-start g-4">
                   <div className="col-12 dashboard-container p-0">
                     <h2 className="dashboard-title">
-                      Energy strategy comparison
+                      Compare Your Power Options
                     </h2>
                     <p className="dashboard-subtitle p-0 m-0">
                       This helps you assess your options and see which one gives
@@ -663,7 +671,9 @@ function AssesementResult() {
                             return (
                               <tr
                                 key={row.strategy}
-                                className={recommended ? "recommended-row" : undefined}
+                                className={
+                                  recommended ? "recommended-row" : undefined
+                                }
                               >
                                 <td
                                   className={
@@ -685,26 +695,36 @@ function AssesementResult() {
                                     row.strategy
                                   )}
                                 </td>
-                                <td className={recommended ? "text-color-b" : undefined}>
+                                <td
+                                  className={
+                                    recommended ? "text-color-b" : undefined
+                                  }
+                                >
                                   {formatNaira(row.annualCost)}
                                 </td>
                                 <td
                                   className={
-                                    recommended ? "strong text-color-b" : undefined
+                                    recommended
+                                      ? "strong text-color-b"
+                                      : undefined
                                   }
                                 >
                                   {formatText(row.reliability)}
                                 </td>
                                 <td
                                   className={
-                                    recommended ? "strong text-color-b" : undefined
+                                    recommended
+                                      ? "strong text-color-b"
+                                      : undefined
                                   }
                                 >
                                   {formatText(row.dieselUse)}
                                 </td>
                                 <td
                                   className={
-                                    recommended ? "strong text-color-b" : undefined
+                                    recommended
+                                      ? "strong text-color-b"
+                                      : undefined
                                   }
                                 >
                                   {formatStrategyPayback(row.payback)}
