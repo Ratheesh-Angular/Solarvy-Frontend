@@ -70,7 +70,9 @@ export const MAIN_OBJECTIVE_TO_LABEL: Record<string, string> = {
 export function quickFormToAssessmentForm(
   quick: QuickAssessmentFormData,
 ): Partial<AssessmentFormData> {
-  const partial: Partial<AssessmentFormData> = {};
+  const partial: Partial<AssessmentFormData> = {
+    inputMethod: "bill",
+  };
 
   if (quick.propertyType) {
     const label = PROPERTY_TYPE_TO_LABEL[quick.propertyType.toLowerCase()];

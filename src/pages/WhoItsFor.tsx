@@ -199,7 +199,7 @@ function WhoItsFor() {
 
                     <div className="d-flex flex-wrap gap-2 mt-auto">
                       <span className="tag">Feasibility</span>
-                      <span className="tag">Strategy</span>
+                      <span className="tag">Power Options</span>
                       <span className="tag">Planning</span>
                     </div>
                   </div>

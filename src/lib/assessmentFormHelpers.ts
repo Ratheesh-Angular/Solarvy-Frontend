@@ -138,21 +138,25 @@ export function applyAssessmentFormData(
     state: merged.city || "",
   });
 
-  if (merged.monthlyElectricityBill) {
-    setters.setMonthlyElectricityBill(merged.monthlyElectricityBill);
+  const spend =
+    merged.bill?.monthlySpend || merged.monthlyElectricityBill || "";
+  const tariff = merged.bill?.gridTariff || DEFAULT_GRID_TARIFF;
+  if (spend) {
+    setters.setMonthlySpend(spend);
+    setters.setMonthlyElectricityBill(spend);
   }
 
   if (merged.bill) {
     if (merged.bill.fileName) setters.setFileName(merged.bill.fileName);
     setters.setBillNotes(merged.bill.notes || "");
     setters.setUsageUnit(merged.bill.usageUnit || "kWh");
-    const spend = merged.bill.monthlySpend || "";
-    const tariff = merged.bill.gridTariff || DEFAULT_GRID_TARIFF;
-    setters.setMonthlySpend(spend);
     setters.setGridTariff(tariff);
     setters.setMonthlyUsage(
       merged.bill.monthlyUsage || formatUsageFromSpend(spend, tariff),
     );
+  } else if (spend) {
+    setters.setGridTariff(tariff);
+    setters.setMonthlyUsage(formatUsageFromSpend(spend, tariff));
   }
 
   if (merged.appliance?.rows?.length) {

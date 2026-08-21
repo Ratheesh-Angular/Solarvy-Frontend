@@ -1434,13 +1434,17 @@ function Assesement() {
     ],
   );
 
+  const hasBillLiveSummaryInputs =
+    Boolean(selectedProperty) &&
+    (Boolean(monthlyUsage && parseFormattedNumber(monthlyUsage) > 0) ||
+      Boolean(monthlySpend && parseFormattedNumber(monthlySpend) > 0));
   const hasLiveSummaryMinimumInputs =
-    Boolean(selectedProperty && selectedTemplate) &&
-    (inputMethod === "bill"
-      ? Boolean(monthlyUsage && parseFormattedNumber(monthlyUsage) > 0)
-      : inputMethod === "appliance"
-        ? applianceRows.some((row) => !row.removed)
-        : customRows.some((row) => !row.removed));
+    inputMethod === "bill"
+      ? hasBillLiveSummaryInputs
+      : Boolean(selectedProperty && selectedTemplate) &&
+        (inputMethod === "appliance"
+          ? applianceRows.some((row) => !row.removed)
+          : customRows.some((row) => !row.removed));
 
   useEffect(() => {
     if (
@@ -1601,8 +1605,18 @@ function Assesement() {
           setRoofArea,
           setBackupDuration,
         });
-        templatePromptHandledRef.current = true;
-        monthlyUsageTouchedRef.current = Boolean(formData?.bill?.monthlyUsage);
+        if (formData?.template) {
+          templatePromptHandledRef.current = true;
+        }
+        const hydratedSpend =
+          formData?.bill?.monthlySpend || formData?.monthlyElectricityBill || "";
+        const hydratedUsage = formData?.bill?.monthlyUsage || "";
+        const derivedUsage = formatUsageFromSpend(
+          hydratedSpend,
+          formData?.bill?.gridTariff || DEFAULT_GRID_TARIFF,
+        );
+        monthlyUsageTouchedRef.current =
+          Boolean(hydratedUsage) && hydratedUsage !== derivedUsage;
 
         const savedApplianceRows = formData?.appliance?.rows;
         const property = formData?.propertyType;
@@ -2435,7 +2449,13 @@ function Assesement() {
                             className="form-control ass-field-control"
                             placeholder=""
                             value={monthlySpend}
-                            onChange={(e) => setMonthlySpend(e.target.value)}
+                            onChange={(e) => {
+                              const spend = formatIntegerWithCommas(
+                                e.target.value,
+                              );
+                              setMonthlySpend(spend);
+                              setMonthlyElectricityBill(spend);
+                            }}
                           />
                         </div>
 

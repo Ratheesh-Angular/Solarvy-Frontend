@@ -9,6 +9,7 @@ import Sun from "../assets/images/icon/sun-red.svg";
 import halfSun from "../assets/images/icon/half-s.svg";
 import batt from "../assets/images/icon/batt.svg";
 import money from "../assets/images/icon/money-bag.svg";
+import compare from "../assets/images/icon/compare.svg";
 import thunder from "../assets/images/icon/thunder.svg";
 import imp from "../assets/images/icon/imporent.svg";
 import donw from "../assets/images/icon/d11.svg";
@@ -478,7 +479,7 @@ function AssesementResult() {
                     <img src={money} alt="icon" />
                   </div>
                   <div>
-                    <h5 className="fw-bold mb-1 rang-head">
+                    <h5 className="fw-bold mb-1 rang-head section-card-title">
                       Financial Summary
                     </h5>
                     <small className="text-muted">
@@ -581,7 +582,9 @@ function AssesementResult() {
                     <img src={thunder} alt="" />
                   </div>
                   <div>
-                    <h5 className="fw-bold mb-1 rang-head">Your Energy Mix</h5>
+                    <h5 className="fw-bold mb-1 rang-head section-card-title">
+                      Your Energy Mix
+                    </h5>
                     <small className="text-muted">
                       This shows how solar, grid, and generator power work
                       together to supply your energy.
@@ -637,109 +640,104 @@ function AssesementResult() {
                 </div>
               </div>
 
-              <section className="container-fluid sample-page-section">
-                <div className="row align-items-start g-4">
-                  <div className="col-12 dashboard-container p-0">
-                    <h2 className="dashboard-title">
+              <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first mt-4">
+                <div className="d-flex align-items-start mb-4">
+                  <div className="icon-box-maony me-3">
+                    <img src={compare} alt="icon" />
+                  </div>
+                  <div>
+                    <h5 className="fw-bold mb-1 rang-head section-card-title">
                       Compare Your Power Options
-                    </h2>
-                    <p className="dashboard-subtitle p-0 m-0">
+                    </h5>
+                    <small className="text-muted">
                       This helps you assess your options and see which one gives
                       you the best results.
-                    </p>
-                  </div>
-
-                  <div className="col-12 p-0">
-                    <div className="custom-table">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>STRATEGY</th>
-                            <th>ANNUAL COST</th>
-                            <th>RELIABILITY</th>
-                            <th>DIESEL USE</th>
-                            <th>PAYBACK</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {strategyComparisonRows.map((row) => {
-                            const recommended = isRecommendedStrategy(
-                              row.recommended,
-                            );
-
-                            return (
-                              <tr
-                                key={row.strategy}
-                                className={
-                                  recommended ? "recommended-row" : undefined
-                                }
-                              >
-                                <td
-                                  className={
-                                    recommended
-                                      ? "text-color-b title-cell"
-                                      : undefined
-                                  }
-                                >
-                                  {recommended ? (
-                                    <>
-                                      <span className="title-text">
-                                        {row.strategy}
-                                      </span>
-                                      <span className="badge-recommended">
-                                        Recommended
-                                      </span>
-                                    </>
-                                  ) : (
-                                    row.strategy
-                                  )}
-                                </td>
-                                <td
-                                  className={
-                                    recommended ? "text-color-b" : undefined
-                                  }
-                                >
-                                  {formatNaira(row.annualCost)}
-                                </td>
-                                <td
-                                  className={
-                                    recommended
-                                      ? "strong text-color-b"
-                                      : undefined
-                                  }
-                                >
-                                  {formatText(row.reliability)}
-                                </td>
-                                <td
-                                  className={
-                                    recommended
-                                      ? "strong text-color-b"
-                                      : undefined
-                                  }
-                                >
-                                  {formatText(row.dieselUse)}
-                                </td>
-                                <td
-                                  className={
-                                    recommended
-                                      ? "strong text-color-b"
-                                      : undefined
-                                  }
-                                >
-                                  {formatStrategyPayback(row.payback)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    </small>
                   </div>
                 </div>
-              </section>
 
-              <div className="important-note d-flex align-items-center p-3 mt-4">
+                <div className="custom-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>STRATEGY</th>
+                        <th>ANNUAL COST</th>
+                        <th>RELIABILITY</th>
+                        <th>DIESEL USE</th>
+                        <th>PAYBACK</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {strategyComparisonRows.map((row) => {
+                        const recommended = isRecommendedStrategy(
+                          row.recommended,
+                        );
+
+                        return (
+                          <tr
+                            key={row.strategy}
+                            className={
+                              recommended ? "recommended-row" : undefined
+                            }
+                          >
+                            <td
+                              className={
+                                recommended
+                                  ? "text-color-b title-cell"
+                                  : undefined
+                              }
+                            >
+                              {recommended ? (
+                                <>
+                                  <span className="title-text">
+                                    {row.strategy}
+                                  </span>
+                                  <span className="badge-recommended">
+                                    Recommended
+                                  </span>
+                                </>
+                              ) : (
+                                row.strategy
+                              )}
+                            </td>
+                            <td
+                              className={
+                                recommended ? "text-color-b" : undefined
+                              }
+                            >
+                              {formatNaira(row.annualCost)}
+                            </td>
+                            <td
+                              className={
+                                recommended ? "strong text-color-b" : undefined
+                              }
+                            >
+                              {formatText(row.reliability)}
+                            </td>
+                            <td
+                              className={
+                                recommended ? "strong text-color-b" : undefined
+                              }
+                            >
+                              {formatText(row.dieselUse)}
+                            </td>
+                            <td
+                              className={
+                                recommended ? "strong text-color-b" : undefined
+                              }
+                            >
+                              {formatStrategyPayback(row.payback)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="important-note d-flex align-items-start p-3 mt-4">
                 <div className="me-2 mt-0">
                   <img src={imp} alt="icon" />
                 </div>

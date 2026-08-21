@@ -200,9 +200,9 @@ function HowItWorks() {
                             </h6>
 
                             <p className="desc">
-                              See practical strategy paths such as solar + grid,
-                              solar + battery, or hybrid setups with generator
-                              support where needed.
+                              See practical power options paths such as solar +
+                              grid, solar + battery, or hybrid setups with
+                              generator support where needed.
                             </p>
                           </div>
                         </div>

@@ -163,7 +163,7 @@ function SampleResults() {
                 <div className="row">
                   <div className="">
                     <div className="summary-row d-flex justify-content-between">
-                      <span className="rang-name">Optimal strategy</span>
+                      <span className="rang-name">Optimal power option</span>
                       <strong className="rang-head">
                         Hybrid solar + battery
                       </strong>
@@ -374,7 +374,7 @@ function SampleResults() {
                 <table>
                   <thead>
                     <tr>
-                      <th>STRATEGY</th>
+                      <th>POWER OPTIONS</th>
                       <th>ANNUAL COST</th>
                       <th>RELIABILITY</th>
                       <th>DIESEL USE</th>

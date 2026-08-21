@@ -152,7 +152,7 @@ export type AssessmentResults = {
   solarCostPerKwh?: number | null;
   systemClass?: string | null;
   calculationError?: string;
-  /** Strategy_Comparison website mapping B12:E16. */
+  /** Power_Options_Comparison website mapping B12:E16. */
   strategyComparison?: Array<{
     strategy: string;
     annualCost?: number | null;
