@@ -99,7 +99,7 @@ function HowItWorks() {
                       <li className="nav-item">
                         <button
                           className="solar-nav-btn"
-                          onClick={() => navigate("/start-assesement")}
+                          onClick={() => navigate("/start-assessment")}
                         >
                           Start Assessment
                           <img src={bttnarrow} alt="arrow" />

@@ -157,11 +157,58 @@ p.dashboard-subtitle {
 
 @media (max-width: 768px) {
   .custom-table {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow: hidden;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
+
+  .custom-table:has(.custom-table-scroll) {
+    overflow: visible;
+  }
+
+  .custom-table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: auto;
+    scrollbar-color: #5b677c #e8edf5;
+    -ms-overflow-style: scrollbar;
+  }
+
+  .custom-table:not(:has(.custom-table-scroll)) {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: auto;
+    scrollbar-color: #5b677c #e8edf5;
+    -ms-overflow-style: scrollbar;
+  }
+
+  .custom-table-scroll::-webkit-scrollbar,
+  .custom-table:not(:has(.custom-table-scroll))::-webkit-scrollbar {
+    height: 12px;
+    display: block;
+  }
+
+  .custom-table-scroll::-webkit-scrollbar-track,
+  .custom-table:not(:has(.custom-table-scroll))::-webkit-scrollbar-track {
+    background: #e8edf5;
+  }
+
+  .custom-table-scroll::-webkit-scrollbar-thumb,
+  .custom-table:not(:has(.custom-table-scroll))::-webkit-scrollbar-thumb {
+    background: #5b677c;
+    border-radius: 8px;
+  }
+
   .financial-summary-title {
     margin-top: 40px !important;
   }
@@ -177,6 +224,7 @@ p.dashboard-subtitle {
   .custom-table tbody td {
     padding: 12px 16px;
     font-size: 12px;
+    white-space: nowrap;
   }
 
   .dashboard-title {
@@ -185,12 +233,6 @@ p.dashboard-subtitle {
 
   .dashboard-subtitle {
     font-size: 13px;
-  }
-
-  .custom-table thead th,
-  .custom-table tbody td {
-    padding: 12px 16px;
-    font-size: 12px;
   }
 }
 

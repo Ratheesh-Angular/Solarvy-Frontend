@@ -21,16 +21,22 @@ import { ApiError } from "../lib/api";
 import { createAssessmentDraft } from "../lib/assessmentApi";
 import {
   formatIntegerWithCommas,
+  parseFormattedNumber,
   quickFormToAssessmentForm,
 } from "../lib/assessmentConstants";
 import type { QuickAssessmentFormData } from "../types/assessment";
 import SolarvyLoader from "../components/SolarvyLoader";
+
+type QuickFormFieldErrors = Partial<
+  Record<keyof QuickAssessmentFormData, string>
+>;
 
 function Home() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const [isStartingAssessment, setIsStartingAssessment] = useState(false);
   const [startError, setStartError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<QuickFormFieldErrors>({});
 
   const [quickForm, setQuickForm] = useState<QuickAssessmentFormData>({
     propertyType: "",
@@ -49,17 +55,55 @@ function Home() {
         ? formatIntegerWithCommas(value)
         : value;
     setQuickForm((prev) => ({ ...prev, [name]: nextValue }));
+    setFieldErrors((prev) => {
+      if (!prev[name as keyof QuickAssessmentFormData]) return prev;
+      const next = { ...prev };
+      delete next[name as keyof QuickAssessmentFormData];
+      return next;
+    });
     e.target.style.color = "#000";
   };
 
+  const validateQuickForm = (): QuickFormFieldErrors => {
+    const errors: QuickFormFieldErrors = {};
+    if (!quickForm.propertyType.trim()) {
+      errors.propertyType = "Please select a property type.";
+    }
+    if (!quickForm.location.trim()) {
+      errors.location = "Please select a location.";
+    }
+    const billAmount = parseFormattedNumber(quickForm.monthlyElectricityBill);
+    if (!quickForm.monthlyElectricityBill.trim()) {
+      errors.monthlyElectricityBill =
+        "Please enter your monthly electricity bill.";
+    } else if (!Number.isFinite(billAmount) || billAmount <= 0) {
+      errors.monthlyElectricityBill =
+        "Please enter a monthly electricity bill greater than 0.";
+    }
+    if (!quickForm.powerSetup.trim()) {
+      errors.powerSetup = "Please select your power setup.";
+    }
+    if (!quickForm.mainObjective.trim()) {
+      errors.mainObjective = "Please select a main objective.";
+    }
+    return errors;
+  };
+
   const handleStartAssessment = async () => {
-    setIsStartingAssessment(true);
     setStartError("");
+    const errors = validateQuickForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setIsStartingAssessment(true);
 
     try {
       const formData = quickFormToAssessmentForm(quickForm);
       const draft = await createAssessmentDraft(formData);
-      navigate(`/start-assesement?draft=${draft.id}`);
+      navigate(`/start-assessment?draft=${draft.id}`);
     } catch (error) {
       setStartError(
         error instanceof ApiError
@@ -166,7 +210,7 @@ function Home() {
                   <li className="nav-item">
                     <button
                       className="solar-nav-btn"
-                      onClick={() => navigate("/start-assesement")}
+                      onClick={() => navigate("/start-assessment")}
                     >
                       Start Assessment
                       <img src={bttnarrow} alt="arrow" />
@@ -199,7 +243,7 @@ function Home() {
                 <div className="solar-action-group">
                   <button
                     className="solar-primary-btn"
-                    onClick={() => navigate("/start-assesement")}
+                    onClick={() => navigate("/start-assessment")}
                   >
                     <span>Start Free Assessment</span>
 
@@ -228,10 +272,13 @@ function Home() {
                     <div className="col">
                       <label className="quick-lable">Property Type</label>
                       <select
-                        className="form-select select-text"
+                        className={`form-select select-text${
+                          fieldErrors.propertyType ? " is-invalid" : ""
+                        }`}
                         name="propertyType"
                         value={quickForm.propertyType}
                         onChange={handleQuickFormChange}
+                        aria-invalid={Boolean(fieldErrors.propertyType)}
                       >
                         <option value="" disabled hidden>
                           Select
@@ -243,20 +290,33 @@ function Home() {
                         <option value="Hospital">Hospital</option>
                         <option value="School">School</option>
                       </select>
+                      {fieldErrors.propertyType && (
+                        <p className="ass-field-error" role="alert">
+                          {fieldErrors.propertyType}
+                        </p>
+                      )}
                     </div>
                     <div className="col">
                       <label className="quick-lable">Location</label>
                       <select
-                        className="form-select select-text"
+                        className={`form-select select-text${
+                          fieldErrors.location ? " is-invalid" : ""
+                        }`}
                         name="location"
                         value={quickForm.location}
                         onChange={handleQuickFormChange}
+                        aria-invalid={Boolean(fieldErrors.location)}
                       >
                         <option value="" disabled hidden>
                           Select
                         </option>
                         <option value="Nigeria">Nigeria</option>
                       </select>
+                      {fieldErrors.location && (
+                        <p className="ass-field-error" role="alert">
+                          {fieldErrors.location}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -268,19 +328,30 @@ function Home() {
                     name="monthlyElectricityBill"
                     value={quickForm.monthlyElectricityBill}
                     onChange={handleQuickFormChange}
-                    className="form-control select-text mb-2"
+                    className={`form-control select-text${
+                      fieldErrors.monthlyElectricityBill ? " is-invalid" : ""
+                    } mb-2`}
                     placeholder="Enter"
                     inputMode="numeric"
+                    aria-invalid={Boolean(fieldErrors.monthlyElectricityBill)}
                   />
+                  {fieldErrors.monthlyElectricityBill && (
+                    <p className="ass-field-error mb-2" role="alert">
+                      {fieldErrors.monthlyElectricityBill}
+                    </p>
+                  )}
 
                   <div className="row g-2 mb-3">
                     <div className="col">
                       <label className="quick-lable">Power Setup</label>
                       <select
-                        className="form-select select-text"
+                        className={`form-select select-text${
+                          fieldErrors.powerSetup ? " is-invalid" : ""
+                        }`}
                         name="powerSetup"
                         value={quickForm.powerSetup}
                         onChange={handleQuickFormChange}
+                        aria-invalid={Boolean(fieldErrors.powerSetup)}
                       >
                         <option value="" disabled hidden>
                           Select
@@ -291,14 +362,22 @@ function Home() {
                         <option value="Grid Only">Grid Only</option>
                         <option value="Solar + Grid">Solar + Grid</option>
                       </select>
+                      {fieldErrors.powerSetup && (
+                        <p className="ass-field-error" role="alert">
+                          {fieldErrors.powerSetup}
+                        </p>
+                      )}
                     </div>
                     <div className="col">
                       <label className="quick-lable">Main Objective</label>
                       <select
-                        className="form-select select-text"
+                        className={`form-select select-text${
+                          fieldErrors.mainObjective ? " is-invalid" : ""
+                        }`}
                         name="mainObjective"
                         value={quickForm.mainObjective}
                         onChange={handleQuickFormChange}
+                        aria-invalid={Boolean(fieldErrors.mainObjective)}
                       >
                         <option value="" disabled hidden>
                           Select
@@ -313,6 +392,11 @@ function Home() {
                           Backup During Outages
                         </option>
                       </select>
+                      {fieldErrors.mainObjective && (
+                        <p className="ass-field-error" role="alert">
+                          {fieldErrors.mainObjective}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -561,7 +645,7 @@ function Home() {
                   <button
                     type="button"
                     className="custom-btn other-section strst"
-                    onClick={() => navigate("/start-assesement")}
+                    onClick={() => navigate("/start-assessment")}
                   >
                     {" "}
                     Start Assessment

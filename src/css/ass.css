@@ -92,6 +92,22 @@
   border: 1px solid #e5e7eb;
   color: #9ca3b4;
   font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.assts-right .row > [class*="col-"] {
+  min-width: 0;
+}
+
+.stat-card h5.asst-h {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(12px, 8cqi, 18px);
 }
 
 .stat-card.live-summary-card-skeleton {
@@ -1441,7 +1457,10 @@ input.form-control.text-center.inputs-text {
   color: #174c90;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
-  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .assessment-summary-mobile-labels {
@@ -1454,6 +1473,7 @@ input.form-control.text-center.inputs-text {
   letter-spacing: 0.02em;
   color: #9ca3b4;
   line-height: 1.2;
+  flex-shrink: 0;
 }
 
 .assessment-summary-mobile-labels .fw-bold {
@@ -1727,8 +1747,8 @@ tr.appliance-select-row-is-open {
   overflow: visible;
   text-overflow: unset;
   line-height: 1.25;
-  font-weight: 500;
-  font-size: 15px;
+  font-weight: 400;
+  font-size: 14px;
   color: #1a2259;
   word-break: break-word;
 }

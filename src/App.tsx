@@ -1,4 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import "./App.css";
 import "./css/ass.css";
 import "./css/ass-result.css";
@@ -35,6 +42,12 @@ function MainLayout() {
   );
 }
 
+/** Preserve query string when redirecting misspelled assessment URLs. */
+function RedirectWithSearch({ to }: { to: string }) {
+  const { search } = useLocation();
+  return <Navigate to={`${to}${search}`} replace />;
+}
+
 function App() {
   return (
     <Router>
@@ -50,8 +63,16 @@ function App() {
 
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/start-assesement" element={<Assesement />} />
-          <Route path="/assesement-result" element={<AssesementResult />} />
+          <Route path="/start-assessment" element={<Assesement />} />
+          <Route path="/assessment-result" element={<AssesementResult />} />
+          <Route
+            path="/start-assesement"
+            element={<RedirectWithSearch to="/start-assessment" />}
+          />
+          <Route
+            path="/assesement-result"
+            element={<RedirectWithSearch to="/assessment-result" />}
+          />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/sample-results" element={<SampleResults />} />
           <Route path="/who-its-for" element={<WhoItsFor />} />

@@ -17,6 +17,82 @@ export function formatIntegerWithCommas(value: string): string {
   return Number(digits).toLocaleString("en-US");
 }
 
+const COMPACT_METRIC_THRESHOLD = 1_000_000;
+
+function groupIntDigits(digits: string): string {
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** Comma-group an integer, using raw digits when the value is beyond MAX_SAFE_INTEGER. */
+export function formatGroupedInteger(value: number | string): string {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return "0";
+    if (Math.abs(value) <= Number.MAX_SAFE_INTEGER) {
+      return Math.round(value).toLocaleString("en-US");
+    }
+    const sign = value < 0 ? "-" : "";
+    const digits = Math.abs(value).toLocaleString("en-US", {
+      useGrouping: false,
+      maximumFractionDigits: 0,
+    });
+    return `${sign}${groupIntDigits(digits.replace(/\D/g, "") || "0")}`;
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return "";
+  const sign = raw.startsWith("-") ? "-" : "";
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return `${sign}${groupIntDigits(digits.replace(/^0+(?=\d)/, "") || "0")}`;
+}
+
+function formatGroupedNumber(value: number, fractionDigits?: number): string {
+  if (!Number.isFinite(value)) return "0";
+  if (Math.abs(value) > Number.MAX_SAFE_INTEGER) {
+    return formatGroupedInteger(value);
+  }
+  if (fractionDigits == null) {
+    return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  }
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+}
+
+/** Short compact notation: 250000000 → 250M, 1500000 → 1.5M. */
+export function formatCompactShort(value: number): string {
+  return new Intl.NumberFormat("en", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+/**
+ * Live-summary display vs hover title.
+ * Compact (₦250M / 250M) only when |value| >= 1,000,000; otherwise full commas (₦250,000).
+ */
+export function formatMetricDisplay(
+  value: number,
+  kind: "number" | "currency",
+  fractionDigits?: number,
+): { display: string; full: string } {
+  const safe = Number.isFinite(value) ? value : 0;
+  const full =
+    kind === "currency"
+      ? `₦${formatGroupedInteger(safe)}`
+      : formatGroupedNumber(safe, fractionDigits);
+  const compact = formatCompactShort(safe);
+  const display =
+    Math.abs(safe) >= COMPACT_METRIC_THRESHOLD
+      ? kind === "currency"
+        ? `₦${compact}`
+        : compact
+      : full;
+  return { display, full };
+}
+
 /** Monthly usage kWh from spend ÷ tariff, rounded to 2 decimals. */
 export function formatUsageFromSpend(
   spend: string,

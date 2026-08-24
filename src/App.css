@@ -284,6 +284,19 @@ p.bannr-text-s.text-light {
   border: 3px solid #ffffff;
 }
 
+.solar-preview-card .form-control.is-invalid {
+  background-image: none;
+  padding-right: 0.75rem;
+}
+
+.solar-preview-card .form-select.is-invalid:not([multiple]):not([size]),
+.solar-preview-card .form-select.is-invalid:not([multiple])[size="1"] {
+  --bs-form-select-bg-icon: none;
+  padding-right: 2.25rem;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+}
+
 /* heading */
 .solar-preview-title {
   text-align: center;

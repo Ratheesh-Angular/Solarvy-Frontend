@@ -35,6 +35,7 @@ import {
   Wrench,
   ChevronDown,
   Plus,
+  Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -60,6 +61,7 @@ import {
 import {
   DEFAULT_GRID_TARIFF,
   formatIntegerWithCommas,
+  formatMetricDisplay,
   formatUsageFromSpend,
   parseFormattedNumber,
 } from "../lib/assessmentConstants";
@@ -154,7 +156,10 @@ function LiveSummaryCardSkeleton({
   }
 
   return (
-    <div className="stat-card text-center live-summary-card-skeleton" aria-hidden>
+    <div
+      className="stat-card text-center live-summary-card-skeleton"
+      aria-hidden
+    >
       <span className="live-summary-skeleton-circle" />
       <span className="live-summary-skeleton-bar live-summary-skeleton-bar--value" />
       <span className="live-summary-skeleton-bar live-summary-skeleton-bar--label" />
@@ -234,7 +239,7 @@ const PROPERTY_DESCRIPTIONS: Record<string, string> = {
 
 const POWER_SETUP_ICONS: Record<string, LucideIcon> = {
   "Grid + Generator": PlugZap,
-  "Grid Only": LayoutGrid,
+  "Grid Only": Zap,
   "Solar + Grid": Sun,
   "Generator Only": Fuel,
   "No Reliable Grid": BatteryCharging,
@@ -1609,7 +1614,9 @@ function Assesement() {
           templatePromptHandledRef.current = true;
         }
         const hydratedSpend =
-          formData?.bill?.monthlySpend || formData?.monthlyElectricityBill || "";
+          formData?.bill?.monthlySpend ||
+          formData?.monthlyElectricityBill ||
+          "";
         const hydratedUsage = formData?.bill?.monthlyUsage || "";
         const derivedUsage = formatUsageFromSpend(
           hydratedSpend,
@@ -1710,7 +1717,13 @@ function Assesement() {
     if (Object.keys(errors).length > 0) {
       setCalculateErrors(errors);
       const firstKey = (
-        ["country", "state", "powerSetup", "backupDuration", "mainObjective"] as const
+        [
+          "country",
+          "state",
+          "powerSetup",
+          "backupDuration",
+          "mainObjective",
+        ] as const
       ).find((key) => errors[key]);
       if (firstKey) {
         document
@@ -1731,7 +1744,7 @@ function Assesement() {
         : await completeAssessment(payload);
 
       await finishLoader();
-      navigate(`/assesement-result?assessment=${result.id}`);
+      navigate(`/assessment-result?assessment=${result.id}`);
     } catch (error) {
       abortLoader();
       showError(
@@ -1805,30 +1818,47 @@ function Assesement() {
       ? parseFormattedNumber(monthlyUsage) * 12
       : liveMonthlyKwh * 12;
 
-  const summaryFirstMetricValue =
-    inputMethod === "bill" ? monthlyUsage || "0" : liveDailyKwh.toFixed(2);
+  const firstMetricRaw =
+    inputMethod === "bill"
+      ? parseFormattedNumber(monthlyUsage || "0")
+      : liveDailyKwh;
+  const firstMetric = formatMetricDisplay(
+    Number.isFinite(firstMetricRaw) ? firstMetricRaw : 0,
+    "number",
+    inputMethod === "bill" ? undefined : 2,
+  );
+  const summaryFirstMetricValue = firstMetric.display;
+  const summaryFirstMetricTitle = firstMetric.full;
 
   const safeMonthlySpend = Number(excelEstimatedMonthlySpend);
   const safeMonthlyKwh = Number(liveMonthlyKwh);
-  const summarySecondMetricValue =
+  const secondMetric = formatMetricDisplay(
     inputMethod === "bill"
-      ? `₦${Math.round(
-          Number.isFinite(safeMonthlySpend) ? safeMonthlySpend : 0,
-        ).toLocaleString("en-NG", {
-          maximumFractionDigits: 0,
-          minimumFractionDigits: 0,
-        })}`
-      : (Number.isFinite(safeMonthlyKwh) ? safeMonthlyKwh : 0).toFixed(1);
+      ? Number.isFinite(safeMonthlySpend)
+        ? safeMonthlySpend
+        : 0
+      : Number.isFinite(safeMonthlyKwh)
+        ? safeMonthlyKwh
+        : 0,
+    inputMethod === "bill" ? "currency" : "number",
+    inputMethod === "bill" ? undefined : 1,
+  );
+  const summarySecondMetricValue = secondMetric.display;
+  const summarySecondMetricTitle = secondMetric.full;
 
-  const summaryEstimatedAnnualLoad =
+  const annualLoadRaw =
     excelEstimatedAnnualLoad !== null &&
     Number.isFinite(Number(excelEstimatedAnnualLoad))
-      ? formatIntegerWithCommas(
-          String(Math.round(Number(excelEstimatedAnnualLoad))),
-        )
+      ? Math.round(Number(excelEstimatedAnnualLoad))
       : Number.isFinite(clientAnnualLoad) && clientAnnualLoad > 0
-        ? formatIntegerWithCommas(String(Math.round(clientAnnualLoad)))
-        : "N/A";
+        ? Math.round(clientAnnualLoad)
+        : null;
+  const annualMetric =
+    annualLoadRaw === null
+      ? { display: "N/A", full: "N/A" }
+      : formatMetricDisplay(annualLoadRaw, "number");
+  const summaryEstimatedAnnualLoad = annualMetric.display;
+  const summaryEstimatedAnnualLoadTitle = annualMetric.full;
 
   const loaderMessage = isSubmitting
     ? "Calculating your system..."
@@ -1941,7 +1971,7 @@ function Assesement() {
                       <li className="nav-item">
                         <button
                           className="solar-nav-btn"
-                          onClick={() => navigate("/start-assesement")}
+                          onClick={() => navigate("/start-assessment")}
                         >
                           Start Assessment
                           <img src={bttnarrow} alt="arrow" />
@@ -2967,7 +2997,10 @@ function Assesement() {
                         <img src={buleone} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
-                        <div className="assessment-summary-mobile-value">
+                        <div
+                          className="assessment-summary-mobile-value"
+                          title={summaryFirstMetricTitle}
+                        >
                           {summaryFirstMetricValue}
                         </div>
                         <div className="assessment-summary-mobile-labels">
@@ -2984,7 +3017,10 @@ function Assesement() {
                         <img src={buletwo} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
-                        <div className="assessment-summary-mobile-value">
+                        <div
+                          className="assessment-summary-mobile-value"
+                          title={summarySecondMetricTitle}
+                        >
                           {summarySecondMetricValue}
                         </div>
                         <div className="assessment-summary-mobile-labels">
@@ -3001,7 +3037,10 @@ function Assesement() {
                         <img src={bulefour} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
-                        <div className="assessment-summary-mobile-value">
+                        <div
+                          className="assessment-summary-mobile-value"
+                          title={summaryEstimatedAnnualLoadTitle}
+                        >
                           {summaryEstimatedAnnualLoad}
                         </div>
                         <div className="assessment-summary-mobile-labels">
@@ -3017,7 +3056,10 @@ function Assesement() {
                         <img src={bulethree} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
-                        <div className="assessment-summary-mobile-value">
+                        <div
+                          className="assessment-summary-mobile-value"
+                          title={summaryAssessmentPathTitle}
+                        >
                           {summaryAssessmentPathTitle}
                         </div>
                         <div className="assessment-summary-mobile-labels">
@@ -3068,7 +3110,12 @@ function Assesement() {
                           <div className="icon-box-build-right mb-2">
                             <img src={buleone} alt="icon" />
                           </div>
-                          <h5 className="asst-h">{summaryFirstMetricValue}</h5>
+                          <h5
+                            className="asst-h"
+                            title={summaryFirstMetricTitle}
+                          >
+                            {summaryFirstMetricValue}
+                          </h5>
                           <div className="usage-wrapper">
                             <small>{summaryFirstMetricUnit}</small>
                             <small>
@@ -3083,11 +3130,14 @@ function Assesement() {
                           <div className="icon-box-build-right  mb-2">
                             <img src={buletwo} alt="icon" />
                           </div>
-                          <h5 className="asst-h">{summarySecondMetricValue}</h5>
+                          <h5
+                            className="asst-h"
+                            title={summarySecondMetricTitle}
+                          >
+                            {summarySecondMetricValue}
+                          </h5>
                           <div className="usage-wrapper">
-                            {inputMethod !== "bill" && (
-                              <small>kWh/month</small>
-                            )}
+                            {inputMethod !== "bill" && <small>kWh/month</small>}
                             <small>
                               <b>{summarySecondMetricLabel}</b>
                             </small>
@@ -3099,12 +3149,16 @@ function Assesement() {
                           <div className="icon-box-build-right mb-2">
                             <img src={bulefour} alt="icon" />
                           </div>
-                          <h5 className="asst-h">
-                            {summaryEstimatedAnnualLoad === "N/A"
-                              ? "N/A"
-                              : `${summaryEstimatedAnnualLoad} kWh`}
+                          <h5
+                            className="asst-h"
+                            title={summaryEstimatedAnnualLoadTitle}
+                          >
+                            {summaryEstimatedAnnualLoad}
                           </h5>
                           <div className="usage-wrapper">
+                            {summaryEstimatedAnnualLoad !== "N/A" && (
+                              <small>kWh</small>
+                            )}
                             <small>
                               <b>ESTIMATED ANNUAL LOAD</b>
                             </small>
@@ -3116,7 +3170,10 @@ function Assesement() {
                           <div className="icon-box-build-right mb-2">
                             <img src={bulethree} alt="icon" />
                           </div>
-                          <h5 className="asst-h">
+                          <h5
+                            className="asst-h"
+                            title={summaryAssessmentPathTitle}
+                          >
                             {summaryAssessmentPathTitle}
                           </h5>
                           <small>

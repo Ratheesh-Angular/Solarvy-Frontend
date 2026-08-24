@@ -353,7 +353,7 @@ function AssesementResult() {
                       <li className="nav-item">
                         <button
                           className="solar-nav-btn"
-                          onClick={() => navigate("/start-assesement")}
+                          onClick={() => navigate("/start-assessment")}
                         >
                           Start Assessment
                           <img src={bttnarrow} alt="arrow" />
@@ -522,9 +522,7 @@ function AssesementResult() {
                   </div>
 
                   <div className="col-md-6 ps-md-4 mt-4 mt-md-0 d-none d-md-block">
-                    <h6 className="left-rang fw-bold mb-3">
-                      % Your Energy Mix
-                    </h6>
+                    <h6 className="left-rang fw-bold mb-3">Your Energy Mix</h6>
 
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
@@ -640,103 +638,6 @@ function AssesementResult() {
                 </div>
               </div>
 
-              <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first mt-4">
-                <div className="d-flex align-items-start mb-4">
-                  <div className="icon-box-maony me-3">
-                    <img src={compare} alt="icon" />
-                  </div>
-                  <div>
-                    <h5 className="fw-bold mb-1 rang-head section-card-title">
-                      Compare Your Power Options
-                    </h5>
-                    <small className="text-muted">
-                      This helps you assess your options and see which one gives
-                      you the best results.
-                    </small>
-                  </div>
-                </div>
-
-                <div className="custom-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>STRATEGY</th>
-                        <th>ANNUAL COST</th>
-                        <th>RELIABILITY</th>
-                        <th>DIESEL USE</th>
-                        <th>PAYBACK</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {strategyComparisonRows.map((row) => {
-                        const recommended = isRecommendedStrategy(
-                          row.recommended,
-                        );
-
-                        return (
-                          <tr
-                            key={row.strategy}
-                            className={
-                              recommended ? "recommended-row" : undefined
-                            }
-                          >
-                            <td
-                              className={
-                                recommended
-                                  ? "text-color-b title-cell"
-                                  : undefined
-                              }
-                            >
-                              {recommended ? (
-                                <>
-                                  <span className="title-text">
-                                    {row.strategy}
-                                  </span>
-                                  <span className="badge-recommended">
-                                    Recommended
-                                  </span>
-                                </>
-                              ) : (
-                                row.strategy
-                              )}
-                            </td>
-                            <td
-                              className={
-                                recommended ? "text-color-b" : undefined
-                              }
-                            >
-                              {formatNaira(row.annualCost)}
-                            </td>
-                            <td
-                              className={
-                                recommended ? "strong text-color-b" : undefined
-                              }
-                            >
-                              {formatText(row.reliability)}
-                            </td>
-                            <td
-                              className={
-                                recommended ? "strong text-color-b" : undefined
-                              }
-                            >
-                              {formatText(row.dieselUse)}
-                            </td>
-                            <td
-                              className={
-                                recommended ? "strong text-color-b" : undefined
-                              }
-                            >
-                              {formatStrategyPayback(row.payback)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
               <div className="important-note d-flex align-items-start p-3 mt-4">
                 <div className="me-2 mt-0">
                   <img src={imp} alt="icon" />
@@ -744,102 +645,6 @@ function AssesementResult() {
 
                 <div>
                   <span className="fw-bold">Important note:</span> {disclaimer}
-                </div>
-              </div>
-
-              <div className="p-4 shadow-sm rounded-4 ass-first mt-4 mb-4">
-                <div className="d-flex align-items-start mb-3">
-                  <div className="next-icon me-3">
-                    <img src={whitearrow} alt="arrow" />
-                  </div>
-                  <div>
-                    <h5 className="fw-bold mb-1 rang-head">
-                      What Happens Next
-                    </h5>
-                    <small className="text-muted sub-down">
-                      The best results don’t stop at numbers. Move forward with
-                      a clear next step.
-                    </small>
-                  </div>
-                </div>
-
-                <div
-                  className="container my-4"
-                  style={{ marginLeft: 0, paddingLeft: 0 }}
-                >
-                  <div className="row g-4">
-                    <div className="col-12 col-md-4">
-                      <div className="info-card ms-0">
-                        <div className="info-badge">1</div>
-                        <h6 className="info-title">
-                          <i className="bi bi-download me-2"></i>
-                          Download your report
-                        </h6>
-                        <p className="info-text">
-                          Send a PDF summary by email with the recommended
-                          system, savings, and payback period.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="col-12 col-md-4">
-                      <div className="info-card">
-                        <div className="info-badge">2</div>
-                        <h6 className="info-title">
-                          <i className="bi bi-people me-2"></i>
-                          View installer quotes
-                        </h6>
-                        <p className="info-text">
-                          Use the result to match you with installers suited to
-                          the location and system size.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="col-12 col-md-4">
-                      <div className="info-card">
-                        <div className="info-badge">3</div>
-                        <h6 className="info-title">
-                          <i className="bi bi-bar-chart me-2"></i>
-                          Upgrade to expert review
-                        </h6>
-                        <p className="info-text">
-                          For more confidence before investment, route into a
-                          deeper technical review with our advisory team.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="button-group mt-3">
-                  <button
-                    type="button"
-                    className="btn-primary-customss-down"
-                    onClick={handleDownloadReport}
-                    disabled={!results || isDownloadingReport}
-                    aria-busy={isDownloadingReport}
-                  >
-                    <span className="icon-get">
-                      <img src={donw} alt="" />
-                    </span>
-                    <span>
-                      {isDownloadingReport
-                        ? "Preparing PDF…"
-                        : "Download Report"}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-outline-customsss2-req"
-                    onClick={() => navigate("/matched-installers")}
-                  >
-                    <span className="icon-get">
-                      <img src={save} alt="icon" />
-                    </span>
-                    <span>View Installer Quotes</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -954,8 +759,8 @@ function AssesementResult() {
                   onClick={() =>
                     navigate(
                       assessmentId
-                        ? `/start-assesement?assessment=${encodeURIComponent(assessmentId)}`
-                        : "/start-assesement",
+                        ? `/start-assessment?assessment=${encodeURIComponent(assessmentId)}`
+                        : "/start-assessment",
                     )
                   }
                 >
@@ -965,6 +770,185 @@ function AssesementResult() {
                   <span>Back to Assessment</span>
                 </button>
               </div>
+            </div>
+          </div>
+          <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first mt-4">
+            <div className="d-flex align-items-start mb-4">
+              <div className="icon-box-maony me-3">
+                <img src={compare} alt="icon" />
+              </div>
+              <div>
+                <h5 className="fw-bold mb-1 rang-head section-card-title">
+                  Compare Your Power Options
+                </h5>
+                <small className="text-muted">
+                  This helps you assess your options and see which one gives you
+                  the best results.
+                </small>
+              </div>
+            </div>
+            <div className="custom-table">
+              <div className="custom-table-scroll">
+                <table>
+                <thead>
+                  <tr>
+                    <th>POWER OPTIONS</th>
+                    <th>ANNUAL COST</th>
+                    <th>RELIABILITY</th>
+                    <th>DIESEL USE</th>
+                    <th>PAYBACK</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {strategyComparisonRows.map((row) => {
+                    const recommended = isRecommendedStrategy(row.recommended);
+
+                    return (
+                      <tr
+                        key={row.strategy}
+                        className={recommended ? "recommended-row" : undefined}
+                      >
+                        <td
+                          className={
+                            recommended ? "text-color-b title-cell" : undefined
+                          }
+                        >
+                          {recommended ? (
+                            <>
+                              <span className="title-text">{row.strategy}</span>
+                              <span className="badge-recommended">
+                                Recommended
+                              </span>
+                            </>
+                          ) : (
+                            row.strategy
+                          )}
+                        </td>
+                        <td
+                          className={recommended ? "text-color-b" : undefined}
+                        >
+                          {formatNaira(row.annualCost)}
+                        </td>
+                        <td
+                          className={
+                            recommended ? "strong text-color-b" : undefined
+                          }
+                        >
+                          {formatText(row.reliability)}
+                        </td>
+                        <td
+                          className={
+                            recommended ? "strong text-color-b" : undefined
+                          }
+                        >
+                          {formatText(row.dieselUse)}
+                        </td>
+                        <td
+                          className={
+                            recommended ? "strong text-color-b" : undefined
+                          }
+                        >
+                          {formatStrategyPayback(row.payback)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 shadow-sm rounded-4 ass-first mt-4 mb-4">
+            <div className="d-flex align-items-start mb-3">
+              <div className="next-icon me-3">
+                <img src={whitearrow} alt="arrow" />
+              </div>
+              <div>
+                <h5 className="fw-bold mb-1 rang-head">What Happens Next</h5>
+                <small className="text-muted sub-down">
+                  The best results don’t stop at numbers. Move forward with a
+                  clear next step.
+                </small>
+              </div>
+            </div>
+
+            <div
+              className="container my-4"
+              style={{ marginLeft: 0, paddingLeft: 0 }}
+            >
+              <div className="row g-4">
+                <div className="col-12 col-md-4">
+                  <div className="info-card ms-0">
+                    <div className="info-badge">1</div>
+                    <h6 className="info-title">
+                      <i className="bi bi-download me-2"></i>
+                      Download your report
+                    </h6>
+                    <p className="info-text">
+                      Send a PDF summary by email with the recommended system,
+                      savings, and payback period.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="col-12 col-md-4">
+                  <div className="info-card">
+                    <div className="info-badge">2</div>
+                    <h6 className="info-title">
+                      <i className="bi bi-people me-2"></i>
+                      View installer quotes
+                    </h6>
+                    <p className="info-text">
+                      Use the result to match you with installers suited to the
+                      location and system size.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="col-12 col-md-4">
+                  <div className="info-card">
+                    <div className="info-badge">3</div>
+                    <h6 className="info-title">
+                      <i className="bi bi-bar-chart me-2"></i>
+                      Upgrade to expert review
+                    </h6>
+                    <p className="info-text">
+                      For more confidence before investment, route into a deeper
+                      technical review with our advisory team.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="button-group mt-3 justify-content-end">
+              <button
+                type="button"
+                className="btn-primary-customss-down"
+                onClick={handleDownloadReport}
+                disabled={!results || isDownloadingReport}
+                aria-busy={isDownloadingReport}
+              >
+                <span className="icon-get">
+                  <img src={donw} alt="" />
+                </span>
+                <span>
+                  {isDownloadingReport ? "Preparing PDF…" : "Download Report"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-outline-customsss2-req"
+                onClick={() => navigate("/matched-installers")}
+              >
+                <span className="icon-get">
+                  <img src={save} alt="icon" />
+                </span>
+                <span>View Installer Quotes</span>
+              </button>
             </div>
           </div>
         </section>
