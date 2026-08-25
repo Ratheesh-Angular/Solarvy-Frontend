@@ -2441,7 +2441,7 @@ function Assesement() {
                       <div className="row g-3">
                         <div className="col-md-6">
                           <label className="form-label ass-field-label">
-                            MONTHLY ELECTRICITY USAGE
+                            MONTHLY ELECTRICITY USAGE (kWh)
                           </label>
                           <input
                             type="text"
@@ -2472,7 +2472,7 @@ function Assesement() {
 
                         <div className="col-md-6">
                           <label className="form-label ass-field-label">
-                            AVERAGE MONTHLY ELECTRICITY SPEND
+                            AVERAGE MONTHLY ELECTRICITY SPEND (₦)
                           </label>
                           <input
                             type="text"
@@ -3176,9 +3176,11 @@ function Assesement() {
                           >
                             {summaryAssessmentPathTitle}
                           </h5>
-                          <small>
-                            <b>ASSESSMENT PATH</b>
-                          </small>
+                          <div className="usage-wrapper">
+                            <small>
+                              <b>ASSESSMENT PATH</b>
+                            </small>
+                          </div>
                         </div>
                       </div>
                     </>

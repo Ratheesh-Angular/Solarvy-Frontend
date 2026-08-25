@@ -95,10 +95,23 @@
   min-width: 0;
   overflow: hidden;
   container-type: inline-size;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 132px;
 }
 
 .assts-right .row > [class*="col-"] {
   min-width: 0;
+  display: flex;
+}
+
+.stat-card .usage-wrapper {
+  min-height: 2.6em;
+  justify-content: center;
 }
 
 .stat-card h5.asst-h {
