@@ -638,7 +638,7 @@ function AssesementResult() {
                 </div>
               </div>
 
-              <div className="important-note d-flex align-items-start p-3 mt-4">
+              <div className="important-note d-none d-lg-flex align-items-start p-3 mt-4">
                 <div className="me-2 mt-0">
                   <img src={imp} alt="icon" />
                 </div>
@@ -657,7 +657,7 @@ function AssesementResult() {
                   </div>
                   <div>
                     <h5 className="fw-bold mb-1 rang-head section-card-title">
-                      Compare Your Power Option
+                      Compare Your Power Options
                     </h5>
                     <small className="text-muted">
                       This helps you assess your options and see which one gives
@@ -751,6 +751,16 @@ function AssesementResult() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </div>
+
+              <div className="important-note d-flex d-lg-none align-items-start p-3 mt-4">
+                <div className="me-2 mt-0">
+                  <img src={imp} alt="icon" />
+                </div>
+
+                <div>
+                  <span className="fw-bold">Important note:</span> {disclaimer}
                 </div>
               </div>
             </div>
