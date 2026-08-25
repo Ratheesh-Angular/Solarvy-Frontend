@@ -192,14 +192,14 @@ function WhoItsFor() {
                       Developers & advisors
                     </h5>
                     <p className="text-muted small">
-                      For early-stage feasibility, Compare Your Power Options,
+                      For early-stage feasibility, Compare Your Power Option,
                       and clearer technical-financial understanding before
                       deeper study.
                     </p>
 
                     <div className="d-flex flex-wrap gap-2 mt-auto">
                       <span className="tag">Feasibility</span>
-                      <span className="tag">Power Options</span>
+                      <span className="tag">Power Option</span>
                       <span className="tag">Planning</span>
                     </div>
                   </div>

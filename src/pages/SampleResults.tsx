@@ -362,7 +362,7 @@ function SampleResults() {
         <section className="container-fluid px-3 px-lg-4 sample-page-section">
           <div className="row align-items-start g-4">
             <div className="col-12 dashboard-container">
-              <h2 className="dashboard-title">Compare Your Power Options</h2>
+              <h2 className="dashboard-title">Compare Your Power Option</h2>
               <p className="dashboard-subtitle">
                 This helps you assess your options and see which one gives you
                 the best results.
@@ -374,7 +374,7 @@ function SampleResults() {
                 <table>
                   <thead>
                     <tr>
-                      <th>POWER OPTIONS</th>
+                      <th>POWER OPTION</th>
                       <th>ANNUAL COST</th>
                       <th>RELIABILITY</th>
                       <th>DIESEL USE</th>

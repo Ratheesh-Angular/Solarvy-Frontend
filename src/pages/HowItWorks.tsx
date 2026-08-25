@@ -200,7 +200,7 @@ function HowItWorks() {
                             </h6>
 
                             <p className="desc">
-                              See practical power options paths such as solar +
+                              See practical power option paths such as solar +
                               grid, solar + battery, or hybrid setups with
                               generator support where needed.
                             </p>
@@ -277,7 +277,7 @@ function HowItWorks() {
                           <div className="feature-item">
                             <span className="dot-blue"></span>
                             <span className="dots-texts">
-                              Compare Your Power Options
+                              Compare Your Power Option
                             </span>
                           </div>
                         </div>

@@ -149,7 +149,9 @@ small.pv-textss.text-danger.fw-semibold {
 }
 
 .p-4.shadow-sm.rounded-4.ass-resul-first.mt-4,
-.p-3.shadow-sm.rounded-4.ass-resul-first.mt-4 {
+.p-3.shadow-sm.rounded-4.ass-resul-first.mt-4,
+.p-4.shadow-sm.rounded-4.ass-resul-first,
+.p-3.p-md-4.shadow-sm.rounded-4.ass-resul-first {
   border: 1px solid #e8edf5;
   border-radius: 16px !important;
   box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.04) !important;
@@ -349,8 +351,8 @@ small.text-muted.sub-down {
 
   .p-4.rounded-4.shadow-sm.right-panel.assts-right {
     position: relative;
-    top: -20px;
-    margin-top: 24px;
+    top: 0;
+    margin-top: 0;
   }
 
   h5.fw-bold.mb-1.rang-head.section-card-title {
@@ -406,6 +408,27 @@ small.text-muted.sub-down {
   border-radius: 14px;
   padding: 16px;
   background: #f8fafd;
+  width: 100%;
+  height: 100%;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.assts-right .row > [class*="col-"] {
+  display: flex;
+  min-width: 0;
+}
+
+.qs-cards .value {
+  width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  margin-bottom: 0;
 }
 
 hr.liness {
