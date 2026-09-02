@@ -1,68 +1,34 @@
 /**
  * Solarvy Energy Assessment Report PDF
  *
- * PLACEHOLDER FIELDS (no Excel cell yet — update these constants when cells exist):
+ * Four-page client template:
+ *   Page 1 — Cover: title, solar house illustration, property metadata,
+ *            recommendation snapshot cards, executive summary.
+ *   Page 2 — Energy profile table, data-quality note, system architecture
+ *            diagram, "how the system works" panel.
+ *   Page 3 — Recommended system table, financial summary table, financial
+ *            interpretation panel.
+ *   Page 4 — Energy cost bar chart, energy contribution pie chart, SolarVy
+ *            recommendation, next-steps table, disclaimer.
  *
- * | Field                         | Constant / location                                      | PDF page / section        |
- * |-------------------------------|----------------------------------------------------------|---------------------------|
- * | NPV                           | PLACEHOLDER_NPV (line ~below)                            | Page 3 — Financials table |
- * | IRR                           | PLACEHOLDER_IRR                                          | Page 3 — Financials table |
- * | Diesel Displacement Value     | PLACEHOLDER_DIESEL_DISPLACEMENT_VALUE                    | Page 3 — Impact table     |
- * | Energy Independence Ratio     | PLACEHOLDER_ENERGY_INDEPENDENCE_RATIO                    | Page 3 — Impact table     |
- * | Estimated CO2 reduction       | PLACEHOLDER_CO2_REDUCTION                                | Page 3 — Impact table     |
- * | Energy Profile (5 rows)       | ENERGY_PROFILE_ROWS                                      | Page 2 — Energy Profile   |
- *
- * When Excel cells are ready: extend Backend OUTPUT_CELLS + AssessmentResults,
- * then replace these placeholders with real formatted values in buildReportPayload /
- * the Document props.
+ * All numeric/text content is derived from the existing `AssessmentResults`
+ * (Excel-backed) values; only the copy is templated.
  */
 import {
   Document,
   Page,
   Text,
   View,
-  Image,
   StyleSheet,
+  Svg,
+  Path,
+  Rect,
+  Circle,
+  Line,
+  Polygon,
   pdf,
 } from "@react-pdf/renderer";
 import type { AssessmentResults } from "../types/assessment";
-
-// ---------------------------------------------------------------------------
-// Placeholders — replace when Excel cells are added
-// ---------------------------------------------------------------------------
-
-/** NPV — no Outputs cell yet. Add cell ref here later. */
-export const PLACEHOLDER_NPV = "—";
-
-/** IRR — no Outputs cell yet. Add cell ref here later. */
-export const PLACEHOLDER_IRR = "—";
-
-/** Diesel Displacement Value — no Outputs cell yet. Add cell ref here later. */
-export const PLACEHOLDER_DIESEL_DISPLACEMENT_VALUE = "—";
-
-/** Energy Independence Ratio — no Outputs cell yet. Add cell ref here later. */
-export const PLACEHOLDER_ENERGY_INDEPENDENCE_RATIO = "—";
-
-/** Estimated CO2 reduction — no Outputs cell yet. Add cell ref here later. */
-export const PLACEHOLDER_CO2_REDUCTION = "—";
-
-/**
- * Energy Profile table rows — values hardcoded to 0 until Excel cells exist.
- * Update each `value` (and optionally `label` / `unit`) when cells are mapped.
- */
-export const ENERGY_PROFILE_ROWS: Array<{
-  label: string;
-  value: string;
-  unit: string;
-  /** Set this when an Outputs cell is assigned, e.g. "B50" */
-  excelCell?: string;
-}> = [
-  { label: "Peak demand", value: "0", unit: "kW" },
-  { label: "Average daily load", value: "0", unit: "kWh/day" },
-  { label: "Critical load share", value: "0", unit: "%" },
-  { label: "Night-time / backup load", value: "0", unit: "kWh/day" },
-  { label: "Grid dependence", value: "0", unit: "%" },
-];
 
 // ---------------------------------------------------------------------------
 // Types & formatters
@@ -74,9 +40,9 @@ export type AssessmentReportPayload = {
   assessmentId: string;
   inputMethod: AssessmentReportInputMethod;
   results: AssessmentResults;
-  /** Download date string, e.g. "6 August 2026" */
+  /** Download date string, e.g. "19 August 2026" */
   assessmentDate: string;
-  /** Vite-resolved logo URL */
+  /** Vite-resolved logo URL (accepted for API compatibility; brand lockup is drawn). */
   logoSrc?: string;
 };
 
@@ -131,11 +97,6 @@ const toPercent = (value: unknown): number | null => {
   return Math.round(n <= 1 ? n * 100 : n);
 };
 
-const formatPercentLabel = (value: unknown): string => {
-  const pct = toPercent(value);
-  return pct === null ? MISSING : `${pct}%`;
-};
-
 const formatKwh = (value: unknown): string => {
   const n = toNum(value);
   if (n === null) return MISSING;
@@ -145,12 +106,12 @@ const formatKwh = (value: unknown): string => {
   })} kWh`;
 };
 
-const formatDieselLitres = (value: unknown): string => {
-  const n = toNum(value) ?? 0;
-  return `${n.toLocaleString("en-NG", {
+const formatKwhPer = (value: number | null, suffix: string): string => {
+  if (value === null || !Number.isFinite(value)) return MISSING;
+  return `${value.toLocaleString("en-NG", {
     maximumFractionDigits: 1,
-    minimumFractionDigits: 1,
-  })} L`;
+    minimumFractionDigits: 0,
+  })} kWh/${suffix}`;
 };
 
 export function formatAssessmentDate(date = new Date()): string {
@@ -169,7 +130,6 @@ export function resolveEstimatedAnnualDemandKwh(
   if (fromMethod != null && Number.isFinite(Number(fromMethod))) {
     return Number(fromMethod);
   }
-  // Fallback: first non-null summary annual load
   for (const key of ["bill", "appliance", "custom"] as const) {
     const v = results?.summary?.[key]?.estimatedAnnualLoadKwh;
     if (v != null && Number.isFinite(Number(v))) return Number(v);
@@ -178,31 +138,82 @@ export function resolveEstimatedAnnualDemandKwh(
 }
 
 // ---------------------------------------------------------------------------
-// Styles — minimal, print-friendly two-color theme
-// Only colors allowed:
-// - Blue: `#174c90` for titles/rules/borders
-// - Black: all other text
-// Page background stays white.
+// Palette
 // ---------------------------------------------------------------------------
 
 const colors = {
-  brand: "#174c90",
-  text: "#000000",
-  pageBg: "#FFFFFF",
-  paper: "#FFFFFF",
-  line: "#174c90",
+  navy: "#1b3b6b",
+  navyDeep: "#193760",
+  orange: "#F5921E",
+  panelSolar: "#2f5d9e",
+  text: "#3a3f47",
+  textDark: "#22303f",
+  muted: "#7f8b9a",
+  line: "#d8e0e9",
+  tableHeaderBg: "#e9eef4",
+  white: "#ffffff",
+  noteCream: "#fbf3e0",
+  noteCreamBorder: "#eddaae",
+  panelBlue: "#eaf1f9",
+  panelBlueBorder: "#d3e0ef",
+  mint: "#eaf3ea",
+  mintBorder: "#d4e6d4",
+  gridSlice: "#1b60a8",
 };
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
     fontSize: 10,
     color: colors.text,
-    backgroundColor: colors.pageBg,
-    paddingTop: 34,
+    backgroundColor: colors.white,
+    paddingTop: 30,
     paddingBottom: 46,
     paddingHorizontal: 36,
   },
+
+  // Header
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 26,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  brandBars: {
+    width: 16,
+    height: 18,
+    marginRight: 7,
+  },
+  brandWord: {
+    fontSize: 15,
+    fontFamily: "Helvetica-Bold",
+    color: colors.navy,
+  },
+  headerMeta: {
+    textAlign: "right",
+  },
+  headerMetaLabel: {
+    fontSize: 7,
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  headerMetaValue: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: colors.navy,
+  },
+
+  // Footer
   footer: {
     position: "absolute",
     left: 36,
@@ -217,408 +228,383 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 8,
-    color: colors.text,
+    color: colors.muted,
   },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 28,
-  },
-  logo: {
-    width: 110,
-    height: 36,
-    objectFit: "contain",
-  },
-  brandFallback: {
-    fontSize: 18,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-    letterSpacing: 0.5,
-  },
-  headerMeta: {
-    textAlign: "right",
-  },
-  headerMetaLabel: {
-    fontSize: 8,
-    color: colors.brand,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  headerMetaValue: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-  },
-  titleBlock: {
-    marginBottom: 22,
-  },
+
+  // Title block
   eyebrow: {
-    fontSize: 9,
-    color: colors.brand,
+    fontSize: 8,
+    color: colors.navy,
     fontFamily: "Helvetica-Bold",
     textTransform: "uppercase",
-    letterSpacing: 1.4,
+    letterSpacing: 1.2,
     marginBottom: 6,
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontFamily: "Helvetica-Bold",
-    color: colors.brand,
+    color: colors.navy,
+    lineHeight: 1.1,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 10,
     color: colors.text,
     lineHeight: 1.4,
-    maxWidth: 420,
+    marginBottom: 4,
   },
+
+  // Cover illustration
+  heroWrap: {
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  heroCaption: {
+    fontSize: 8,
+    color: colors.navy,
+    textAlign: "center",
+    marginTop: 6,
+  },
+
+  // Metadata grid
   metaGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 22,
+    marginTop: 14,
+    marginBottom: 8,
   },
   metaItem: {
-    width: "48%",
-    paddingVertical: 6,
-    paddingHorizontal: 6,
+    width: "50%",
+    marginBottom: 16,
   },
   metaLabel: {
     fontSize: 7.5,
-    color: colors.brand,
+    color: colors.muted,
     textTransform: "uppercase",
     letterSpacing: 0.8,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   metaValue: {
-    fontSize: 10.5,
+    fontSize: 14,
     fontFamily: "Helvetica-Bold",
-    color: colors.text,
+    color: colors.navy,
   },
+
+  // Section heading
+  sectionTitle: {
+    fontSize: 15,
+    fontFamily: "Helvetica-Bold",
+    color: colors.navy,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+
+  // KPI cards
   kpiRow: {
     flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
+    gap: 10,
+    marginBottom: 4,
   },
   kpiCard: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderWidth: 0,
-    backgroundColor: colors.paper,
-  },
-  kpiCardBrand: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderWidth: 0,
-    backgroundColor: colors.paper,
-  },
-  kpiLabel: {
-    fontSize: 7,
-    color: colors.brand,
-    textTransform: "uppercase",
-    letterSpacing: 0.7,
-    marginBottom: 6,
-  },
-  kpiLabelOnBrand: {
-    fontSize: 7,
-    color: colors.brand,
-    textTransform: "uppercase",
-    letterSpacing: 0.7,
-    marginBottom: 6,
-  },
-  kpiValue: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-  },
-  kpiValueOnBrand: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-  },
-  section: {
-    marginTop: 18,
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: colors.brand,
-    marginBottom: 4,
-  },
-  sectionRule: {
-    height: 1.5,
-    width: 34,
-    backgroundColor: colors.brand,
-    marginBottom: 12,
-  },
-  sectionIntro: {
-    fontSize: 8,
-    color: colors.text,
-    marginBottom: 10,
-    lineHeight: 1.4,
-  },
-  table: {
-    backgroundColor: colors.paper,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 4,
+    borderRadius: 3,
+    paddingVertical: 11,
+    paddingHorizontal: 11,
+  },
+  kpiLabel: {
+    fontSize: 6.5,
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+  kpiValue: {
+    fontSize: 15,
+    fontFamily: "Helvetica-Bold",
+    color: colors.navy,
+  },
+
+  // Dark panel (executive summary / financial interpretation)
+  darkPanel: {
+    marginTop: 18,
+    backgroundColor: colors.navyDeep,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  darkPanelTitle: {
+    fontSize: 9.5,
+    fontFamily: "Helvetica-Bold",
+    color: colors.white,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  darkPanelText: {
+    fontSize: 9,
+    color: "#dbe4f0",
+    lineHeight: 1.5,
+  },
+
+  // Tables
+  table: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 2,
+    marginBottom: 4,
   },
   tableHeader: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.brand,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    backgroundColor: colors.tableHeaderBg,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
   },
   tableHeaderText: {
-    fontSize: 7.5,
+    fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    color: colors.brand,
+    color: colors.muted,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.7,
   },
   tableRow: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.brand,
-    paddingVertical: 6.5,
-    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
-  tableRowLast: {
-    flexDirection: "row",
-    paddingVertical: 6.5,
-    paddingHorizontal: 10,
-  },
-  colLabel: {
-    fontSize: 9,
-    color: colors.text,
-  },
-  colLeftWrap: {
-    flex: 1.4,
-    borderRightWidth: 1,
-    borderRightColor: colors.brand,
+  colLeft: {
+    width: "47%",
     paddingRight: 8,
   },
-  colValue: {
-    flex: 1,
+  colRight: {
+    width: "53%",
+  },
+  cellLabel: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-    textAlign: "right",
+    color: colors.textDark,
   },
-  demandBanner: {
-    backgroundColor: colors.paper,
+  cellValue: {
+    fontSize: 9,
+    color: colors.navy,
+  },
+  cellValuePlain: {
+    fontSize: 8.5,
+    color: colors.text,
+    lineHeight: 1.35,
+  },
+
+  // Notes / callout panels
+  noteBox: {
+    marginTop: 14,
+    backgroundColor: colors.noteCream,
     borderWidth: 1,
-    borderColor: colors.line,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.brand,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    marginBottom: 6,
+    borderColor: colors.noteCreamBorder,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
-  demandLabel: {
-    fontSize: 8,
-    color: colors.brand,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  demandValue: {
-    fontSize: 16,
-    fontFamily: "Helvetica-Bold",
+  noteText: {
+    fontSize: 7.5,
     color: colors.text,
+    lineHeight: 1.5,
   },
-  twoCol: {
-    flexDirection: "row",
-    gap: 12,
+  noteBold: {
+    fontFamily: "Helvetica-Bold",
+    color: colors.navy,
   },
-  col: {
-    flex: 1,
-  },
-  disclaimer: {
+  bluePanel: {
     marginTop: 16,
-    padding: 12,
-    backgroundColor: colors.paper,
+    backgroundColor: colors.panelBlue,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: colors.panelBlueBorder,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
-  disclaimerTitle: {
-    fontSize: 8,
+  bluePanelTitle: {
+    fontSize: 7.5,
     fontFamily: "Helvetica-Bold",
-    color: colors.brand,
+    color: colors.navy,
     textTransform: "uppercase",
     letterSpacing: 0.8,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  disclaimerText: {
-    fontSize: 8,
+  bluePanelText: {
+    fontSize: 9,
+    color: colors.text,
+    lineHeight: 1.55,
+  },
+  mintPanel: {
+    marginTop: 4,
+    marginBottom: 12,
+    backgroundColor: colors.mint,
+    borderWidth: 1,
+    borderColor: colors.mintBorder,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  mintPanelText: {
+    fontSize: 8.5,
     color: colors.text,
     lineHeight: 1.45,
   },
-  ctaBox: {
-    marginTop: 14,
-    backgroundColor: colors.paper,
-    borderWidth: 1,
-    borderColor: colors.line,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+  disclaimerBox: {
+    marginTop: 10,
+    backgroundColor: colors.panelBlue,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
-  ctaTitle: {
-    fontSize: 12,
+  disclaimerText: {
+    fontSize: 7.5,
+    color: colors.muted,
+    lineHeight: 1.5,
+  },
+  disclaimerBold: {
     fontFamily: "Helvetica-Bold",
-    color: colors.brand,
-    marginBottom: 4,
+    color: colors.navy,
   },
-  ctaText: {
-    fontSize: 9,
-    color: colors.text,
-    lineHeight: 1.4,
-  },
-  ctaAccent: {
-    marginTop: 8,
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-  },
-  archSection: {
-    marginTop: 16,
-  },
-  archTitle: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: colors.brand,
-    marginBottom: 14,
-  },
-  archDiagram: {
-    height: 132,
-    flexDirection: "row",
-    alignItems: "center",
+
+  // Architecture diagram
+  archWrap: {
+    height: 156,
+    position: "relative",
+    marginTop: 6,
   },
   archBox: {
-    backgroundColor: colors.paper,
+    position: "absolute",
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: colors.navy,
     borderRadius: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    minWidth: 72,
+    backgroundColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
   },
   archBoxText: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: colors.brand,
+    color: colors.navy,
     textAlign: "center",
   },
-  archLineH: {
-    height: 2,
-    flex: 1,
-    backgroundColor: colors.brand,
-    minWidth: 12,
-  },
-  archCenterCol: {
-    width: 88,
-    height: 132,
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  archLineV: {
-    width: 2,
-    flexGrow: 1,
-    backgroundColor: colors.brand,
-  },
+
+  // Charts
   chartsRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 14,
+    gap: 14,
+    marginTop: 6,
   },
   chartPanel: {
     flex: 1,
     borderWidth: 1,
     borderColor: colors.line,
-    backgroundColor: colors.paper,
-    paddingTop: 8,
-    paddingBottom: 6,
-    paddingHorizontal: 8,
+    borderRadius: 2,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 12,
+    height: 140,
   },
   chartTitle: {
-    fontSize: 9,
+    fontSize: 9.5,
     fontFamily: "Helvetica-Bold",
-    color: colors.brand,
-    textAlign: "center",
+    color: colors.navy,
     marginBottom: 6,
   },
-  chartBody: {
+  chartAxisLabel: {
+    fontSize: 6.5,
+    color: colors.orange,
+    marginBottom: 2,
+  },
+  barBody: {
     flexDirection: "row",
-    alignItems: "stretch",
-  },
-  chartYCol: {
-    width: 36,
-    marginRight: 2,
-    paddingBottom: 16,
-  },
-  chartYLabel: {
-    fontSize: 5.5,
-    color: colors.text,
-    textAlign: "right",
-    marginBottom: 4,
-    lineHeight: 1.2,
-  },
-  chartYTicks: {
-    height: 88,
-    justifyContent: "space-between",
-  },
-  chartYTick: {
-    fontSize: 6,
-    color: colors.text,
-    textAlign: "right",
-  },
-  chartPlot: {
     flex: 1,
   },
-  chartBarsArea: {
-    height: 88,
+  barYCol: {
+    width: 24,
+    justifyContent: "space-between",
+    paddingBottom: 16,
+  },
+  barYTick: {
+    fontSize: 6,
+    color: colors.muted,
+    textAlign: "right",
+  },
+  barPlot: {
+    flex: 1,
+  },
+  barsArea: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "flex-end",
     borderLeftWidth: 1,
     borderBottomWidth: 1,
-    borderColor: colors.brand,
-    paddingHorizontal: 4,
+    borderColor: colors.line,
+    paddingHorizontal: 10,
   },
-  chartBarCol: {
+  barCol: {
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-end",
     height: "100%",
-    paddingHorizontal: 3,
+    paddingHorizontal: 8,
   },
-  chartBar: {
-    width: "70%",
-    backgroundColor: colors.brand,
+  bar: {
+    width: "72%",
+    backgroundColor: colors.orange,
     minHeight: 1,
   },
-  chartXLabels: {
+  barXLabels: {
     flexDirection: "row",
     marginTop: 4,
-    paddingHorizontal: 4,
+    paddingHorizontal: 10,
   },
-  chartXLabel: {
+  barXLabel: {
     flex: 1,
     fontSize: 7,
     color: colors.text,
     textAlign: "center",
   },
+  pieWrap: {
+    flex: 1,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pieLabel: {
+    position: "absolute",
+    fontSize: 6.5,
+    color: colors.text,
+  },
 });
 
 // ---------------------------------------------------------------------------
-// Shared pieces
+// Shared primitives
 // ---------------------------------------------------------------------------
+
+function BrandLockup() {
+  return (
+    <View style={styles.brandRow}>
+      <Svg style={styles.brandBars} viewBox="0 0 16 18">
+        <Rect x="0" y="4" width="3" height="14" fill={colors.orange} />
+        <Rect x="4.5" y="0" width="3" height="18" fill={colors.orange} />
+        <Rect x="9" y="6" width="3" height="12" fill={colors.orange} />
+        <Rect x="13.5" y="2" width="2.5" height="16" fill={colors.orange} />
+      </Svg>
+      <Text style={styles.brandWord}>SolarVy</Text>
+    </View>
+  );
+}
+
+function ReportHeader({ assessmentId }: { assessmentId: string }) {
+  return (
+    <View style={styles.headerRow} fixed>
+      <BrandLockup />
+      <View style={styles.headerMeta}>
+        <Text style={styles.headerMetaLabel}>Assessment</Text>
+        <Text style={styles.headerMetaValue}>{assessmentId}</Text>
+      </View>
+    </View>
+  );
+}
 
 function ReportFooter({
   assessmentId,
@@ -629,67 +615,193 @@ function ReportFooter({
 }) {
   return (
     <View style={styles.footer} fixed>
-      <Text style={styles.footerText}>{assessmentId} · solarvy.ng</Text>
+      <Text style={styles.footerText}>
+        {assessmentId} · SolarVy Energy Assessment
+      </Text>
       <Text style={styles.footerText}>{pageLabel}</Text>
     </View>
   );
 }
 
-function SectionHeading({ title, intro }: { title: string; intro?: string }) {
+type TableColumn = { header: string };
+
+function TwoColTable({
+  columns,
+  rows,
+}: {
+  columns: [TableColumn, TableColumn];
+  rows: Array<{ label: string; value: string }>;
+}) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionRule} />
-      {intro ? <Text style={styles.sectionIntro}>{intro}</Text> : null}
+    <View style={styles.table}>
+      <View style={styles.tableHeader}>
+        <View style={styles.colLeft}>
+          <Text style={styles.tableHeaderText}>{columns[0].header}</Text>
+        </View>
+        <View style={styles.colRight}>
+          <Text style={styles.tableHeaderText}>{columns[1].header}</Text>
+        </View>
+      </View>
+      {rows.map((row) => (
+        <View style={styles.tableRow} key={row.label}>
+          <View style={styles.colLeft}>
+            <Text style={styles.cellLabel}>{row.label}</Text>
+          </View>
+          <View style={styles.colRight}>
+            <Text style={styles.cellValue}>{row.value}</Text>
+          </View>
+        </View>
+      ))}
     </View>
   );
 }
 
-function TableRow({
-  label,
-  value,
-  last,
-}: {
-  label: string;
-  value: string;
-  last?: boolean;
-}) {
+function SolarHouseHero() {
+  const cx = 285;
+  const cy = 52;
+  const rays = Array.from({ length: 8 }).map((_, i) => {
+    const a = (i * 45 * Math.PI) / 180;
+    return {
+      x1: cx + Math.cos(a) * 26,
+      y1: cy + Math.sin(a) * 26,
+      x2: cx + Math.cos(a) * 36,
+      y2: cy + Math.sin(a) * 36,
+    };
+  });
+
   return (
-    <View style={last ? styles.tableRowLast : styles.tableRow}>
-      <View style={styles.colLeftWrap}>
-        <Text style={styles.colLabel}>{label}</Text>
-      </View>
-      <Text style={styles.colValue}>{value}</Text>
+    <View style={styles.heroWrap}>
+      <Svg width={340} height={140} viewBox="0 0 340 140">
+        {/* House body */}
+        <Rect
+          x="62"
+          y="66"
+          width="116"
+          height="56"
+          fill={colors.white}
+          stroke={colors.navy}
+          strokeWidth={1.4}
+        />
+        {/* Roof */}
+        <Polygon
+          points="40,66 120,26 200,66"
+          fill={colors.white}
+          stroke={colors.navy}
+          strokeWidth={1.4}
+        />
+        {/* Solar panel band on roof */}
+        <Polygon
+          points="90,44 150,44 166,58 78,58"
+          fill={colors.panelSolar}
+          stroke={colors.navy}
+          strokeWidth={0.8}
+        />
+        <Line x1="110" y1="44" x2="102" y2="58" stroke={colors.white} strokeWidth={0.8} />
+        <Line x1="130" y1="44" x2="126" y2="58" stroke={colors.white} strokeWidth={0.8} />
+        <Line x1="150" y1="44" x2="150" y2="58" stroke={colors.white} strokeWidth={0.8} />
+        <Line x1="84" y1="51" x2="160" y2="51" stroke={colors.white} strokeWidth={0.6} />
+        {/* Door */}
+        <Rect
+          x="110"
+          y="88"
+          width="22"
+          height="34"
+          fill={colors.white}
+          stroke={colors.navy}
+          strokeWidth={1.2}
+        />
+        {/* Windows */}
+        <Rect x="74" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+        <Rect x="148" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+        {/* Sun */}
+        <Circle cx={cx} cy={cy} r={20} fill={colors.orange} />
+        {rays.map((r, i) => (
+          <Line
+            key={i}
+            x1={r.x1}
+            y1={r.y1}
+            x2={r.x2}
+            y2={r.y2}
+            stroke={colors.orange}
+            strokeWidth={2.2}
+          />
+        ))}
+      </Svg>
+      <Text style={styles.heroCaption}>
+        Illustrative residential solar + battery concept
+      </Text>
     </View>
   );
 }
 
 function SystemArchitectureDiagram() {
+  const boxes = {
+    solar: { left: 6, top: 58, w: 92, h: 40 },
+    inverter: { left: 150, top: 58, w: 118, h: 40 },
+    battery: { left: 320, top: 10, w: 96, h: 40 },
+    generator: { left: 320, top: 106, w: 96, h: 40 },
+    loads: { left: 425, top: 58, w: 92, h: 40 },
+  };
+
   return (
-    <View style={styles.archSection} wrap={false}>
-      <Text style={styles.archTitle}>Illustrative system architecture</Text>
-      <View style={styles.archDiagram}>
-        <View style={styles.archBox}>
-          <Text style={styles.archBoxText}>Solar PV</Text>
-        </View>
-        <View style={styles.archLineH} />
-        <View style={styles.archBox}>
-          <Text style={styles.archBoxText}>Hybrid Inverter</Text>
-        </View>
-        <View style={styles.archLineH} />
-        <View style={styles.archCenterCol}>
-          <View style={styles.archBox}>
-            <Text style={styles.archBoxText}>Battery</Text>
-          </View>
-          <View style={styles.archLineV} />
-          <View style={styles.archBox}>
-            <Text style={styles.archBoxText}>Generator</Text>
-          </View>
-        </View>
-        <View style={styles.archLineH} />
-        <View style={styles.archBox}>
-          <Text style={styles.archBoxText}>Loads</Text>
-        </View>
+    <View style={styles.archWrap}>
+      <Svg
+        width="100%"
+        height={156}
+        viewBox="0 0 523 156"
+        style={{ position: "absolute", top: 0, left: 0 }}
+      >
+        {/* Solar PV -> Hybrid Inverter */}
+        <Line x1={98} y1={78} x2={150} y2={78} stroke={colors.navy} strokeWidth={1.6} />
+        {/* Inverter -> bus */}
+        <Line x1={268} y1={78} x2={294} y2={78} stroke={colors.navy} strokeWidth={1.6} />
+        <Line x1={294} y1={30} x2={294} y2={126} stroke={colors.navy} strokeWidth={1.6} />
+        <Line x1={294} y1={30} x2={320} y2={30} stroke={colors.navy} strokeWidth={1.6} />
+        <Line x1={294} y1={126} x2={320} y2={126} stroke={colors.navy} strokeWidth={1.6} />
+        {/* Battery / Generator converge -> Home Loads */}
+        <Line x1={416} y1={30} x2={425} y2={78} stroke={colors.navy} strokeWidth={1.6} />
+        <Line x1={416} y1={126} x2={425} y2={78} stroke={colors.navy} strokeWidth={1.6} />
+      </Svg>
+
+      <View
+        style={[
+          styles.archBox,
+          { left: boxes.solar.left, top: boxes.solar.top, width: boxes.solar.w, height: boxes.solar.h },
+        ]}
+      >
+        <Text style={styles.archBoxText}>Solar PV</Text>
+      </View>
+      <View
+        style={[
+          styles.archBox,
+          { left: boxes.inverter.left, top: boxes.inverter.top, width: boxes.inverter.w, height: boxes.inverter.h },
+        ]}
+      >
+        <Text style={styles.archBoxText}>Hybrid Inverter</Text>
+      </View>
+      <View
+        style={[
+          styles.archBox,
+          { left: boxes.battery.left, top: boxes.battery.top, width: boxes.battery.w, height: boxes.battery.h },
+        ]}
+      >
+        <Text style={styles.archBoxText}>Battery</Text>
+      </View>
+      <View
+        style={[
+          styles.archBox,
+          { left: boxes.generator.left, top: boxes.generator.top, width: boxes.generator.w, height: boxes.generator.h },
+        ]}
+      >
+        <Text style={styles.archBoxText}>Generator</Text>
+      </View>
+      <View
+        style={[
+          styles.archBox,
+          { left: boxes.loads.left, top: boxes.loads.top, width: boxes.loads.w, height: boxes.loads.h },
+        ]}
+      >
+        <Text style={styles.archBoxText}>Home Loads</Text>
       </View>
     </View>
   );
@@ -700,56 +812,46 @@ const niceYMax = (maxValue: number, step = 100): number => {
   return Math.ceil(maxValue / step) * step;
 };
 
-const PLOT_HEIGHT = 88;
-
-function MiniBarChart({
-  title,
-  yLabel,
+function CostBarChart({
   categories,
   yMax,
-  tickCount = 4,
 }: {
-  title: string;
-  yLabel: string;
   categories: Array<{ label: string; value: number }>;
   yMax: number;
-  tickCount?: number;
 }) {
   const safeMax = yMax > 0 ? yMax : 1;
+  const tickCount = 4;
   const ticks: number[] = [];
   for (let i = tickCount; i >= 0; i -= 1) {
     ticks.push(Math.round((safeMax * i) / tickCount));
   }
 
   return (
-    <View style={styles.chartPanel} wrap={false}>
-      <Text style={styles.chartTitle}>{title}</Text>
-      <View style={styles.chartBody}>
-        <View style={styles.chartYCol}>
-          <Text style={styles.chartYLabel}>{yLabel}</Text>
-          <View style={styles.chartYTicks}>
-            {ticks.map((tick, index) => (
-              <Text key={`${tick}-${index}`} style={styles.chartYTick}>
-                {tick}
-              </Text>
-            ))}
-          </View>
+    <View style={styles.chartPanel}>
+      <Text style={styles.chartTitle}>Illustrative energy cost comparison</Text>
+      <Text style={styles.chartAxisLabel}>NGN/kWh</Text>
+      <View style={styles.barBody}>
+        <View style={styles.barYCol}>
+          {ticks.map((tick, index) => (
+            <Text key={`${tick}-${index}`} style={styles.barYTick}>
+              {tick}
+            </Text>
+          ))}
         </View>
-        <View style={styles.chartPlot}>
-          <View style={styles.chartBarsArea}>
+        <View style={styles.barPlot}>
+          <View style={styles.barsArea}>
             {categories.map((cat) => {
               const ratio = Math.min(1, Math.max(0, cat.value / safeMax));
-              const barHeight = Math.max(1, Math.round(ratio * PLOT_HEIGHT));
               return (
-                <View key={cat.label} style={styles.chartBarCol}>
-                  <View style={[styles.chartBar, { height: barHeight }]} />
+                <View key={cat.label} style={styles.barCol}>
+                  <View style={[styles.bar, { height: `${Math.max(1, ratio * 100)}%` }]} />
                 </View>
               );
             })}
           </View>
-          <View style={styles.chartXLabels}>
+          <View style={styles.barXLabels}>
             {categories.map((cat) => (
-              <Text key={cat.label} style={styles.chartXLabel}>
+              <Text key={cat.label} style={styles.barXLabel}>
                 {cat.label}
               </Text>
             ))}
@@ -760,23 +862,70 @@ function MiniBarChart({
   );
 }
 
-function ReportHeader({
-  logoSrc,
-  assessmentId,
+const polar = (cx: number, cy: number, r: number, angleDeg: number) => {
+  const a = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+};
+
+const wedgePath = (
+  cx: number,
+  cy: number,
+  r: number,
+  startDeg: number,
+  endDeg: number,
+): string => {
+  const start = polar(cx, cy, r, startDeg);
+  const end = polar(cx, cy, r, endDeg);
+  const large = endDeg - startDeg > 180 ? 1 : 0;
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y} Z`;
+};
+
+function ContributionPieChart({
+  solarPct,
+  gridPct,
 }: {
-  logoSrc?: string;
-  assessmentId: string;
+  solarPct: number;
+  gridPct: number;
 }) {
+  const cx = 75;
+  const cy = 48;
+  const r = 40;
+  const gridAngle = (gridPct / 100) * 360;
+
+  // Grid/Other slice starts at top; solar fills the remainder.
+  const gridSlice =
+    gridPct <= 0
+      ? null
+      : gridPct >= 100
+        ? null
+        : wedgePath(cx, cy, r, 0, gridAngle);
+  const solarSlice =
+    solarPct >= 100
+      ? null
+      : solarPct <= 0
+        ? null
+        : wedgePath(cx, cy, r, gridAngle, 360);
+
   return (
-    <View style={styles.headerRow}>
-      {logoSrc ? (
-        <Image src={logoSrc} style={styles.logo} />
-      ) : (
-        <Text style={styles.brandFallback}>Solarvy</Text>
-      )}
-      <View style={styles.headerMeta}>
-        <Text style={styles.headerMetaLabel}>Assessment</Text>
-        <Text style={styles.headerMetaValue}>{assessmentId}</Text>
+    <View style={styles.chartPanel}>
+      <Text style={styles.chartTitle}>Estimated energy contribution</Text>
+      <View style={styles.pieWrap}>
+        <Svg width={150} height={96} viewBox="0 0 150 96">
+          {solarPct >= 100 ? (
+            <Circle cx={cx} cy={cy} r={r} fill={colors.orange} />
+          ) : null}
+          {gridPct >= 100 ? (
+            <Circle cx={cx} cy={cy} r={r} fill={colors.gridSlice} />
+          ) : null}
+          {solarSlice ? <Path d={solarSlice} fill={colors.orange} /> : null}
+          {gridSlice ? <Path d={gridSlice} fill={colors.gridSlice} /> : null}
+        </Svg>
+        <Text style={[styles.pieLabel, { top: 0, right: 22, color: colors.gridSlice }]}>
+          Grid/Other {gridPct}%
+        </Text>
+        <Text style={[styles.pieLabel, { bottom: 4, left: 34, color: colors.orange }]}>
+          Solar {solarPct}%
+        </Text>
       </View>
     </View>
   );
@@ -786,35 +935,52 @@ function ReportHeader({
 // Document
 // ---------------------------------------------------------------------------
 
-function AssessmentReportDocument({
+export function AssessmentReportDocument({
   assessmentId,
   results,
   assessmentDate,
-  estimatedAnnualDemand,
-  logoSrc,
+  annualDemandKwh,
 }: {
   assessmentId: string;
   results: AssessmentResults;
   assessmentDate: string;
-  estimatedAnnualDemand: string;
-  logoSrc?: string;
+  annualDemandKwh: number | null;
 }) {
   const propertyType = formatText(results.propertyType);
   const objective = formatText(results.objective);
-  const projectLocation =
+  const location =
     [results.city, results.country]
       .map((v) => formatText(v))
       .filter((v) => v !== MISSING)
       .join(", ") || MISSING;
-  const solarKwp = `${formatNumber(results.recommendedSolarKwp, 1)} kWp`;
-  const batteryKwh = `${formatNumber(results.recommendedBatteryKwh, 1)} kWh`;
-  const inverterKw = `${formatNumber(results.recommendedInverterKw, 1)} kW`;
-  const annualSavings = formatNaira(results.netAnnualSavings);
-  const payback = formatPaybackYears(results.simplePaybackYears);
-  const disclaimer =
-    results.disclaimer ||
-    "These results are indicative only. Final system design, procurement, and performance should be validated through a detailed review before investment or installation.";
 
+  const pv = `${formatNumber(results.recommendedSolarKwp, 1)} kWp`;
+  const battery = `${formatNumber(results.recommendedBatteryKwh, 1)} kWh`;
+  const inverter = `${formatNumber(results.recommendedInverterKw, 1)} kW`;
+  const annualPvGen = formatKwh(results.annualPvGenerationKwh);
+  const usableSolar = formatKwh(results.usableSolarKwh);
+
+  const systemCost = formatNaira(results.estimatedSystemCost);
+  const grossSavings = formatNaira(results.grossAnnualSavings);
+  const omAllowance = formatNaira(results.annualOmAllowance);
+  const netSavings = formatNaira(results.netAnnualSavings);
+  const payback = formatPaybackYears(results.simplePaybackYears);
+
+  const annualDemandLabel = formatKwhPer(annualDemandKwh, "year");
+  const monthlyDemandLabel = formatKwhPer(
+    annualDemandKwh != null ? annualDemandKwh / 12 : null,
+    "month",
+  );
+
+  const propertyLower =
+    propertyType !== MISSING ? propertyType.toLowerCase() : "property";
+  const objectiveLower =
+    objective !== MISSING ? objective.toLowerCase() : "improve energy reliability";
+  const locationPhrase = location !== MISSING ? location : "your location";
+
+  const executiveSummary = `SolarVy assessed this ${propertyLower} in ${locationPhrase} with a primary objective to ${objectiveLower}. The preliminary model recommends a ${pv} solar PV system, ${battery} battery storage and a ${inverter} hybrid inverter. Based on the assessment outputs, the system is estimated to generate ${annualPvGen} of solar energy per year, with net annual savings of approximately ${netSavings} and a simple payback of about ${payback}.`;
+
+  // Cost comparison chart
   const solarCost = toNum(results.solarCostPerKwh) ?? 0;
   const gridCost = toNum(results.gridCostPerKwh) ?? 0;
   const dieselCost = toNum(results.dieselCostPerKwh) ?? 0;
@@ -825,12 +991,9 @@ function AssessmentReportDocument({
   ];
   const costYMax = niceYMax(Math.max(solarCost, gridCost, dieselCost, 1), 100);
 
+  // Energy contribution pie
   const solarSharePct = toPercent(results.solarShare) ?? 0;
-  const gridOtherPct = Math.max(0, 100 - solarSharePct);
-  const contributionCategories = [
-    { label: "Solar", value: solarSharePct },
-    { label: "Grid/Other", value: gridOtherPct },
-  ];
+  const gridOtherPct = Math.max(0, Math.min(100, 100 - solarSharePct));
 
   return (
     <Document
@@ -838,17 +1001,18 @@ function AssessmentReportDocument({
       author="Solarvy"
       subject="Energy Assessment Report"
     >
-      {/* -------- Page 1: Cover / snapshot -------- */}
+      {/* -------- Page 1: Cover -------- */}
       <Page size="A4" style={styles.page}>
-        <ReportHeader logoSrc={logoSrc} assessmentId={assessmentId} />
+        <ReportHeader assessmentId={assessmentId} />
 
-        <View style={styles.titleBlock}>
-          <Text style={styles.eyebrow}>Solar energy assessment</Text>
-          <Text style={styles.title}>Energy Assessment Report</Text>
-          <Text style={styles.subtitle}>
-            **Add house illustration with solar panels**
-          </Text>
-        </View>
+        <Text style={styles.eyebrow}>Solar energy assessment</Text>
+        <Text style={styles.title}>Energy Assessment Report</Text>
+        <Text style={styles.subtitle}>
+          A clear preliminary view of your recommended solar and battery system,
+          expected savings and next steps.
+        </Text>
+
+        <SolarHouseHero />
 
         <View style={styles.metaGrid}>
           <View style={styles.metaItem}>
@@ -864,362 +1028,230 @@ function AssessmentReportDocument({
             <Text style={styles.metaValue}>{objective}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Project Location</Text>
-            <Text style={styles.metaValue}>{projectLocation}</Text>
+            <Text style={styles.metaLabel}>Project location</Text>
+            <Text style={styles.metaValue}>{location}</Text>
           </View>
         </View>
 
-        <SectionHeading
-          title="Recommendation snapshot"
-          intro="Key sizing and savings figures from your assessment Outputs."
-        />
-
+        <Text style={styles.sectionTitle}>Recommendation snapshot</Text>
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiLabel}>Recommended PV</Text>
-            <Text style={styles.kpiValue}>{solarKwp}</Text>
+            <Text style={styles.kpiValue}>{pv}</Text>
           </View>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiLabel}>Battery</Text>
-            <Text style={styles.kpiValue}>{batteryKwh}</Text>
+            <Text style={styles.kpiValue}>{battery}</Text>
           </View>
-          <View style={styles.kpiCardBrand}>
-            <Text style={styles.kpiLabelOnBrand}>Annual savings</Text>
-            <Text style={styles.kpiValueOnBrand}>{annualSavings}</Text>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Annual savings</Text>
+            <Text style={styles.kpiValue}>{netSavings}</Text>
           </View>
-          <View style={styles.kpiCardBrand}>
-            <Text style={styles.kpiLabelOnBrand}>Payback</Text>
-            <Text style={styles.kpiValueOnBrand}>{payback}</Text>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Payback</Text>
+            <Text style={styles.kpiValue}>{payback}</Text>
           </View>
         </View>
 
-        {/* <View style={{ marginTop: 20 }}>
-          <View style={styles.demandBanner}>
-            <Text style={styles.demandLabel}>Estimated annual demand</Text>
-            <Text style={styles.demandValue}>{estimatedAnnualDemand}</Text>
-          </View>
-        </View> */}
-
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerTitle}>Executive Summary</Text>
-          <Text
-            style={[
-              styles.disclaimerText,
-              { fontSize: 10, fontFamily: "Helvetica" },
-            ]}
-          >
-            The Solarvy platform evaluated the site as a hotel in Lagos, Nigeria
-            with a primary objective to reduce diesel use and improve
-            reliability. Based on the sample inputs, the site appears well
-            suited to a hybrid solar plus battery solution because generator
-            dependence is meaningful, outage exposure is material, and the
-            estimated operating profile suggests strong value in shifting
-            daytime demand away from diesel.
-          </Text>
-          <Text
-            style={[
-              styles.disclaimerText,
-              { marginTop: 10, fontSize: 10, fontFamily: "Helvetica" },
-            ]}
-          >
-            The model indicates an example configuration of 28 kWp solar PV, 40
-            kWh battery storage, and a 25 kW hybrid inverter. At this level, the
-            strongest financial value driver is the reduction of diesel-backed
-            electricity, with indicative annual savings of NGN 7,800,000 and a
-            simple payback of approximately 4.2 years.
-          </Text>
+        <View style={styles.darkPanel}>
+          <Text style={styles.darkPanelTitle}>Executive summary</Text>
+          <Text style={styles.darkPanelText}>{executiveSummary}</Text>
         </View>
 
-        <View style={[styles.table, { marginTop: 10 }]} wrap={false}>
-          <View style={styles.tableHeader}>
-            <View style={styles.colLeftWrap}>
-              <Text style={[styles.tableHeaderText]}>Key Finding</Text>
-            </View>
-            <Text
-              style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
-            >
-              Results
-            </Text>
-          </View>
-          <TableRow
-            label="Estimated annual demand"
-            value={estimatedAnnualDemand}
-          />
-          <TableRow label="Recommended PV" value={solarKwp} />
-          <TableRow label="Recommended Battery" value={batteryKwh} />
-          <TableRow
-            label="Estimated Diesel Reduction"
-            value={formatKwh(results.dieselReduction)}
-          />
-          <TableRow
-            label="Estimated Annual Savings"
-            value={formatNaira(results.netAnnualSavings)}
-          />
-          <TableRow
-            label="Estimated Simple Payback"
-            value={formatPaybackYears(results.simplePaybackYears)}
-            last
+        <ReportFooter assessmentId={assessmentId} pageLabel="Page 1 of 4" />
+      </Page>
+
+      {/* -------- Page 2: Energy profile & system logic -------- */}
+      <Page size="A4" style={styles.page}>
+        <ReportHeader assessmentId={assessmentId} />
+
+        <Text style={styles.eyebrow}>Energy profile</Text>
+        <Text style={styles.title}>Your energy profile &amp; system logic</Text>
+
+        <View style={{ marginTop: 8 }}>
+          <TwoColTable
+            columns={[{ header: "Energy profile" }, { header: "Assessment value" }]}
+            rows={[
+              { label: "Estimated average monthly energy use", value: monthlyDemandLabel },
+              { label: "Estimated annual demand", value: annualDemandLabel },
+              { label: "Hybrid inverter rating", value: inverter },
+              { label: "Primary objective", value: objective },
+              { label: "Assessment location", value: location },
+            ]}
           />
         </View>
 
-        <View style={styles.disclaimer} break>
-          <Text style={styles.disclaimerTitle}>Important Notes</Text>
-          <Text
-            style={[
-              styles.disclaimerText,
-              { fontSize: 10, fontFamily: "Helvetica" },
-            ]}
-          >
-            This report is preliminary. Final design, equipment selection, and
-            performance should be validated through a more detailed engineering
-            review before procurement or installation.
+        <View style={styles.noteBox}>
+          <Text style={styles.noteText}>
+            <Text style={styles.noteBold}>Data quality note: </Text>
+            the previous report populated several energy-profile fields
+            incorrectly. This improved version uses only consistent assessment
+            values and clearly derived figures. Diesel displacement, energy
+            independence and CO2 reduction are not shown as quantified results
+            because the supplied report does not contain reliable values for them.
           </Text>
         </View>
 
-        <SectionHeading title="Energy Profile" />
-        <View style={styles.table} wrap={false}>
-          <View style={styles.tableHeader}>
-            <View style={styles.colLeftWrap}>
-              <Text style={styles.tableHeaderText}>Metric</Text>
-            </View>
-            <Text
-              style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
-            >
-              Example Value
-            </Text>
-          </View>
-          <TableRow label="Average Monthly Energy Use" value={"0"} />
-          <TableRow label="Estimated Annual Demand" value={"0"} />
-
-          <TableRow label="Estimated peak demand" value={"0"} />
-          <TableRow
-            label="Typical outage exposure"
-            value={formatNaira(results.netAnnualSavings)}
-          />
-          <TableRow label="Primary energy objective" value={"0"} last />
-        </View>
-
-        <View style={styles.disclaimer}>
-          <Text
-            style={[
-              styles.disclaimerText,
-              { fontSize: 10, fontFamily: "Helvetica" },
-            ]}
-          >
-            The example load profile suggests a site with meaningful daily
-            demand and recurring outage exposure. This kind of operating
-            environment typically supports a hybrid system case because solar
-            generation can offset daytime energy use, while battery storage can
-            reduce generator runtime and support critical loads during
-            interruptions.
-          </Text>
-        </View>
-
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+          Illustrative system architecture
+        </Text>
         <SystemArchitectureDiagram />
 
-        <ReportFooter assessmentId={assessmentId} pageLabel="Page 1 of 3" />
+        <View style={styles.bluePanel}>
+          <Text style={styles.bluePanelTitle}>How the system works</Text>
+          <Text style={styles.bluePanelText}>
+            Solar PV supplies daytime household loads and charges the battery
+            when surplus energy is available. The hybrid inverter manages power
+            flow between solar, battery and the home. Battery storage supports
+            the home during periods when solar generation is low or grid supply
+            is unavailable. Generator support, where retained, should be treated
+            as an auxiliary backup source rather than the primary daily energy
+            source.
+          </Text>
+        </View>
+
+        <ReportFooter assessmentId={assessmentId} pageLabel="Page 2 of 4" />
       </Page>
 
-      {/* -------- Page 2: System recommendation -------- */}
+      {/* -------- Page 3: System design & financials -------- */}
       <Page size="A4" style={styles.page}>
-        <ReportHeader logoSrc={logoSrc} assessmentId={assessmentId} />
+        <ReportHeader assessmentId={assessmentId} />
 
-        <View style={styles.titleBlock}>
-          <Text style={styles.eyebrow}>System design</Text>
-          <Text style={styles.title}>
-            Recommended system and financial analysis
-          </Text>
-          {/* <Text style={styles.subtitle}>
-            Proposed solar PV capacity, storage, and expected generation for
-            your property.
-          </Text> */}
-        </View>
+        <Text style={styles.eyebrow}>System design</Text>
+        <Text style={styles.title}>Recommended system &amp; financial analysis</Text>
 
-        <View style={styles.table} wrap={false}>
-          <View style={styles.tableHeader}>
-            <View style={styles.colLeftWrap}>
-              <Text style={styles.tableHeaderText}>Component</Text>
-            </View>
-            <Text
-              style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
-            >
-              Recommendation
-            </Text>
-          </View>
-          <TableRow label="Solar PV capacity" value={solarKwp} />
-          <TableRow label="Battery storage" value={batteryKwh} />
-          <TableRow label="Hybrid inverter" value={inverterKw} />
-          <TableRow
-            label="Annual PV generation"
-            value={formatKwh(results.annualPvGenerationKwh)}
-          />
-          <TableRow
-            label="Usable solar energy"
-            value={formatKwh(results.usableSolarKwh)}
-            last
-          />
-        </View>
-
-        <SectionHeading title="Metrics" intro="" />
-        <View style={styles.table} wrap={false}>
-          <View style={styles.tableHeader}>
-            <View style={styles.colLeftWrap}>
-              <Text style={styles.tableHeaderText}>Metric</Text>
-            </View>
-            <Text
-              style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
-            >
-              Example Result
-            </Text>
-          </View>
-          {/* {ENERGY_PROFILE_ROWS.map((row, index) => (
-            <TableRow
-              key={row.label}
-              label={row.label}
-              value={`${row.value} ${row.unit}`}
-              last={index === ENERGY_PROFILE_ROWS.length - 1}
-            />
-          ))} */}
-          <TableRow
-            label="Total estimated system cost"
-            value={formatNaira(results.estimatedSystemCost)}
-          />
-          <TableRow
-            label="Gross annual savings"
-            value={formatNaira(results.grossAnnualSavings)}
-          />
-          <TableRow
-            label="Annual O&M allowance"
-            value={formatNaira(results.annualOmAllowance)}
-          />
-          <TableRow
-            label="Net annual savings"
-            value={formatNaira(results.netAnnualSavings)}
-          />
-          <TableRow
-            label="Simple payback"
-            value={formatPaybackYears(results.simplePaybackYears)}
-          />
-          {/* PLACEHOLDER_NPV — Page 3 Financial summary */}
-          <TableRow label="NPV" value={PLACEHOLDER_NPV} />
-          {/* PLACEHOLDER_IRR — Page 3 Financial summary */}
-          <TableRow label="IRR" value={PLACEHOLDER_IRR} last />
-        </View>
-
-        <SectionHeading title="Hybrid Performance and Value Analysis" />
-        <View style={styles.table} wrap={false}>
-          <View style={styles.tableHeader}>
-            <View style={styles.colLeftWrap}>
-              <Text style={styles.tableHeaderText}>Performance Metric</Text>
-            </View>
-            <Text
-              style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
-            >
-              Example Result
-            </Text>
-          </View>
-          <TableRow
-            label="Diesel Saved"
-            value={formatKwh(results.dieselReduction)}
-          />
-          <TableRow
-            label="Diesel Displacement Value"
-            value={formatNaira(results.dieselReduction)}
-          />
-          <TableRow label="Energy Independence Ratio" value={"0"} />
-          <TableRow label="Estimated CO₂ Reduction" value={"0"} />
-        </View>
-
-        <View style={styles.chartsRow} wrap={false}>
-          <MiniBarChart
-            title="Energy cost comparison"
-            yLabel="NGN/kWh"
-            categories={costCategories}
-            yMax={costYMax}
-            tickCount={3}
-          />
-          <MiniBarChart
-            title="Estimated energy contribution"
-            yLabel="% of annual demand"
-            categories={contributionCategories}
-            yMax={100}
-            tickCount={5}
-          />
-        </View>
-
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerTitle}>
-            Recomendation Narrative and Steps
-          </Text>
-          <Text
-            style={[
-              styles.disclaimerText,
-              { fontSize: 10, fontFamily: "Helvetica" },
+        <View style={{ marginTop: 8 }}>
+          <TwoColTable
+            columns={[{ header: "Component" }, { header: "Recommendation" }]}
+            rows={[
+              { label: "Solar PV capacity", value: pv },
+              { label: "Battery storage", value: battery },
+              { label: "Hybrid inverter", value: inverter },
+              { label: "Annual PV generation", value: annualPvGen },
+              { label: "Usable solar energy", value: usableSolar },
             ]}
-          >
-            Recomendation Insight <br />A hybrid solar plus battery system is
-            recommended because generator dependence appears significant and the
-            example model indicates strong fuel-saving potential. Battery
-            storage is included primarily to reduce generator runtime and
-            support continuity of supply during outages. The recommended system
-            should be treated as a preliminary assessment rather than a final
-            design package.
+          />
+        </View>
+
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+          Financial summary
+        </Text>
+        <TwoColTable
+          columns={[{ header: "Financial metric" }, { header: "Estimate" }]}
+          rows={[
+            { label: "Total estimated system cost", value: systemCost },
+            { label: "Gross annual savings", value: grossSavings },
+            { label: "Annual O&M allowance", value: omAllowance },
+            { label: "Net annual savings", value: netSavings },
+            { label: "Simple payback", value: payback },
+          ]}
+        />
+
+        <View style={styles.darkPanel}>
+          <Text style={styles.darkPanelTitle}>Financial interpretation</Text>
+          <Text style={styles.darkPanelText}>
+            The assessment indicates that the largest financial benefit comes
+            from replacing more expensive conventional energy with solar
+            generation. The simple payback period is an indicative planning
+            metric and should be reviewed again once actual installer pricing,
+            equipment warranties, operating costs and fuel usage are confirmed.
           </Text>
         </View>
 
-        <View style={styles.table} wrap={false}>
-          <View style={styles.tableHeader}>
-            <View style={styles.colLeftWrap}>
-              <Text style={styles.tableHeaderText}>Recommended Next Steps</Text>
-            </View>
-            <Text
-              style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}
-            >
-              Why it matters
-            </Text>
-          </View>
-          <TableRow
-            label="Request detailed technical review"
-            value="Validate load assumptions, battery sizing, and real operating profile before procurement."
-          />
-          <TableRow
-            label="Obtain installer quotations"
-            value="Compare implementation options against the preliminary system recommendation."
-          />
-          <TableRow
-            label="Review commercial assumptions"
-            value="Check tariff, diesel price, and operating profile against actual site data."
-          />
-        </View>
-
-        <ReportFooter assessmentId={assessmentId} pageLabel="Page 2 of 3" />
+        <ReportFooter assessmentId={assessmentId} pageLabel="Page 3 of 4" />
       </Page>
 
-      {/* -------- Page 3: Financials & impact -------- */}
+      {/* -------- Page 4: Value & next steps -------- */}
       <Page size="A4" style={styles.page}>
-        <ReportHeader logoSrc={logoSrc} assessmentId={assessmentId} />
+        <ReportHeader assessmentId={assessmentId} />
 
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerTitle}>CTA</Text>
+        <Text style={styles.eyebrow}>Value &amp; next steps</Text>
+        <Text style={styles.title}>
+          Energy economics and recommended next steps
+        </Text>
+
+        <View style={styles.chartsRow}>
+          <CostBarChart categories={costCategories} yMax={costYMax} />
+          <ContributionPieChart solarPct={solarSharePct} gridPct={gridOtherPct} />
+        </View>
+
+        <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
+          SolarVy recommendation
+        </Text>
+        <View style={styles.mintPanel}>
+          <Text style={styles.mintPanelText}>
+            A hybrid solar + battery system remains the appropriate preliminary
+            direction for this assessment. The recommended battery capacity is
+            materially larger than the PV array&apos;s average daily generation,
+            so final engineering should verify the household&apos;s outage
+            duration, critical loads and desired backup autonomy before
+            procurement. This is particularly important because the stated
+            objective is to {objectiveLower}.
+          </Text>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={styles.colLeft}>
+              <Text style={styles.tableHeaderText}>Next step</Text>
+            </View>
+            <View style={styles.colRight}>
+              <Text style={styles.tableHeaderText}>Why it matters</Text>
+            </View>
+          </View>
+          {[
+            {
+              label: "1. Confirm outage and backup requirement",
+              value:
+                "Verify typical hours without grid electricity and identify critical household loads.",
+            },
+            {
+              label: "2. Complete technical site review",
+              value:
+                "Check roof area, orientation, cable routes, distribution board and protection requirements.",
+            },
+            {
+              label: "3. Obtain comparable installer quotations",
+              value:
+                "Ask installers to quote against the same preliminary SolarVy sizing basis.",
+            },
+            {
+              label: "4. Review financial assumptions",
+              value:
+                "Confirm actual equipment price, diesel cost, tariff and maintenance assumptions before committing.",
+            },
+            {
+              label: "5. Finalise engineering design",
+              value:
+                "Installer or qualified engineer confirms final equipment selection and system protection.",
+            },
+          ].map((row) => (
+            <View style={[styles.tableRow, { paddingVertical: 5.5 }]} key={row.label}>
+              <View style={styles.colLeft}>
+                <Text style={styles.cellLabel}>{row.label}</Text>
+              </View>
+              <View style={styles.colRight}>
+                <Text style={styles.cellValuePlain}>{row.value}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.disclaimerBox}>
           <Text style={styles.disclaimerText}>
-            Request a detailed review from SAEK Energy or Get matched with
-            supplier and installer option
+            <Text style={styles.disclaimerBold}>
+              Preliminary assessment disclaimer:{" "}
+            </Text>
+            This report is an indicative planning assessment generated from the
+            supplied inputs and simplified assumptions. Final system sizing,
+            equipment selection, electrical design, installation cost, energy
+            production and financial performance should be validated by
+            appropriately qualified professionals before procurement or
+            installation.
           </Text>
         </View>
 
-        <View style={styles.ctaBox}>
-          <Text style={styles.ctaTitle}>Disclaimer</Text>
-          <Text style={styles.ctaText}>
-            This report is an indicative assessment generated from example
-            inputs and simplified assumptions. Final design, procurement,
-            performance, and financial outcomes may vary.
-          </Text>
-          <Text style={styles.ctaAccent}>
-            www.solarvy.ng · support@solarvy.ng
-          </Text>
-        </View>
-
-        <ReportFooter assessmentId={assessmentId} pageLabel="Page 3 of 3" />
+        <ReportFooter assessmentId={assessmentId} pageLabel="Page 4 of 4" />
       </Page>
     </Document>
   );
@@ -1232,25 +1264,17 @@ function AssessmentReportDocument({
 export async function downloadAssessmentReport(
   payload: AssessmentReportPayload,
 ): Promise<void> {
-  const annualDemandRaw = resolveEstimatedAnnualDemandKwh(
+  const annualDemandKwh = resolveEstimatedAnnualDemandKwh(
     payload.results,
     payload.inputMethod,
   );
-  const estimatedAnnualDemand =
-    annualDemandRaw == null
-      ? MISSING
-      : `${annualDemandRaw.toLocaleString("en-NG", {
-          maximumFractionDigits: 1,
-          minimumFractionDigits: 0,
-        })} kWh/year`;
 
   const blob = await pdf(
     <AssessmentReportDocument
       assessmentId={payload.assessmentId}
       results={payload.results}
       assessmentDate={payload.assessmentDate}
-      estimatedAnnualDemand={estimatedAnnualDemand}
-      logoSrc={payload.logoSrc}
+      annualDemandKwh={annualDemandKwh}
     />,
   ).toBlob();
 
