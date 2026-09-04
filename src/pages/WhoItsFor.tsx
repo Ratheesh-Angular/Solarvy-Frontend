@@ -7,6 +7,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import PageSeo from "../components/PageSeo";
+
 function WhoItsFor() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -31,6 +33,11 @@ function WhoItsFor() {
 
   return (
     <div>
+      <PageSeo
+        title="Who It's For | SolarVy"
+        description="Solarvy is built for homes, hospitals, factories, and commercial buildings that need clearer solar and backup planning."
+        path="/who-its-for"
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr ">
           <div className="overlay"></div>

@@ -182,3 +182,22 @@ export async function adminSaveBillPrompt(value: string) {
   );
   return data.data!;
 }
+
+export async function adminGetRecommendationPrompt() {
+  const data = await adminFetch<ApiEnvelope<AiPromptSetting>>(
+    "/admin/ai-prompts/recommendation",
+  );
+  return data.data!;
+}
+
+export async function adminSaveRecommendationPrompt(value: string) {
+  const data = await adminFetch<ApiEnvelope<AiPromptSetting>>(
+    "/admin/ai-prompts/recommendation",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value }),
+    },
+  );
+  return data.data!;
+}

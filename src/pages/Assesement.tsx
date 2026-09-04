@@ -43,6 +43,7 @@ import { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import FeedbackToast from "../components/FeedbackToast";
 import SolarvyLoader from "../components/SolarvyLoader";
+import PageSeo from "../components/PageSeo";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { useSyncedProgress } from "../hooks/useSyncedProgress";
 import { ApiError } from "../lib/api";
@@ -1913,6 +1914,11 @@ function Assesement() {
 
   return (
     <div>
+      <PageSeo
+        title="Start Assessment | SolarVy"
+        description="Start a free Solarvy energy assessment to estimate solar size, battery storage, savings, and payback for your building."
+        path="/start-assessment"
+      />
       <SolarvyLoader
         open={loaderOpen || (!isSlowApi && isApiBusy)}
         message={loaderMessage}

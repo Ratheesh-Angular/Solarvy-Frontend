@@ -7,6 +7,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import PageSeo from "../components/PageSeo";
+
 function SampleResults() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -30,6 +32,11 @@ function SampleResults() {
 
   return (
     <div>
+      <PageSeo
+        title="Sample Results | SolarVy"
+        description="Preview a sample Solarvy energy assessment with indicative system size, storage, cost, and payback."
+        path="/sample-results"
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr ">
           <div className="overlay"></div>

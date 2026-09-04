@@ -6,6 +6,7 @@ import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { apiPost, ApiError } from "../lib/api";
+import PageSeo from "../components/PageSeo";
 
 const PROJECT_SUMMARY_DATA = [
   { label: "Location", value: "Lagos" },
@@ -97,6 +98,11 @@ function RequestIntro() {
 
   return (
     <div>
+      <PageSeo
+        title="Request Intro | SolarVy"
+        description="Request an introduction to matched solar installers based on your Solarvy assessment."
+        path="/request-intro"
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>

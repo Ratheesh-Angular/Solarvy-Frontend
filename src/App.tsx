@@ -29,6 +29,7 @@ import RequestIntro from "./pages/RequestIntro.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import AdminBillInput from "./pages/AdminBillInput.tsx";
+import AdminRecommendations from "./pages/AdminRecommendations.tsx";
 import AdminRoute from "./components/AdminRoute.tsx";
 import AdminLayout from "./components/AdminLayout.tsx";
 import "./css/admin.css";
@@ -58,6 +59,7 @@ function App() {
           <Route element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="bill-input" element={<AdminBillInput />} />
+            <Route path="recommendations" element={<AdminRecommendations />} />
           </Route>
         </Route>
 

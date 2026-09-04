@@ -6,6 +6,7 @@ import bttnarrow from "../assets/images/btton-arrow.png";
 import donw from "../assets/images/icon/d11.svg";
 import "../css/MatchedInstallers.css";
 import { useEffect } from "react";
+import PageSeo from "../components/PageSeo";
 
 const MATCHED_PROJECT_SUMMARY = [
   { label: "Project type", value: "Small business" },
@@ -173,6 +174,11 @@ function MatchedInstallers() {
 
   return (
     <div>
+      <PageSeo
+        title="Matched Installers | SolarVy"
+        description="Review installer matches aligned to your Solarvy project size, location, and budget range."
+        path="/matched-installers"
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>

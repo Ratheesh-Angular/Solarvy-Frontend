@@ -259,12 +259,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
     marginBottom: 6,
+    width: "100%",
+  },
+  heroImage: {
+    width: "100%",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    paddingBottom: 8,
   },
   heroCaption: {
     fontSize: 8,
     color: colors.navy,
     textAlign: "center",
     marginTop: 6,
+    width: "100%",
   },
 
   // Metadata grid
@@ -352,7 +361,7 @@ const styles = StyleSheet.create({
   table: {
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 2,
+    borderRadius: 0,
     marginBottom: 4,
   },
   tableHeader: {
@@ -360,6 +369,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tableHeaderBg,
     paddingVertical: 7,
     paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
   tableHeaderText: {
     fontSize: 7,
@@ -370,17 +381,20 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   colLeft: {
     width: "47%",
     paddingRight: 8,
+    borderRightWidth: 1,
+    borderRightColor: colors.line,
   },
   colRight: {
     width: "53%",
+    paddingLeft: 8,
   },
   cellLabel: {
     fontSize: 9,
@@ -642,8 +656,14 @@ function TwoColTable({
           <Text style={styles.tableHeaderText}>{columns[1].header}</Text>
         </View>
       </View>
-      {rows.map((row) => (
-        <View style={styles.tableRow} key={row.label}>
+      {rows.map((row, index) => (
+        <View
+          style={[
+            styles.tableRow,
+            index === rows.length - 1 ? { borderBottomWidth: 0 } : null,
+          ]}
+          key={row.label}
+        >
           <View style={styles.colLeft}>
             <Text style={styles.cellLabel}>{row.label}</Text>
           </View>
@@ -671,62 +691,64 @@ function SolarHouseHero() {
 
   return (
     <View style={styles.heroWrap}>
-      <Svg width={340} height={140} viewBox="0 0 340 140">
-        {/* House body */}
-        <Rect
-          x="62"
-          y="66"
-          width="116"
-          height="56"
-          fill={colors.white}
-          stroke={colors.navy}
-          strokeWidth={1.4}
-        />
-        {/* Roof */}
-        <Polygon
-          points="40,66 120,26 200,66"
-          fill={colors.white}
-          stroke={colors.navy}
-          strokeWidth={1.4}
-        />
-        {/* Solar panel band on roof */}
-        <Polygon
-          points="90,44 150,44 166,58 78,58"
-          fill={colors.panelSolar}
-          stroke={colors.navy}
-          strokeWidth={0.8}
-        />
-        <Line x1="110" y1="44" x2="102" y2="58" stroke={colors.white} strokeWidth={0.8} />
-        <Line x1="130" y1="44" x2="126" y2="58" stroke={colors.white} strokeWidth={0.8} />
-        <Line x1="150" y1="44" x2="150" y2="58" stroke={colors.white} strokeWidth={0.8} />
-        <Line x1="84" y1="51" x2="160" y2="51" stroke={colors.white} strokeWidth={0.6} />
-        {/* Door */}
-        <Rect
-          x="110"
-          y="88"
-          width="22"
-          height="34"
-          fill={colors.white}
-          stroke={colors.navy}
-          strokeWidth={1.2}
-        />
-        {/* Windows */}
-        <Rect x="74" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
-        <Rect x="148" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
-        {/* Sun */}
-        <Circle cx={cx} cy={cy} r={20} fill={colors.orange} />
-        {rays.map((r, i) => (
-          <Line
-            key={i}
-            x1={r.x1}
-            y1={r.y1}
-            x2={r.x2}
-            y2={r.y2}
-            stroke={colors.orange}
-            strokeWidth={2.2}
+      <View style={styles.heroImage}>
+        <Svg width={340} height={140} viewBox="0 0 340 140">
+          {/* House body */}
+          <Rect
+            x="62"
+            y="66"
+            width="116"
+            height="56"
+            fill={colors.white}
+            stroke={colors.navy}
+            strokeWidth={1.4}
           />
-        ))}
-      </Svg>
+          {/* Roof */}
+          <Polygon
+            points="40,66 120,26 200,66"
+            fill={colors.white}
+            stroke={colors.navy}
+            strokeWidth={1.4}
+          />
+          {/* Solar panel band on roof */}
+          <Polygon
+            points="90,44 150,44 166,58 78,58"
+            fill={colors.panelSolar}
+            stroke={colors.navy}
+            strokeWidth={0.8}
+          />
+          <Line x1="110" y1="44" x2="102" y2="58" stroke={colors.white} strokeWidth={0.8} />
+          <Line x1="130" y1="44" x2="126" y2="58" stroke={colors.white} strokeWidth={0.8} />
+          <Line x1="150" y1="44" x2="150" y2="58" stroke={colors.white} strokeWidth={0.8} />
+          <Line x1="84" y1="51" x2="160" y2="51" stroke={colors.white} strokeWidth={0.6} />
+          {/* Door */}
+          <Rect
+            x="110"
+            y="88"
+            width="22"
+            height="34"
+            fill={colors.white}
+            stroke={colors.navy}
+            strokeWidth={1.2}
+          />
+          {/* Windows */}
+          <Rect x="74" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+          <Rect x="148" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+          {/* Sun */}
+          <Circle cx={cx} cy={cy} r={20} fill={colors.orange} />
+          {rays.map((r, i) => (
+            <Line
+              key={i}
+              x1={r.x1}
+              y1={r.y1}
+              x2={r.x2}
+              y2={r.y2}
+              stroke={colors.orange}
+              strokeWidth={2.2}
+            />
+          ))}
+        </Svg>
+      </View>
       <Text style={styles.heroCaption}>
         Illustrative residential solar + battery concept
       </Text>
@@ -890,6 +912,7 @@ function ContributionPieChart({
   const cx = 75;
   const cy = 48;
   const r = 40;
+  const labelR = r + 8;
   const gridAngle = (gridPct / 100) * 360;
 
   // Grid/Other slice starts at top; solar fills the remainder.
@@ -906,26 +929,57 @@ function ContributionPieChart({
         ? null
         : wedgePath(cx, cy, r, gridAngle, 360);
 
+  const gridMid = gridAngle / 2;
+  const solarMid = gridAngle + (360 - gridAngle) / 2;
+  const gridLabelPos = polar(cx, cy, labelR, gridMid);
+  const solarLabelPos = polar(cx, cy, labelR, solarMid);
+  // Approximate label box so text sits near the slice edge.
+  const labelOffset = { w: 52, h: 10 };
+
   return (
     <View style={styles.chartPanel}>
       <Text style={styles.chartTitle}>Estimated energy contribution</Text>
       <View style={styles.pieWrap}>
-        <Svg width={150} height={96} viewBox="0 0 150 96">
-          {solarPct >= 100 ? (
-            <Circle cx={cx} cy={cy} r={r} fill={colors.orange} />
+        <View style={{ width: 150, height: 96, position: "relative" }}>
+          <Svg width={150} height={96} viewBox="0 0 150 96">
+            {solarPct >= 100 ? (
+              <Circle cx={cx} cy={cy} r={r} fill={colors.orange} />
+            ) : null}
+            {gridPct >= 100 ? (
+              <Circle cx={cx} cy={cy} r={r} fill={colors.gridSlice} />
+            ) : null}
+            {solarSlice ? <Path d={solarSlice} fill={colors.orange} /> : null}
+            {gridSlice ? <Path d={gridSlice} fill={colors.gridSlice} /> : null}
+          </Svg>
+          {gridPct > 0 ? (
+            <Text
+              style={[
+                styles.pieLabel,
+                {
+                  left: Math.max(0, gridLabelPos.x - labelOffset.w / 2),
+                  top: Math.max(0, gridLabelPos.y - labelOffset.h / 2),
+                  color: colors.gridSlice,
+                },
+              ]}
+            >
+              Grid/Other {gridPct}%
+            </Text>
           ) : null}
-          {gridPct >= 100 ? (
-            <Circle cx={cx} cy={cy} r={r} fill={colors.gridSlice} />
+          {solarPct > 0 ? (
+            <Text
+              style={[
+                styles.pieLabel,
+                {
+                  left: Math.max(0, solarLabelPos.x - labelOffset.w / 2),
+                  top: Math.max(0, solarLabelPos.y - labelOffset.h / 2),
+                  color: colors.orange,
+                },
+              ]}
+            >
+              Solar {solarPct}%
+            </Text>
           ) : null}
-          {solarSlice ? <Path d={solarSlice} fill={colors.orange} /> : null}
-          {gridSlice ? <Path d={gridSlice} fill={colors.gridSlice} /> : null}
-        </Svg>
-        <Text style={[styles.pieLabel, { top: 0, right: 22, color: colors.gridSlice }]}>
-          Grid/Other {gridPct}%
-        </Text>
-        <Text style={[styles.pieLabel, { bottom: 4, left: 34, color: colors.orange }]}>
-          Solar {solarPct}%
-        </Text>
+        </View>
       </View>
     </View>
   );
@@ -977,6 +1031,14 @@ export function AssessmentReportDocument({
   const objectiveLower =
     objective !== MISSING ? objective.toLowerCase() : "improve energy reliability";
   const locationPhrase = location !== MISSING ? location : "your location";
+
+  const primaryRecommendation = formatText(results.primaryRecommendation);
+  const aiRecommendation = results.aiRecommendation?.trim() || "";
+  const solarVyRecommendation =
+    aiRecommendation ||
+    (primaryRecommendation !== MISSING
+      ? `Based on this assessment, ${primaryRecommendation} is the recommended option. Treat these figures as a planning baseline, then confirm sizing with a site review before you invest.`
+      : "Your recommendation will appear here once the assessment results are ready.");
 
   const executiveSummary = `SolarVy assessed this ${propertyLower} in ${locationPhrase} with a primary objective to ${objectiveLower}. The preliminary model recommends a ${pv} solar PV system, ${battery} battery storage and a ${inverter} hybrid inverter. Based on the assessment outputs, the system is estimated to generate ${annualPvGen} of solar energy per year, with net annual savings of approximately ${netSavings} and a simple payback of about ${payback}.`;
 
@@ -1179,15 +1241,7 @@ export function AssessmentReportDocument({
           SolarVy recommendation
         </Text>
         <View style={styles.mintPanel}>
-          <Text style={styles.mintPanelText}>
-            A hybrid solar + battery system remains the appropriate preliminary
-            direction for this assessment. The recommended battery capacity is
-            materially larger than the PV array&apos;s average daily generation,
-            so final engineering should verify the household&apos;s outage
-            duration, critical loads and desired backup autonomy before
-            procurement. This is particularly important because the stated
-            objective is to {objectiveLower}.
-          </Text>
+          <Text style={styles.mintPanelText}>{solarVyRecommendation}</Text>
         </View>
 
         <View style={styles.table}>
@@ -1225,8 +1279,15 @@ export function AssessmentReportDocument({
               value:
                 "Installer or qualified engineer confirms final equipment selection and system protection.",
             },
-          ].map((row) => (
-            <View style={[styles.tableRow, { paddingVertical: 5.5 }]} key={row.label}>
+          ].map((row, index, all) => (
+            <View
+              style={[
+                styles.tableRow,
+                { paddingVertical: 5.5 },
+                index === all.length - 1 ? { borderBottomWidth: 0 } : null,
+              ]}
+              key={row.label}
+            >
               <View style={styles.colLeft}>
                 <Text style={styles.cellLabel}>{row.label}</Text>
               </View>

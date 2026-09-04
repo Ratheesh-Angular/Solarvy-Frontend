@@ -26,6 +26,7 @@ import {
 } from "../lib/assessmentConstants";
 import type { QuickAssessmentFormData } from "../types/assessment";
 import SolarvyLoader from "../components/SolarvyLoader";
+import PageSeo from "../components/PageSeo";
 
 type QuickFormFieldErrors = Partial<
   Record<keyof QuickAssessmentFormData, string>
@@ -147,6 +148,11 @@ function Home() {
 
   return (
     <div className="menu-div ">
+      <PageSeo
+        title="SolarVy | Smart Solar & Energy Advisor"
+        description="Solarvy helps homes and businesses estimate solar size, battery storage, diesel reduction, savings, and payback before speaking to installers or committing money."
+        path="/"
+      />
       <SolarvyLoader
         open={isStartingAssessment}
         message="Starting your assessment..."

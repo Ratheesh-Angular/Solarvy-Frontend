@@ -17,11 +17,14 @@ import save from "../assets/images/icon/saves.svg";
 import qut from "../assets/images/icon/qut.svg";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { Sparkles } from "lucide-react";
 import whitearrow from "../assets/images/icon/w-arror.svg";
 import FeedbackToast from "../components/FeedbackToast";
 import SolarvyLoader from "../components/SolarvyLoader";
+import PageSeo from "../components/PageSeo";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { apiGet } from "../lib/api";
+import { getAssessmentRecommendation } from "../lib/assessmentApi";
 import type {
   AssessmentFormData,
   AssessmentResults,
@@ -152,6 +155,8 @@ function AssesementResult() {
     Boolean(assessmentId),
   );
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
+  const [recommendationFailed, setRecommendationFailed] = useState(false);
   const { toast, showError, clearToast } = useFeedbackToast();
 
   useEffect(() => {
@@ -160,6 +165,7 @@ function AssesementResult() {
       return;
     }
 
+    setRecommendationFailed(false);
     let cancelled = false;
 
     (async () => {
@@ -209,6 +215,55 @@ function AssesementResult() {
     // showError identity can change each render; only refetch when assessment id changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessmentId]);
+
+  const storedRecommendation = results?.aiRecommendation?.trim() || "";
+  const canGenerateRecommendation =
+    Boolean(results) && !results?.calculationError;
+
+  useEffect(() => {
+    if (!assessmentId || isLoadingResults) return;
+    if (!canGenerateRecommendation) {
+      setIsLoadingRecommendation(false);
+      return;
+    }
+    if (storedRecommendation) {
+      setIsLoadingRecommendation(false);
+      setRecommendationFailed(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingRecommendation(true);
+    setRecommendationFailed(false);
+
+    (async () => {
+      try {
+        const data = await getAssessmentRecommendation(assessmentId);
+        if (cancelled) return;
+        const text = data.aiRecommendation?.trim() || "";
+        if (text) {
+          setResults((prev) =>
+            prev ? { ...prev, aiRecommendation: text } : prev,
+          );
+        } else {
+          setRecommendationFailed(true);
+        }
+      } catch {
+        if (!cancelled) setRecommendationFailed(true);
+      } finally {
+        if (!cancelled) setIsLoadingRecommendation(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    assessmentId,
+    isLoadingResults,
+    canGenerateRecommendation,
+    storedRecommendation,
+  ]);
 
   const handleDownloadReport = async () => {
     if (!results || !assessmentId || isDownloadingReport) return;
@@ -263,6 +318,18 @@ function AssesementResult() {
     results?.disclaimer ||
     "These results are indicative only. Final system design, procurement, and performance should be validated through a detailed review before investment or installation.";
 
+  const showRecommendationSkeleton =
+    Boolean(assessmentId) &&
+    !storedRecommendation &&
+    !recommendationFailed &&
+    !results?.calculationError &&
+    (isLoadingResults || isLoadingRecommendation || canGenerateRecommendation);
+
+  const recommendationFallback =
+    primaryRecommendation !== MISSING
+      ? `Based on this assessment, ${primaryRecommendation} is the recommended option. Treat these figures as a planning baseline, then confirm sizing with a site review before you invest.`
+      : "Your recommendation will appear here once the assessment results are ready.";
+
   const strategyComparisonRows =
     results?.strategyComparison && results.strategyComparison.length > 0
       ? results.strategyComparison
@@ -297,6 +364,12 @@ function AssesementResult() {
 
   return (
     <div>
+      <PageSeo
+        title="Assessment Results | SolarVy"
+        description="Your Solarvy assessment results with recommended system sizing, savings, and payback."
+        path="/assessment-result"
+        noindex
+      />
       <SolarvyLoader
         open={isLoadingResults}
         message="Loading your assessment results..."
@@ -385,7 +458,7 @@ function AssesementResult() {
 
         <section className="container-fluid px-lg-4 py-4">
           <div className="row g-4 align-items-start">
-            <div className="col-lg-8 order-1">
+            <div className="col-lg-8">
               <div className="row g-2">
                 <div className="col-md-4">
                   <div className="card custom-card h-100">
@@ -649,123 +722,7 @@ function AssesementResult() {
               </div>
             </div>
 
-            <div className="col-12 order-2 order-lg-3">
-              <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first">
-                <div className="d-flex align-items-start mb-4">
-                  <div className="icon-box-maony me-3">
-                    <img src={compare} alt="icon" />
-                  </div>
-                  <div>
-                    <h5 className="fw-bold mb-1 rang-head section-card-title">
-                      Compare Your Power Options
-                    </h5>
-                    <small className="text-muted">
-                      This helps you assess your options and see which one gives
-                      you the best results.
-                    </small>
-                  </div>
-                </div>
-                <div className="custom-table">
-                  <div className="custom-table-scroll">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>POWER OPTION</th>
-                          <th>ANNUAL COST</th>
-                          <th>RELIABILITY</th>
-                          <th>DIESEL USE</th>
-                          <th>PAYBACK</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {strategyComparisonRows.map((row) => {
-                          const recommended = isRecommendedStrategy(
-                            row.recommended,
-                          );
-
-                          return (
-                            <tr
-                              key={row.strategy}
-                              className={
-                                recommended ? "recommended-row" : undefined
-                              }
-                            >
-                              <td
-                                className={
-                                  recommended
-                                    ? "text-color-b title-cell"
-                                    : undefined
-                                }
-                              >
-                                {recommended ? (
-                                  <>
-                                    <span className="title-text">
-                                      {row.strategy}
-                                    </span>
-                                    <span className="badge-recommended">
-                                      Recommended
-                                    </span>
-                                  </>
-                                ) : (
-                                  row.strategy
-                                )}
-                              </td>
-                              <td
-                                className={
-                                  recommended ? "text-color-b" : undefined
-                                }
-                              >
-                                {formatNaira(row.annualCost)}
-                              </td>
-                              <td
-                                className={
-                                  recommended
-                                    ? "strong text-color-b"
-                                    : undefined
-                                }
-                              >
-                                {formatText(row.reliability)}
-                              </td>
-                              <td
-                                className={
-                                  recommended
-                                    ? "strong text-color-b"
-                                    : undefined
-                                }
-                              >
-                                {formatText(row.dieselUse)}
-                              </td>
-                              <td
-                                className={
-                                  recommended
-                                    ? "strong text-color-b"
-                                    : undefined
-                                }
-                              >
-                                {formatStrategyPayback(row.payback)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              <div className="important-note d-flex d-lg-none align-items-start p-3 mt-4">
-                <div className="me-2 mt-0">
-                  <img src={imp} alt="icon" />
-                </div>
-
-                <div>
-                  <span className="fw-bold">Important note:</span> {disclaimer}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-lg-4 order-3 order-lg-2">
+            <div className="col-lg-4">
               <div className="p-4 rounded-4 shadow-sm right-panel assts-right">
                 <div className="d-flex align-items-center mb-3">
                   <div className="qs-icon me-2">
@@ -887,95 +844,259 @@ function AssesementResult() {
             </div>
           </div>
 
-          <div className="p-4 shadow-sm rounded-4 ass-first mt-4 mb-4">
-            <div className="d-flex align-items-start mb-3">
-              <div className="next-icon me-3">
-                <img src={whitearrow} alt="arrow" />
+          <div className="ass-result-lower-band mt-4">
+            <div className="ass-result-main-col">
+              <div className="ass-result-compare-wrap">
+                <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first ass-result-compare-card">
+                  <div className="d-flex align-items-start mb-4">
+                    <div className="icon-box-maony me-3">
+                      <img src={compare} alt="icon" />
+                    </div>
+                    <div>
+                      <h5 className="fw-bold mb-1 rang-head section-card-title">
+                        Compare Your Power Options
+                      </h5>
+                      <small className="text-muted">
+                        This helps you assess your options and see which one
+                        gives you the best results.
+                      </small>
+                    </div>
+                  </div>
+                  <div className="custom-table">
+                    <div className="custom-table-scroll">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>POWER OPTION</th>
+                            <th>ANNUAL COST</th>
+                            <th>RELIABILITY</th>
+                            <th>DIESEL USE</th>
+                            <th>PAYBACK</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {strategyComparisonRows.map((row) => {
+                            const recommended = isRecommendedStrategy(
+                              row.recommended,
+                            );
+
+                            return (
+                              <tr
+                                key={row.strategy}
+                                className={
+                                  recommended ? "recommended-row" : undefined
+                                }
+                              >
+                                <td
+                                  className={
+                                    recommended
+                                      ? "text-color-b title-cell"
+                                      : undefined
+                                  }
+                                >
+                                  {recommended ? (
+                                    <>
+                                      <span className="title-text">
+                                        {row.strategy}
+                                      </span>
+                                      <span className="badge-recommended">
+                                        Recommended
+                                      </span>
+                                    </>
+                                  ) : (
+                                    row.strategy
+                                  )}
+                                </td>
+                                <td
+                                  className={
+                                    recommended ? "text-color-b" : undefined
+                                  }
+                                >
+                                  {formatNaira(row.annualCost)}
+                                </td>
+                                <td
+                                  className={
+                                    recommended
+                                      ? "strong text-color-b"
+                                      : undefined
+                                  }
+                                >
+                                  {formatText(row.reliability)}
+                                </td>
+                                <td
+                                  className={
+                                    recommended
+                                      ? "strong text-color-b"
+                                      : undefined
+                                  }
+                                >
+                                  {formatText(row.dieselUse)}
+                                </td>
+                                <td
+                                  className={
+                                    recommended
+                                      ? "strong text-color-b"
+                                      : undefined
+                                  }
+                                >
+                                  {formatStrategyPayback(row.payback)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="important-note d-flex d-lg-none align-items-start p-3 mt-4">
+                  <div className="me-2 mt-0">
+                    <img src={imp} alt="icon" />
+                  </div>
+
+                  <div>
+                    <span className="fw-bold">Important note:</span>{" "}
+                    {disclaimer}
+                  </div>
+                </div>
               </div>
-              <div>
-                <h5 className="fw-bold mb-1 rang-head">What Happens Next</h5>
-                <small className="text-muted sub-down">
-                  The best results don’t stop at numbers. Move forward with a
-                  clear next step.
-                </small>
+
+              <div className="ass-result-next-wrap">
+                <div className="p-4 shadow-sm rounded-4 ass-first">
+                  <div className="d-flex align-items-start mb-3">
+                    <div className="next-icon me-3">
+                      <img src={whitearrow} alt="arrow" />
+                    </div>
+                    <div>
+                      <h5 className="fw-bold mb-1 rang-head">
+                        What Happens Next
+                      </h5>
+                      <small className="text-muted sub-down">
+                        The best results don’t stop at numbers. Move forward
+                        with a clear next step.
+                      </small>
+                    </div>
+                  </div>
+
+                  <div
+                    className="container my-4"
+                    style={{ marginLeft: 0, paddingLeft: 0 }}
+                  >
+                    <div className="row g-4">
+                      <div className="col-12 col-md-4">
+                        <div className="info-card ms-0">
+                          <div className="info-badge">1</div>
+                          <h6 className="info-title">
+                            <i className="bi bi-download me-2"></i>
+                            Download your report
+                          </h6>
+                          <p className="info-text">
+                            Send a PDF summary by email with the recommended
+                            system, savings, and payback period.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="col-12 col-md-4">
+                        <div className="info-card">
+                          <div className="info-badge">2</div>
+                          <h6 className="info-title">
+                            <i className="bi bi-people me-2"></i>
+                            View installer quotes
+                          </h6>
+                          <p className="info-text">
+                            Use the result to match you with installers suited
+                            to the location and system size.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="col-12 col-md-4">
+                        <div className="info-card">
+                          <div className="info-badge">3</div>
+                          <h6 className="info-title">
+                            <i className="bi bi-bar-chart me-2"></i>
+                            Upgrade to expert review
+                          </h6>
+                          <p className="info-text">
+                            For more confidence before investment, route into a
+                            deeper technical review with our advisory team.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="button-group mt-3 justify-content-end">
+                    <button
+                      type="button"
+                      className="btn-primary-customss-down"
+                      onClick={handleDownloadReport}
+                      disabled={!results || isDownloadingReport}
+                      aria-busy={isDownloadingReport}
+                    >
+                      <span className="icon-get">
+                        <img src={donw} alt="" />
+                      </span>
+                      <span>
+                        {isDownloadingReport
+                          ? "Preparing PDF…"
+                          : "Download Report"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn-outline-customsss2-req"
+                      onClick={() => navigate("/matched-installers")}
+                    >
+                      <span className="icon-get">
+                        <img src={save} alt="icon" />
+                      </span>
+                      <span>View Installer Quotes</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div
-              className="container my-4"
-              style={{ marginLeft: 0, paddingLeft: 0 }}
-            >
-              <div className="row g-4">
-                <div className="col-12 col-md-4">
-                  <div className="info-card ms-0">
-                    <div className="info-badge">1</div>
-                    <h6 className="info-title">
-                      <i className="bi bi-download me-2"></i>
-                      Download your report
-                    </h6>
-                    <p className="info-text">
-                      Send a PDF summary by email with the recommended system,
-                      savings, and payback period.
-                    </p>
+            <div className="ass-result-ai-wrap">
+              <div className="p-4 shadow-sm rounded-4 ass-resul-first ai-recommendation-card">
+                <div className="d-flex align-items-start mb-3">
+                  <div className="icon-box-maony me-3" aria-hidden>
+                    <Sparkles size={18} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
+                      <h5 className="fw-bold mb-0 rang-head section-card-title">
+                        AI Recommendation
+                      </h5>
+                      <span className="bill-ai-badge">AI</span>
+                    </div>
+                    <small className="text-muted">
+                      A plain-language read of what this result means for you.
+                    </small>
                   </div>
                 </div>
-
-                <div className="col-12 col-md-4">
-                  <div className="info-card">
-                    <div className="info-badge">2</div>
-                    <h6 className="info-title">
-                      <i className="bi bi-people me-2"></i>
-                      View installer quotes
-                    </h6>
-                    <p className="info-text">
-                      Use the result to match you with installers suited to the
-                      location and system size.
-                    </p>
+                {showRecommendationSkeleton ? (
+                  <div
+                    className="ai-recommendation-skeleton"
+                    aria-busy="true"
+                    aria-label="Loading recommendation"
+                  >
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
                   </div>
-                </div>
-
-                <div className="col-12 col-md-4">
-                  <div className="info-card">
-                    <div className="info-badge">3</div>
-                    <h6 className="info-title">
-                      <i className="bi bi-bar-chart me-2"></i>
-                      Upgrade to expert review
-                    </h6>
-                    <p className="info-text">
-                      For more confidence before investment, route into a deeper
-                      technical review with our advisory team.
-                    </p>
-                  </div>
-                </div>
+                ) : (
+                  <p className="ai-recommendation-body mb-0">
+                    {storedRecommendation || recommendationFallback}
+                  </p>
+                )}
               </div>
-            </div>
-
-            <div className="button-group mt-3 justify-content-end">
-              <button
-                type="button"
-                className="btn-primary-customss-down"
-                onClick={handleDownloadReport}
-                disabled={!results || isDownloadingReport}
-                aria-busy={isDownloadingReport}
-              >
-                <span className="icon-get">
-                  <img src={donw} alt="" />
-                </span>
-                <span>
-                  {isDownloadingReport ? "Preparing PDF…" : "Download Report"}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className="btn-outline-customsss2-req"
-                onClick={() => navigate("/matched-installers")}
-              >
-                <span className="icon-get">
-                  <img src={save} alt="icon" />
-                </span>
-                <span>View Installer Quotes</span>
-              </button>
             </div>
           </div>
         </section>

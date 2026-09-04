@@ -6,6 +6,7 @@ import {
   clearAdminToken,
   type AdminUser,
 } from "../lib/adminApi";
+import PageSeo from "./PageSeo";
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -34,6 +35,12 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-shell">
+      <PageSeo
+        title="Admin | SolarVy"
+        description="Solarvy admin console."
+        path="/admin"
+        noindex
+      />
       <header className="admin-header">
         <div className="admin-header-brand">
           <span className="admin-header-title">Solarvy Admin</span>
@@ -70,6 +77,14 @@ export default function AdminLayout() {
               }
             >
               Bill Input
+            </NavLink>
+            <NavLink
+              to="/admin/recommendations"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Recommendations
             </NavLink>
           </nav>
         </aside>

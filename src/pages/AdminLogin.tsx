@@ -5,6 +5,7 @@ import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { adminLogin, getAdminToken } from "../lib/adminApi";
 import logo from "../assets/images/logo.png";
+import PageSeo from "../components/PageSeo";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -38,6 +39,12 @@ export default function AdminLogin() {
 
   return (
     <div className="admin-page min-vh-100 d-flex align-items-center py-5">
+      <PageSeo
+        title="Admin Sign In | SolarVy"
+        description="Solarvy admin sign in."
+        path="/admin/login"
+        noindex
+      />
       <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="container">
         <div className="row justify-content-center">

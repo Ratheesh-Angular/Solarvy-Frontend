@@ -623,10 +623,11 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
 
 .button-group {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   flex-direction: row;
-
   flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .ass-result-banner-text {
@@ -764,37 +765,33 @@ h6.qt-text.fw-bold.mb-0 {
   margin: 0;
 }
 
-button.btn-primary-customss-down {
-  width: 30%;
-  height: 45px;
-  background-color: #234f8e;
-  color: #fff;
-  border: none;
-  border-radius: 30px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  max-width: 280px;
-}
-
+button.btn-primary-customss-down,
 button.btn-outline-customsss2-req {
-  width: 100%;
-  height: 45px;
-  background-color: #fff;
-  color: #234f8e;
-  border: 2px solid #bfd0ea;
-  border-radius: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: auto;
+  min-width: 250px;
+  height: 45px;
+  border-radius: 30px;
   padding: 0 20px;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  max-width: 280px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+button.btn-primary-customss-down {
+  background-color: #234f8e;
+  color: #fff;
+  border: none;
+}
+
+button.btn-outline-customsss2-req {
+  background-color: #fff;
+  color: #234f8e;
+  border: 2px solid #bfd0ea;
 }
 
 @media (max-width: 768px) {
@@ -802,18 +799,141 @@ button.btn-outline-customsss2-req {
     margin-bottom: 20px;
   }
 
-  button.btn-primary-customss-down {
+  button.btn-primary-customss-down,
+  button.btn-outline-customsss2-req {
     width: 100%;
+    min-width: 0;
     max-width: 500px;
+    flex: 1 1 auto;
   }
 
   button.btn-outline-custom2.assresult {
     width: 100%;
     height: 60px;
   }
+}
 
-  button.btn-outline-customsss2-req {
-    width: 100%;
-    max-width: 500px;
+.ass-result-lower-band {
+  --ass-result-section-gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ass-result-section-gap);
+}
+
+.ass-result-main-col {
+  display: contents;
+}
+
+.ass-result-compare-wrap {
+  order: 1;
+}
+
+.ass-result-ai-wrap {
+  order: 2;
+}
+
+.ass-result-next-wrap {
+  order: 3;
+}
+
+@media (min-width: 992px) {
+  .ass-result-lower-band {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--ass-result-section-gap);
+    row-gap: var(--ass-result-section-gap);
+  }
+
+  .ass-result-main-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ass-result-section-gap);
+    grid-column: 1;
+  }
+
+  .ass-result-compare-wrap,
+  .ass-result-next-wrap,
+  .ass-result-ai-wrap {
+    order: initial;
+  }
+
+  .ass-result-ai-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+  }
+}
+
+.p-4.shadow-sm.rounded-4.ass-resul-first.ai-recommendation-card {
+  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 48%);
+}
+
+.ai-recommendation-card .icon-box-maony {
+  color: #174c90;
+  background: #eef4ff;
+  top: 0;
+}
+
+.ai-recommendation-body {
+  font-size: 14px;
+  color: #6f7196;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.ai-recommendation-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.ai-recommendation-skeleton-bar {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e8edf5 0%, #e5e7eb 50%, #e8edf5 100%);
+  background-size: 200% 100%;
+  animation: ai-recommendation-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.ai-recommendation-skeleton-bar--long {
+  width: 100%;
+}
+
+.ai-recommendation-skeleton-bar--medium {
+  width: 82%;
+}
+
+.ai-recommendation-skeleton-bar--short {
+  width: 64%;
+}
+
+@keyframes ai-recommendation-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-recommendation-skeleton-bar {
+    animation: none;
+    background: #e8edf5;
+  }
+}
+
+@media (min-width: 992px) {
+  .ass-result-compare-card .custom-table thead th,
+  .ass-result-compare-card .custom-table tbody td {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+
+  .ass-result-compare-card .title-cell {
+    flex-wrap: wrap;
   }
 }

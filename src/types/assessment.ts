@@ -152,6 +152,8 @@ export type AssessmentResults = {
   solarCostPerKwh?: number | null;
   systemClass?: string | null;
   calculationError?: string;
+  /** OpenAI plain-language recommendation for the results sidebar. */
+  aiRecommendation?: string | null;
   /** Power_Options_Comparison website mapping B12:E16. */
   strategyComparison?: Array<{
     strategy: string;

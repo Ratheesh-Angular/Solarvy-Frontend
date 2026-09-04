@@ -1,5 +1,5 @@
 import { apiGet, apiPatch, apiPost } from "./api";
-import type { AssessmentFormData } from "../types/assessment";
+import type { AssessmentFormData, AssessmentResults } from "../types/assessment";
 
 type DraftResponse = {
   success: boolean;
@@ -17,6 +17,7 @@ type AssessmentResponse = {
     id: string;
     draftId: number | null;
     formData: AssessmentFormData;
+    results?: AssessmentResults | null;
     createdAt: string;
   };
 };
@@ -56,4 +57,12 @@ export async function completeAssessment(formData: AssessmentFormData) {
 export async function getAssessment(id: string) {
   const response = await apiGet<AssessmentResponse>(`/assessments/${id}`);
   return response.data;
+}
+
+export async function getAssessmentRecommendation(id: string) {
+  const response = await apiPost<{
+    success: boolean;
+    data: { aiRecommendation: string | null };
+  }>(`/assessments/${id}/recommendation`, {});
+  return response.data!;
 }

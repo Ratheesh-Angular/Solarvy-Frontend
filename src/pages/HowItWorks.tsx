@@ -12,6 +12,7 @@ import money from "../assets/images/icon/money-bag.svg";
 
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import PageSeo from "../components/PageSeo";
 
 function HowItWorks() {
   const [open, setOpen] = useState(false);
@@ -48,6 +49,11 @@ function HowItWorks() {
   }, []);
   return (
     <div>
+      <PageSeo
+        title="How It Works | SolarVy"
+        description="See how Solarvy turns your energy data into solar sizing, battery storage, savings estimates, and a clear next step."
+        path="/how-it-works"
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr ">
           <div className="overlay"></div>

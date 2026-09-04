@@ -6,6 +6,7 @@ import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
 import { CheckCircle2 } from "lucide-react";
 import { apiPost, ApiError } from "../lib/api";
+import PageSeo from "../components/PageSeo";
 
 function ExpertReview() {
   const [open, setOpen] = useState(false);
@@ -100,6 +101,11 @@ function ExpertReview() {
 
   return (
     <div>
+      <PageSeo
+        title="Expert Review | SolarVy"
+        description="Request an expert review of your Solarvy assessment for clearer recommendations before you buy or install."
+        path="/expert-review"
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>
