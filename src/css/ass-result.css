@@ -12,7 +12,7 @@
 }
 
 .custom-card small {
-  font-size: 14px;
+  font-size: 12px;
   color: #6f7196 !important;
 }
 
@@ -53,7 +53,7 @@ button.btn-outline-custom2.assresult {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   transition: 0.3s ease;
   width: 100%;
@@ -87,7 +87,7 @@ button.btn-outline-custom2.assresult {
 }
 
 span.fs-5.sun-sub {
-  font-size: 32px !important;
+  font-size: 26px !important;
   color: #6f7196;
 }
 
@@ -99,7 +99,7 @@ span.fs-5.sun-sub {
 
 small.roof-text-text-muted.d-block.mb-2 {
   color: #9ca3b4 !important;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 small.pv-text.text-danger.fw-semibold {
@@ -162,40 +162,40 @@ small.pv-textss.text-danger.fw-semibold {
 
 h5.fw-bold.mb-1.rang-head {
   color: #1a2259;
-  font-size: 20px;
+  font-size: 17px;
 }
 
 h5.fw-bold.mb-1.rang-head.section-card-title {
   color: #1a2259;
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1.3;
 }
 
 strong.rang-head {
   color: #1a2259;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 strong.rang-heads {
   color: #1a2259;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 span.rang-name {
   color: #6f7196;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 strong.per-rang {
   color: #1a2259;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700 !important;
 }
 
 h6.left-rang.fw-bold.mb-3 {
   color: #1a2259;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .summary-row {
@@ -223,7 +223,7 @@ h6.left-rang.fw-bold.mb-3 {
 
   border-radius: 16px;
   color: #92400e;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .note-icon {
@@ -272,7 +272,7 @@ h6.left-rang.fw-bold.mb-3 {
 
 small.text-muted.sub-down {
   color: #9ca3b4 !important;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .step-card h6 {
@@ -335,8 +335,8 @@ small.text-muted.sub-down {
     position: static !important;
   }
 
-  h1.bannr-text.display-5.ass-page {
-    font-size: 28px;
+  h1.bannr-text.display-5.ass-page.ass-result-banner-text {
+    font-size: 24px;
   }
 
   .icon-box-maony {
@@ -356,7 +356,7 @@ small.text-muted.sub-down {
   }
 
   h5.fw-bold.mb-1.rang-head.section-card-title {
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.25;
   }
 }
@@ -429,6 +429,7 @@ small.text-muted.sub-down {
   overflow-wrap: anywhere;
   line-height: 1.25;
   margin-bottom: 0;
+  font-size: 16px;
 }
 
 hr.liness {
@@ -438,7 +439,7 @@ hr.liness {
 
 .label {
   display: block;
-  font-size: 11px;
+  font-size: 10px;
   color: #94a3b8;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -468,12 +469,12 @@ hr.liness {
 
 .det-text.fw-semibold.info-title {
   color: #1a2259;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 small.text-muted.info-desc {
   color: #9ca3b4;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 i.bi.bi-file-earmark-text {
@@ -498,6 +499,7 @@ i.colo-sym-right.bi {
   font-weight: 700;
   color: #1e293b;
   text-align: center;
+  font-size: 16px;
 }
 
 .btn-primary {
@@ -521,13 +523,13 @@ i.colo-sym-right.bi {
   white-space: nowrap;
 
   color: #1a2259;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .desc {
   color: #64748b;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -539,7 +541,7 @@ i.bi.bi-download.me-2,
 }
 
 h2.fw-bold.sun-head {
-  font-size: 30px;
+  font-size: 26px;
   margin: 10px 0;
   color: #1a2259;
 }
@@ -579,7 +581,7 @@ i.colo-sym.bi.bi-graph-up.mb-2.text-primary.fs-5 {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   margin-bottom: 10px;
@@ -616,7 +618,7 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
   padding: 0 20px;
   margin-top: 10px;
 
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
 }
@@ -633,6 +635,18 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
 .ass-result-banner-text {
   word-break: normal;
   overflow-wrap: normal;
+}
+
+h1.bannr-text.display-5.ass-page.ass-result-banner-text {
+  font-size: 34px;
+}
+
+p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
+  font-size: 14px;
+}
+
+.ass-result-banner-desc {
+  font-size: 14px;
 }
 
 .ass-result-banner-phrase {
@@ -657,12 +671,12 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
 /* iPhone 12 / 13 / 14 (390px) — keep the same 2-line title wrap as ~430px */
 @media (max-width: 429px) {
   h1.bannr-text.display-5.ass-page.ass-result-banner-text {
-    font-size: 26px;
+    font-size: 22px;
     letter-spacing: -0.02em;
   }
 
   p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
-    font-size: 15px;
+    font-size: 13px;
     width: 100%;
   }
 }
@@ -682,7 +696,7 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
 
   padding: 0 20px;
 
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
 }
@@ -712,7 +726,7 @@ span.icon-get {
 
 h6.qt-text.fw-bold.mb-0 {
   color: #1a2259;
-  font-size: 24px;
+  font-size: 20px;
   margin-left: 20px;
 }
 
@@ -736,7 +750,7 @@ h6.qt-text.fw-bold.mb-0 {
   background: linear-gradient(135deg, #ff7a18, #ffb347);
   color: #fff;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -750,16 +764,16 @@ h6.qt-text.fw-bold.mb-0 {
   margin-bottom: 8px;
   display: flex;
   align-items: center;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .info-title i {
   color: #1a2259;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .info-text {
-  font-size: 14px;
+  font-size: 12px;
   color: #6b7280;
   line-height: 1.5;
   margin: 0;
@@ -775,7 +789,7 @@ button.btn-outline-customsss2-req {
   height: 45px;
   border-radius: 30px;
   padding: 0 20px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -813,31 +827,40 @@ button.btn-outline-customsss2-req {
   }
 }
 
-.ass-result-lower-band {
+.ass-result-flow {
   --ass-result-section-gap: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: var(--ass-result-section-gap);
 }
 
-.ass-result-main-col {
+.ass-result-left,
+.ass-result-right {
   display: contents;
 }
 
-.ass-result-compare-wrap {
+.ass-result-metrics {
   order: 1;
 }
 
-.ass-result-ai-wrap {
+.ass-result-snapshot {
   order: 2;
 }
 
-.ass-result-next-wrap {
+.ass-result-compare-wrap {
   order: 3;
 }
 
+.ass-result-ai-wrap {
+  order: 4;
+}
+
+.ass-result-next-wrap {
+  order: 5;
+}
+
 @media (min-width: 992px) {
-  .ass-result-lower-band {
+  .ass-result-flow {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     align-items: start;
@@ -845,41 +868,49 @@ button.btn-outline-customsss2-req {
     row-gap: var(--ass-result-section-gap);
   }
 
-  .ass-result-main-col {
+  .ass-result-left,
+  .ass-result-right {
     display: flex;
     flex-direction: column;
     gap: var(--ass-result-section-gap);
-    grid-column: 1;
   }
 
+  .ass-result-metrics,
+  .ass-result-snapshot,
   .ass-result-compare-wrap,
   .ass-result-next-wrap,
   .ass-result-ai-wrap {
     order: initial;
   }
-
-  .ass-result-ai-wrap {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
-  }
 }
 
 .p-4.shadow-sm.rounded-4.ass-resul-first.ai-recommendation-card {
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 48%);
+  background: #fff;
 }
 
 .ai-recommendation-card .icon-box-maony {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   color: #174c90;
   background: #eef4ff;
   top: 0;
+  font-size: 12px;
 }
 
 .ai-recommendation-body {
   font-size: 14px;
-  color: #6f7196;
-  line-height: 1.65;
+  color: #3d4468;
+  line-height: 1.7;
   white-space: pre-wrap;
+}
+
+.ass-result-compare-card .custom-table thead th {
+  font-size: 11px;
+}
+
+.ass-result-compare-card .custom-table tbody td {
+  font-size: 14px;
 }
 
 .ai-recommendation-skeleton {
@@ -930,7 +961,7 @@ button.btn-outline-customsss2-req {
   .ass-result-compare-card .custom-table thead th,
   .ass-result-compare-card .custom-table tbody td {
     padding: 14px 16px;
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .ass-result-compare-card .title-cell {

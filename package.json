@@ -12,6 +12,8 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@digabi/noto-sans": "^3.2.0",
+    "@fontsource/noto-sans": "^5.3.0",
     "@react-pdf/renderer": "^4.5.1",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",

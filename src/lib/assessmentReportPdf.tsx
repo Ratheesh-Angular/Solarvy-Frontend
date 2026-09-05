@@ -2,7 +2,7 @@
  * Solarvy Energy Assessment Report PDF
  *
  * Four-page client template:
- *   Page 1 — Cover: title, solar house illustration, property metadata,
+ *   Page 1 — Cover: title, property-type solar illustration, property metadata,
  *            recommendation snapshot cards, executive summary.
  *   Page 2 — Energy profile table, data-quality note, system architecture
  *            diagram, "how the system works" panel.
@@ -26,9 +26,22 @@ import {
   Circle,
   Line,
   Polygon,
+  Font,
   pdf,
 } from "@react-pdf/renderer";
 import type { AssessmentResults } from "../types/assessment";
+import notoSansRegular from "../assets/fonts/NotoSans-Regular.ttf";
+import notoSansBold from "../assets/fonts/NotoSans-Bold.ttf";
+
+// Built-in PDF fonts lack ₦ — register Noto Sans (full TTF) for reliable rendering.
+Font.register({
+  family: "NotoSans",
+  src: notoSansRegular,
+});
+Font.register({
+  family: "NotoSans-Bold",
+  src: notoSansBold,
+});
 
 // ---------------------------------------------------------------------------
 // Types & formatters
@@ -57,8 +70,7 @@ const toNum = (value: unknown): number | null => {
 const formatNaira = (value: unknown): string => {
   const n = toNum(value);
   if (n === null) return MISSING;
-  // Helvetica lacks the ₦ glyph — use ASCII "NGN" for reliable PDF rendering.
-  return `NGN ${Math.round(n).toLocaleString("en-NG", {
+  return `₦${Math.round(n).toLocaleString("en-NG", {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   })}`;
@@ -159,6 +171,7 @@ const colors = {
   mint: "#eaf3ea",
   mintBorder: "#d4e6d4",
   gridSlice: "#1b60a8",
+  archGreen: "#2e7d32",
 };
 
 // ---------------------------------------------------------------------------
@@ -167,7 +180,7 @@ const colors = {
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: "Helvetica",
+    fontFamily: "NotoSans",
     fontSize: 10,
     color: colors.text,
     backgroundColor: colors.white,
@@ -194,7 +207,7 @@ const styles = StyleSheet.create({
   },
   brandWord: {
     fontSize: 15,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
   },
   headerMeta: {
@@ -209,7 +222,7 @@ const styles = StyleSheet.create({
   },
   headerMetaValue: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
   },
 
@@ -235,14 +248,14 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 8,
     color: colors.navy,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     textTransform: "uppercase",
     letterSpacing: 1.2,
     marginBottom: 6,
   },
   title: {
     fontSize: 24,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
     lineHeight: 1.1,
     marginBottom: 6,
@@ -296,14 +309,14 @@ const styles = StyleSheet.create({
   },
   metaValue: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
   },
 
   // Section heading
   sectionTitle: {
     fontSize: 15,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
     marginTop: 8,
     marginBottom: 12,
@@ -328,11 +341,11 @@ const styles = StyleSheet.create({
     color: colors.muted,
     textTransform: "uppercase",
     letterSpacing: 0.6,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   kpiValue: {
-    fontSize: 15,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 11,
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
   },
 
@@ -345,7 +358,7 @@ const styles = StyleSheet.create({
   },
   darkPanelTitle: {
     fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.white,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -374,7 +387,7 @@ const styles = StyleSheet.create({
   },
   tableHeaderText: {
     fontSize: 7,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.muted,
     textTransform: "uppercase",
     letterSpacing: 0.7,
@@ -425,7 +438,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
   noteBold: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
   },
   bluePanel: {
@@ -438,7 +451,7 @@ const styles = StyleSheet.create({
   },
   bluePanelTitle: {
     fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -475,13 +488,13 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
   disclaimerBold: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
   },
 
   // Architecture diagram
   archWrap: {
-    height: 156,
+    height: 212,
     position: "relative",
     marginTop: 6,
   },
@@ -493,11 +506,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 4,
   },
   archBoxText: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 8.5,
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
+    textAlign: "center",
+  },
+  archEdgeLabel: {
+    position: "absolute",
+    fontSize: 7,
+    color: colors.muted,
     textAlign: "center",
   },
 
@@ -519,7 +539,7 @@ const styles = StyleSheet.create({
   },
   chartTitle: {
     fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "NotoSans-Bold",
     color: colors.navy,
     marginBottom: 6,
   },
@@ -676,9 +696,44 @@ function TwoColTable({
   );
 }
 
-function SolarHouseHero() {
-  const cx = 285;
-  const cy = 52;
+type PropertyHeroType =
+  | "Home"
+  | "Hotel"
+  | "Factory"
+  | "Commercial"
+  | "Hospital"
+  | "School";
+
+const PROPERTY_HERO_CAPTIONS: Record<PropertyHeroType, string> = {
+  Home: "Illustrative residential solar + battery concept",
+  Hotel: "Illustrative hotel solar + battery concept",
+  Factory: "Illustrative industrial solar + battery concept",
+  Commercial: "Illustrative commercial solar + battery concept",
+  Hospital: "Illustrative healthcare solar + battery concept",
+  School: "Illustrative school solar + battery concept",
+};
+
+function normalizePropertyType(raw: string): PropertyHeroType {
+  const key = raw.trim().toLowerCase();
+  if (!key || key === "—" || key === "-") return "Home";
+  const aliases: Record<string, PropertyHeroType> = {
+    home: "Home",
+    residential: "Home",
+    house: "Home",
+    hotel: "Hotel",
+    factory: "Factory",
+    industrial: "Factory",
+    commercial: "Commercial",
+    "commercial building": "Commercial",
+    office: "Commercial",
+    hospital: "Hospital",
+    healthcare: "Hospital",
+    school: "School",
+  };
+  return aliases[key] ?? "Home";
+}
+
+function HeroSun({ cx = 285, cy = 52 }: { cx?: number; cy?: number }) {
   const rays = Array.from({ length: 8 }).map((_, i) => {
     const a = (i * 45 * Math.PI) / 180;
     return {
@@ -688,143 +743,554 @@ function SolarHouseHero() {
       y2: cy + Math.sin(a) * 36,
     };
   });
+  return (
+    <>
+      <Circle cx={cx} cy={cy} r={20} fill={colors.orange} />
+      {rays.map((r, i) => (
+        <Line
+          key={i}
+          x1={r.x1}
+          y1={r.y1}
+          x2={r.x2}
+          y2={r.y2}
+          stroke={colors.orange}
+          strokeWidth={2.2}
+        />
+      ))}
+    </>
+  );
+}
 
+function FlatRoofPv({
+  x,
+  y,
+  width,
+  height,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}) {
+  const midY = y + height / 2;
+  const colGap = width / 4;
+  return (
+    <>
+      <Rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={colors.panelSolar}
+        stroke={colors.navy}
+        strokeWidth={0.8}
+      />
+      <Line
+        x1={x}
+        y1={midY}
+        x2={x + width}
+        y2={midY}
+        stroke={colors.white}
+        strokeWidth={0.6}
+      />
+      {[1, 2, 3].map((i) => (
+        <Line
+          key={i}
+          x1={x + colGap * i}
+          y1={y}
+          x2={x + colGap * i}
+          y2={y + height}
+          stroke={colors.white}
+          strokeWidth={0.7}
+        />
+      ))}
+    </>
+  );
+}
+
+function WindowGrid({
+  originX,
+  originY,
+  cols,
+  rows,
+  size = 12,
+  gapX = 8,
+  gapY = 8,
+}: {
+  originX: number;
+  originY: number;
+  cols: number;
+  rows: number;
+  size?: number;
+  gapX?: number;
+  gapY?: number;
+}) {
+  const cells: { x: number; y: number; key: string }[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cells.push({
+        x: originX + c * (size + gapX),
+        y: originY + r * (size + gapY),
+        key: `${r}-${c}`,
+      });
+    }
+  }
+  return (
+    <>
+      {cells.map((w) => (
+        <Rect
+          key={w.key}
+          x={w.x}
+          y={w.y}
+          width={size}
+          height={size}
+          fill={colors.white}
+          stroke={colors.navy}
+          strokeWidth={1}
+        />
+      ))}
+    </>
+  );
+}
+
+function HomeBuildingArt() {
+  return (
+    <>
+      <Rect
+        x="62"
+        y="66"
+        width="116"
+        height="56"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      <Polygon
+        points="40,66 120,26 200,66"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      <Polygon
+        points="90,44 150,44 166,58 78,58"
+        fill={colors.panelSolar}
+        stroke={colors.navy}
+        strokeWidth={0.8}
+      />
+      <Line x1="110" y1="44" x2="102" y2="58" stroke={colors.white} strokeWidth={0.8} />
+      <Line x1="130" y1="44" x2="126" y2="58" stroke={colors.white} strokeWidth={0.8} />
+      <Line x1="150" y1="44" x2="150" y2="58" stroke={colors.white} strokeWidth={0.8} />
+      <Line x1="84" y1="51" x2="160" y2="51" stroke={colors.white} strokeWidth={0.6} />
+      <Rect
+        x="110"
+        y="88"
+        width="22"
+        height="34"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.2}
+      />
+      <Rect x="74" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+      <Rect x="148" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+    </>
+  );
+}
+
+function HotelBuildingArt() {
+  return (
+    <>
+      <Rect
+        x="48"
+        y="28"
+        width="148"
+        height="94"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      <FlatRoofPv x={58} y={18} width={128} height={14} />
+      <WindowGrid originX={60} originY={40} cols={5} rows={3} size={14} gapX={10} gapY={10} />
+      {/* Canopy */}
+      <Rect
+        x="96"
+        y="98"
+        width={52}
+        height={6}
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.2}
+      />
+      <Line x1="100" y1="104" x2="100" y2="122" stroke={colors.navy} strokeWidth={1.2} />
+      <Line x1="144" y1="104" x2="144" y2="122" stroke={colors.navy} strokeWidth={1.2} />
+      {/* Entrance */}
+      <Rect
+        x="112"
+        y="104"
+        width={20}
+        height={18}
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.2}
+      />
+    </>
+  );
+}
+
+function FactoryBuildingArt() {
+  return (
+    <>
+      {/* Main shed */}
+      <Rect
+        x="36"
+        y="54"
+        width="176"
+        height={68}
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      {/* Sloped roof silhouette */}
+      <Polygon
+        points="36,54 124,28 212,54"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      <FlatRoofPv x={70} y={34} width={108} height={16} />
+      {/* Bay doors */}
+      <Rect x="52" y="78" width={40} height={44} fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+      <Line x1="72" y1="78" x2="72" y2="122" stroke={colors.navy} strokeWidth={1} />
+      <Rect x="108" y="78" width={40} height={44} fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+      <Line x1="128" y1="78" x2="128" y2="122" stroke={colors.navy} strokeWidth={1} />
+      {/* Side office wing */}
+      <Rect x="164" y="86" width={36} height={36} fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
+      <Rect x="172" y="94" width={10} height={10} fill={colors.white} stroke={colors.navy} strokeWidth={1} />
+      <Rect x="186" y="94" width={10} height={10} fill={colors.white} stroke={colors.navy} strokeWidth={1} />
+    </>
+  );
+}
+
+function CommercialBuildingArt() {
+  return (
+    <>
+      <Rect
+        x="58"
+        y="22"
+        width="128"
+        height="100"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      <FlatRoofPv x={68} y={12} width={108} height={14} />
+      {/* Curtain-wall style windows */}
+      <WindowGrid originX={70} originY={36} cols={4} rows={4} size={16} gapX={10} gapY={8} />
+      {/* Ground lobby */}
+      <Rect
+        x="102"
+        y="100"
+        width={40}
+        height={22}
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.2}
+      />
+      <Line x1="122" y1="100" x2="122" y2="122" stroke={colors.navy} strokeWidth={1} />
+    </>
+  );
+}
+
+function HospitalBuildingArt() {
+  return (
+    <>
+      {/* Main wing */}
+      <Rect
+        x="44"
+        y="36"
+        width="160"
+        height="86"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      <FlatRoofPv x={56} y={24} width={136} height={14} />
+      <WindowGrid originX={56} originY={48} cols={5} rows={2} size={14} gapX={10} gapY={12} />
+      {/* Cross emblem */}
+      <Rect
+        x="110"
+        y="88"
+        width={28}
+        height={10}
+        fill={colors.orange}
+        stroke={colors.navy}
+        strokeWidth={0.8}
+      />
+      <Rect
+        x="119"
+        y="79"
+        width={10}
+        height={28}
+        fill={colors.orange}
+        stroke={colors.navy}
+        strokeWidth={0.8}
+      />
+      {/* Entrance */}
+      <Rect
+        x="104"
+        y="106"
+        width={40}
+        height={16}
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.2}
+      />
+    </>
+  );
+}
+
+function SchoolBuildingArt() {
+  return (
+    <>
+      {/* Classroom block */}
+      <Rect
+        x="34"
+        y="58"
+        width="178"
+        height="64"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      {/* Low pitched roof */}
+      <Polygon
+        points="28,58 123,30 218,58"
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.4}
+      />
+      <FlatRoofPv x={68} y={38} width={110} height={14} />
+      <WindowGrid originX={48} originY={70} cols={6} rows={1} size={16} gapX={8} gapY={8} />
+      {/* Door */}
+      <Rect
+        x="108"
+        y="96"
+        width={22}
+        height={26}
+        fill={colors.white}
+        stroke={colors.navy}
+        strokeWidth={1.2}
+      />
+      {/* Flagpole */}
+      <Line x1="224" y1="28" x2="224" y2="122" stroke={colors.navy} strokeWidth={1.4} />
+      <Polygon
+        points="224,30 248,38 224,46"
+        fill={colors.orange}
+        stroke={colors.navy}
+        strokeWidth={0.8}
+      />
+    </>
+  );
+}
+
+function PropertyBuildingArt({ type }: { type: PropertyHeroType }) {
+  switch (type) {
+    case "Hotel":
+      return <HotelBuildingArt />;
+    case "Factory":
+      return <FactoryBuildingArt />;
+    case "Commercial":
+      return <CommercialBuildingArt />;
+    case "Hospital":
+      return <HospitalBuildingArt />;
+    case "School":
+      return <SchoolBuildingArt />;
+    case "Home":
+    default:
+      return <HomeBuildingArt />;
+  }
+}
+
+function PropertySolarHero({ propertyType }: { propertyType: string }) {
+  const type = normalizePropertyType(propertyType);
   return (
     <View style={styles.heroWrap}>
       <View style={styles.heroImage}>
         <Svg width={340} height={140} viewBox="0 0 340 140">
-          {/* House body */}
-          <Rect
-            x="62"
-            y="66"
-            width="116"
-            height="56"
-            fill={colors.white}
-            stroke={colors.navy}
-            strokeWidth={1.4}
-          />
-          {/* Roof */}
-          <Polygon
-            points="40,66 120,26 200,66"
-            fill={colors.white}
-            stroke={colors.navy}
-            strokeWidth={1.4}
-          />
-          {/* Solar panel band on roof */}
-          <Polygon
-            points="90,44 150,44 166,58 78,58"
-            fill={colors.panelSolar}
-            stroke={colors.navy}
-            strokeWidth={0.8}
-          />
-          <Line x1="110" y1="44" x2="102" y2="58" stroke={colors.white} strokeWidth={0.8} />
-          <Line x1="130" y1="44" x2="126" y2="58" stroke={colors.white} strokeWidth={0.8} />
-          <Line x1="150" y1="44" x2="150" y2="58" stroke={colors.white} strokeWidth={0.8} />
-          <Line x1="84" y1="51" x2="160" y2="51" stroke={colors.white} strokeWidth={0.6} />
-          {/* Door */}
-          <Rect
-            x="110"
-            y="88"
-            width="22"
-            height="34"
-            fill={colors.white}
-            stroke={colors.navy}
-            strokeWidth={1.2}
-          />
-          {/* Windows */}
-          <Rect x="74" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
-          <Rect x="148" y="82" width="20" height="20" fill={colors.white} stroke={colors.navy} strokeWidth={1.2} />
-          {/* Sun */}
-          <Circle cx={cx} cy={cy} r={20} fill={colors.orange} />
-          {rays.map((r, i) => (
-            <Line
-              key={i}
-              x1={r.x1}
-              y1={r.y1}
-              x2={r.x2}
-              y2={r.y2}
-              stroke={colors.orange}
-              strokeWidth={2.2}
-            />
-          ))}
+          <PropertyBuildingArt type={type} />
+          <HeroSun />
         </Svg>
       </View>
-      <Text style={styles.heroCaption}>
-        Illustrative residential solar + battery concept
-      </Text>
+      <Text style={styles.heroCaption}>{PROPERTY_HERO_CAPTIONS[type]}</Text>
     </View>
   );
 }
 
+function archArrowHead(
+  tipX: number,
+  tipY: number,
+  direction: "right" | "left" | "up" | "down",
+  fill: string,
+  size = 5,
+) {
+  const s = size;
+  const half = size * 0.65;
+  let points: string;
+  if (direction === "right") {
+    points = `${tipX},${tipY} ${tipX - s},${tipY - half} ${tipX - s},${tipY + half}`;
+  } else if (direction === "left") {
+    points = `${tipX},${tipY} ${tipX + s},${tipY - half} ${tipX + s},${tipY + half}`;
+  } else if (direction === "down") {
+    points = `${tipX},${tipY} ${tipX - half},${tipY - s} ${tipX + half},${tipY - s}`;
+  } else {
+    points = `${tipX},${tipY} ${tipX - half},${tipY + s} ${tipX + half},${tipY + s}`;
+  }
+  return <Polygon points={points} fill={fill} />;
+}
+
 function SystemArchitectureDiagram() {
+  const H = 36;
   const boxes = {
-    solar: { left: 6, top: 58, w: 92, h: 40 },
-    inverter: { left: 150, top: 58, w: 118, h: 40 },
-    battery: { left: 320, top: 10, w: 96, h: 40 },
-    generator: { left: 320, top: 106, w: 96, h: 40 },
-    loads: { left: 425, top: 58, w: 92, h: 40 },
+    solar: { left: 4, top: 88, w: 88, h: H },
+    inverter: { left: 128, top: 88, w: 118, h: H },
+    ats: { left: 298, top: 88, w: 118, h: H },
+    loads: { left: 448, top: 88, w: 72, h: H },
+    battery: { left: 128, top: 8, w: 118, h: H },
+    grid: { left: 298, top: 8, w: 118, h: H },
+    generator: { left: 298, top: 168, w: 118, h: H },
   };
+
+  const midY = boxes.solar.top + H / 2;
+  const batteryMidY = boxes.battery.top + H / 2;
+  const inverterCx = boxes.inverter.left + boxes.inverter.w / 2;
+  const atsCx = boxes.ats.left + boxes.ats.w / 2;
+  const green = colors.archGreen;
+  const navy = colors.navy;
+  const tip = 5;
 
   return (
     <View style={styles.archWrap}>
       <Svg
         width="100%"
-        height={156}
-        viewBox="0 0 523 156"
+        height={212}
+        viewBox="0 0 523 212"
         style={{ position: "absolute", top: 0, left: 0 }}
       >
-        {/* Solar PV -> Hybrid Inverter */}
-        <Line x1={98} y1={78} x2={150} y2={78} stroke={colors.navy} strokeWidth={1.6} />
-        {/* Inverter -> bus */}
-        <Line x1={268} y1={78} x2={294} y2={78} stroke={colors.navy} strokeWidth={1.6} />
-        <Line x1={294} y1={30} x2={294} y2={126} stroke={colors.navy} strokeWidth={1.6} />
-        <Line x1={294} y1={30} x2={320} y2={30} stroke={colors.navy} strokeWidth={1.6} />
-        <Line x1={294} y1={126} x2={320} y2={126} stroke={colors.navy} strokeWidth={1.6} />
-        {/* Battery / Generator converge -> Home Loads */}
-        <Line x1={416} y1={30} x2={425} y2={78} stroke={colors.navy} strokeWidth={1.6} />
-        <Line x1={416} y1={126} x2={425} y2={78} stroke={colors.navy} strokeWidth={1.6} />
+        {/* Solar PV -> Inverter / Charger (green) */}
+        <Line
+          x1={boxes.solar.left + boxes.solar.w}
+          y1={midY}
+          x2={boxes.inverter.left - tip}
+          y2={midY}
+          stroke={green}
+          strokeWidth={1.6}
+        />
+        {archArrowHead(boxes.inverter.left, midY, "right", green)}
+
+        {/* Inverter <-> Battery (green, bi-directional) */}
+        <Line
+          x1={inverterCx}
+          y1={boxes.inverter.top - tip}
+          x2={inverterCx}
+          y2={boxes.battery.top + boxes.battery.h + tip}
+          stroke={green}
+          strokeWidth={1.6}
+        />
+        {archArrowHead(inverterCx, boxes.battery.top + boxes.battery.h, "up", green)}
+        {archArrowHead(inverterCx, boxes.inverter.top, "down", green)}
+
+        {/* Inverter -> ATS (navy) */}
+        <Line
+          x1={boxes.inverter.left + boxes.inverter.w}
+          y1={midY}
+          x2={boxes.ats.left - tip}
+          y2={midY}
+          stroke={navy}
+          strokeWidth={1.6}
+        />
+        {archArrowHead(boxes.ats.left, midY, "right", navy)}
+
+        {/* Grid -> Battery "Grid charging" (navy, left) */}
+        <Line
+          x1={boxes.grid.left}
+          y1={batteryMidY}
+          x2={boxes.battery.left + boxes.battery.w + tip}
+          y2={batteryMidY}
+          stroke={navy}
+          strokeWidth={1.6}
+        />
+        {archArrowHead(boxes.battery.left + boxes.battery.w, batteryMidY, "left", navy)}
+
+        {/* Grid -> ATS (navy, down) */}
+        <Line
+          x1={atsCx}
+          y1={boxes.grid.top + boxes.grid.h}
+          x2={atsCx}
+          y2={boxes.ats.top - tip}
+          stroke={navy}
+          strokeWidth={1.6}
+        />
+        {archArrowHead(atsCx, boxes.ats.top, "down", navy)}
+
+        {/* Generator -> ATS (navy, up) */}
+        <Line
+          x1={atsCx}
+          y1={boxes.generator.top}
+          x2={atsCx}
+          y2={boxes.ats.top + boxes.ats.h + tip}
+          stroke={navy}
+          strokeWidth={1.6}
+        />
+        {archArrowHead(atsCx, boxes.ats.top + boxes.ats.h, "up", navy)}
+
+        {/* ATS -> Loads (navy) */}
+        <Line
+          x1={boxes.ats.left + boxes.ats.w}
+          y1={midY}
+          x2={boxes.loads.left - tip}
+          y2={midY}
+          stroke={navy}
+          strokeWidth={1.6}
+        />
+        {archArrowHead(boxes.loads.left, midY, "right", navy)}
       </Svg>
 
-      <View
+      <Text
         style={[
-          styles.archBox,
-          { left: boxes.solar.left, top: boxes.solar.top, width: boxes.solar.w, height: boxes.solar.h },
+          styles.archEdgeLabel,
+          {
+            left: boxes.battery.left + boxes.battery.w + 4,
+            top: batteryMidY - 14,
+            width: boxes.grid.left - (boxes.battery.left + boxes.battery.w) - 8,
+          },
         ]}
       >
-        <Text style={styles.archBoxText}>Solar PV</Text>
-      </View>
-      <View
-        style={[
-          styles.archBox,
-          { left: boxes.inverter.left, top: boxes.inverter.top, width: boxes.inverter.w, height: boxes.inverter.h },
-        ]}
-      >
-        <Text style={styles.archBoxText}>Hybrid Inverter</Text>
-      </View>
-      <View
-        style={[
-          styles.archBox,
-          { left: boxes.battery.left, top: boxes.battery.top, width: boxes.battery.w, height: boxes.battery.h },
-        ]}
-      >
-        <Text style={styles.archBoxText}>Battery</Text>
-      </View>
-      <View
-        style={[
-          styles.archBox,
-          { left: boxes.generator.left, top: boxes.generator.top, width: boxes.generator.w, height: boxes.generator.h },
-        ]}
-      >
-        <Text style={styles.archBoxText}>Generator</Text>
-      </View>
-      <View
-        style={[
-          styles.archBox,
-          { left: boxes.loads.left, top: boxes.loads.top, width: boxes.loads.w, height: boxes.loads.h },
-        ]}
-      >
-        <Text style={styles.archBoxText}>Home Loads</Text>
-      </View>
+        Grid charging
+      </Text>
+
+      {(
+        [
+          ["solar", "Solar PV"],
+          ["inverter", "Inverter / Charger"],
+          ["ats", "ATS / Changeover"],
+          ["loads", "Loads"],
+          ["battery", "Battery"],
+          ["grid", "Grid"],
+          ["generator", "Generator"],
+        ] as const
+      ).map(([key, label]) => {
+        const b = boxes[key];
+        return (
+          <View
+            key={key}
+            style={[
+              styles.archBox,
+              { left: b.left, top: b.top, width: b.w, height: b.h },
+            ]}
+          >
+            <Text style={styles.archBoxText}>{label}</Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -1074,7 +1540,7 @@ export function AssessmentReportDocument({
           expected savings and next steps.
         </Text>
 
-        <SolarHouseHero />
+        <PropertySolarHero propertyType={propertyType} />
 
         <View style={styles.metaGrid}>
           <View style={styles.metaItem}>
@@ -1154,12 +1620,12 @@ export function AssessmentReportDocument({
           </Text>
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
+        <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           Illustrative system architecture
         </Text>
         <SystemArchitectureDiagram />
 
-        <View style={styles.bluePanel}>
+        <View style={[styles.bluePanel, { marginTop: 10 }]}>
           <Text style={styles.bluePanelTitle}>How the system works</Text>
           <Text style={styles.bluePanelText}>
             Solar PV supplies daytime household loads and charges the battery

@@ -14,20 +14,20 @@
 }
 
 h2.dashboard-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #1e2a5a;
   margin-bottom: 10px;
 }
 
 p.dashboard-subtitle {
-  font-size: 14px;
+  font-size: 12px;
   color: #6b7280;
   line-height: 1.6;
 }
 
 .card-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #5f6d90 !important;
   letter-spacing: 1px;
@@ -36,7 +36,7 @@ p.dashboard-subtitle {
 }
 
 .card-value {
-  font-size: 22px;
+  font-size: 19px;
 
   font-weight: 700;
   color: #1a2259;
@@ -44,7 +44,7 @@ p.dashboard-subtitle {
 }
 
 .card-sub {
-  font-size: 14px;
+  font-size: 12px;
   color: #737c92;
   margin: 0;
 }
@@ -87,7 +87,7 @@ p.dashboard-subtitle {
 }
 
 .custom-table tbody td {
-  font-size: 16px;
+  font-size: 14px;
   color: #4d5260;
   padding: 18px 28px;
   border-top: 1px solid #e5e7eb !important;
@@ -124,7 +124,7 @@ p.dashboard-subtitle {
   background: #22c55e;
   color: #fff;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 12px;
   border-radius: 20px;
 }
 
@@ -228,11 +228,11 @@ p.dashboard-subtitle {
   }
 
   .dashboard-title {
-    font-size: 22px;
+    font-size: 19px;
   }
 
   .dashboard-subtitle {
-    font-size: 13px;
+    font-size: 12px;
   }
 }
 

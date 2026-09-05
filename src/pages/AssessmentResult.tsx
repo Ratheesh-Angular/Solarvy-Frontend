@@ -457,9 +457,10 @@ function AssesementResult() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
-          <div className="row g-4 align-items-start">
-            <div className="col-lg-8">
-              <div className="row g-2">
+          <div className="ass-result-flow">
+            <div className="ass-result-left">
+              <div className="ass-result-metrics">
+                <div className="row g-2">
                 <div className="col-md-4">
                   <div className="card custom-card h-100">
                     <div className="card-body pad">
@@ -720,132 +721,8 @@ function AssesementResult() {
                   <span className="fw-bold">Important note:</span> {disclaimer}
                 </div>
               </div>
-            </div>
-
-            <div className="col-lg-4">
-              <div className="p-4 rounded-4 shadow-sm right-panel assts-right">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="qs-icon me-2">
-                    <img src={qut} alt="icon" />
-                  </div>
-                  <h6 className="qt-text fw-bold mb-0">Quick Snapshot</h6>
-                </div>
-
-                <hr className="liness" />
-
-                <div className="row g-3 flex-wrap qs-metrics">
-                  <div className="col-6">
-                    <div className="qs-cards h-100">
-                      <div className="icon-box-right">
-                        <i className="colo-sym-right bi bi-graph-up text-primary fs-5"></i>
-                      </div>
-                      <small className="label">ANNUAL SAVINGS</small>
-                      <h5 className="value">{netSavings}</h5>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="qs-cards h-100">
-                      <div className="icon-box-right">
-                        <i className="colo-sym-right bi bi-clock-history text-primary fs-5"></i>
-                      </div>
-                      <small className="label">PAYBACK</small>
-                      <h5 className="value">
-                        {paybackYears === MISSING
-                          ? MISSING
-                          : `${paybackYears} yrs`}
-                      </h5>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="qs-cards h-100">
-                      <div className="icon-box-right">
-                        <i className="colo-sym-right bi bi-fire text-primary fs-5"></i>
-                      </div>
-                      <small className="label">DIESEL SAVED</small>
-                      <h5 className="value">{dieselSavedLitres}</h5>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="qs-cards h-100">
-                      <div className="icon-box-right">
-                        <i className="colo-sym-right bi bi-stack text-primary fs-5"></i>
-                      </div>
-                      <small className="label">SYSTEM CLASS</small>
-                      <h5 className="value">{systemClass}</h5>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <div className="d-flex align-items-start mb-3">
-                    <div className="info-icon-box me-3">
-                      <i className="bi bi-file-earmark-text"></i>
-                    </div>
-                    <div>
-                      <div className="det-text fw-semibold info-title">
-                        Detailed technical review
-                      </div>
-                      <small className="text-muted info-desc">
-                        Best for hotels, hospitals, factories, estates, and
-                        higher-value projects.
-                      </small>
-                    </div>
-                  </div>
-
-                  <div className="d-flex align-items-start mb-4">
-                    <div className="info-icon-box me-3">
-                      <i className="bi bi-people"></i>
-                    </div>
-                    <div>
-                      <div className="det-text fw-semibold info-title">
-                        Installer matching
-                      </div>
-                      <small className="text-muted info-desc">
-                        Best for users ready to compare implementation options
-                        immediately.
-                      </small>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  className="btn-primary-customss"
-                  style={{ height: "45px" }}
-                >
-                  <span className="icon-get">
-                    <i className="whit-icon bi bi-file-earmark-text"></i>
-                  </span>
-                  <span>Get Detailed Review</span>
-                  <span className="arrows">
-                    <img src={save} alt="icon" />
-                  </span>
-                </button>
-
-                <button
-                  className="btn-outline-customss2 "
-                  style={{ height: "45px" }}
-                  onClick={() =>
-                    navigate(
-                      assessmentId
-                        ? `/start-assessment?assessment=${encodeURIComponent(assessmentId)}`
-                        : "/start-assessment",
-                    )
-                  }
-                >
-                  <span className="icon-get">
-                    <i className="bi bi-arrow-left"></i>
-                  </span>
-                  <span>Back to Assessment</span>
-                </button>
               </div>
-            </div>
-          </div>
 
-          <div className="ass-result-lower-band mt-4">
-            <div className="ass-result-main-col">
               <div className="ass-result-compare-wrap">
                 <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first ass-result-compare-card">
                   <div className="d-flex align-items-start mb-4">
@@ -1062,40 +939,160 @@ function AssesementResult() {
               </div>
             </div>
 
-            <div className="ass-result-ai-wrap">
-              <div className="p-4 shadow-sm rounded-4 ass-resul-first ai-recommendation-card">
-                <div className="d-flex align-items-start mb-3">
-                  <div className="icon-box-maony me-3" aria-hidden>
-                    <Sparkles size={18} strokeWidth={2} />
-                  </div>
-                  <div>
-                    <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
-                      <h5 className="fw-bold mb-0 rang-head section-card-title">
-                        AI Recommendation
-                      </h5>
-                      <span className="bill-ai-badge">AI</span>
+            <div className="ass-result-right">
+              <div className="ass-result-snapshot">
+                <div className="p-4 rounded-4 shadow-sm right-panel assts-right">
+                  <div className="d-flex align-items-center mb-3">
+                    <div className="qs-icon me-2">
+                      <img src={qut} alt="icon" />
                     </div>
-                    <small className="text-muted">
-                      A plain-language read of what this result means for you.
-                    </small>
+                    <h6 className="qt-text fw-bold mb-0">Quick Snapshot</h6>
                   </div>
-                </div>
-                {showRecommendationSkeleton ? (
-                  <div
-                    className="ai-recommendation-skeleton"
-                    aria-busy="true"
-                    aria-label="Loading recommendation"
+
+                  <hr className="liness" />
+
+                  <div className="row g-3 flex-wrap qs-metrics">
+                    <div className="col-6">
+                      <div className="qs-cards h-100">
+                        <div className="icon-box-right">
+                          <i className="colo-sym-right bi bi-graph-up text-primary fs-5"></i>
+                        </div>
+                        <small className="label">ANNUAL SAVINGS</small>
+                        <h5 className="value">{netSavings}</h5>
+                      </div>
+                    </div>
+
+                    <div className="col-6">
+                      <div className="qs-cards h-100">
+                        <div className="icon-box-right">
+                          <i className="colo-sym-right bi bi-clock-history text-primary fs-5"></i>
+                        </div>
+                        <small className="label">PAYBACK</small>
+                        <h5 className="value">
+                          {paybackYears === MISSING
+                            ? MISSING
+                            : `${paybackYears} yrs`}
+                        </h5>
+                      </div>
+                    </div>
+
+                    <div className="col-6">
+                      <div className="qs-cards h-100">
+                        <div className="icon-box-right">
+                          <i className="colo-sym-right bi bi-fire text-primary fs-5"></i>
+                        </div>
+                        <small className="label">DIESEL SAVED</small>
+                        <h5 className="value">{dieselSavedLitres}</h5>
+                      </div>
+                    </div>
+
+                    <div className="col-6">
+                      <div className="qs-cards h-100">
+                        <div className="icon-box-right">
+                          <i className="colo-sym-right bi bi-stack text-primary fs-5"></i>
+                        </div>
+                        <small className="label">SYSTEM CLASS</small>
+                        <h5 className="value">{systemClass}</h5>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="d-flex align-items-start mb-3">
+                      <div className="info-icon-box me-3">
+                        <i className="bi bi-file-earmark-text"></i>
+                      </div>
+                      <div>
+                        <div className="det-text fw-semibold info-title">
+                          Detailed technical review
+                        </div>
+                        <small className="text-muted info-desc">
+                          Best for hotels, hospitals, factories, estates, and
+                          higher-value projects.
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="d-flex align-items-start mb-4">
+                      <div className="info-icon-box me-3">
+                        <i className="bi bi-people"></i>
+                      </div>
+                      <div>
+                        <div className="det-text fw-semibold info-title">
+                          Installer matching
+                        </div>
+                        <small className="text-muted info-desc">
+                          Best for users ready to compare implementation options
+                          immediately.
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    className="btn-primary-customss"
+                    style={{ height: "45px" }}
                   >
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
+                    <span className="icon-get">
+                      <i className="whit-icon bi bi-file-earmark-text"></i>
+                    </span>
+                    <span>Get Detailed Review</span>
+                    <span className="arrows">
+                      <img src={save} alt="icon" />
+                    </span>
+                  </button>
+
+                  <button
+                    className="btn-outline-customss2 "
+                    style={{ height: "45px" }}
+                    onClick={() =>
+                      navigate(
+                        assessmentId
+                          ? `/start-assessment?assessment=${encodeURIComponent(assessmentId)}`
+                          : "/start-assessment",
+                      )
+                    }
+                  >
+                    <span className="icon-get">
+                      <i className="bi bi-arrow-left"></i>
+                    </span>
+                    <span>Back to Assessment</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="ass-result-ai-wrap">
+                <div className="p-4 shadow-sm rounded-4 ass-resul-first ai-recommendation-card">
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="icon-box-maony me-2" aria-hidden>
+                      <Sparkles size={12} strokeWidth={2} />
+                    </div>
+                    <div>
+                      <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
+                        <h6 className="fw-bold mb-0 rang-head section-card-title">
+                          Solarvy's AI Recommendation
+                        </h6>
+                        {/* <span className="bill-ai-badge">AI</span> */}
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <p className="ai-recommendation-body mb-0">
-                    {storedRecommendation || recommendationFallback}
-                  </p>
-                )}
+                  {showRecommendationSkeleton ? (
+                    <div
+                      className="ai-recommendation-skeleton"
+                      aria-busy="true"
+                      aria-label="Loading recommendation"
+                    >
+                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
+                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
+                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
+                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
+                    </div>
+                  ) : (
+                    <p className="ai-recommendation-body mb-0">
+                      {storedRecommendation || recommendationFallback}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
