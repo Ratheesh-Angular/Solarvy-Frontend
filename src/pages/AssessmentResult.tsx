@@ -279,7 +279,6 @@ function AssesementResult() {
           country: results.country ?? formData?.country,
         },
         assessmentDate: formatAssessmentDate(),
-        logoSrc: logo,
       });
     } catch {
       showError("Unable to generate the PDF report. Please try again.");
