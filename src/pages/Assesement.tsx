@@ -843,7 +843,7 @@ function Assesement() {
   const [calculateErrors, setCalculateErrors] = useState<CalculateFieldErrors>(
     {},
   );
-  const [roofArea, setRoofArea] = useState("200");
+  const [roofArea, setRoofArea] = useState("400");
   const [backupDuration, setBackupDuration] = useState("");
   const templatePromptHandledRef = useRef(false);
   const handleToggle = () => {
@@ -1087,6 +1087,16 @@ function Assesement() {
     return live.toFixed(2);
   };
 
+  /** Keep cleared qty/hours/power blank in the UI; calcs still coerce "" → 0. */
+  const parseOptionalNumberInput = (raw: unknown): number | "" => {
+    if (raw === "" || raw === null || raw === undefined) return "";
+    if (typeof raw === "number") return Number.isFinite(raw) ? raw : "";
+    const trimmed = String(raw).trim();
+    if (trimmed === "") return "";
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : "";
+  };
+
   const handleRowChange = (index: any, field: any, value: any) => {
     const setter = inputMethod === "custom" ? setCustomRows : setApplianceRows;
 
@@ -1098,19 +1108,19 @@ function Assesement() {
       if (field === "qty") {
         updatedRows[index] = {
           ...updatedRows[index],
-          qty: Number(value) || 0,
+          qty: parseOptionalNumberInput(value),
           dailyKwhExcel: undefined,
         };
       } else if (field === "hours") {
         updatedRows[index] = {
           ...updatedRows[index],
-          hours: Number(value) || 0,
+          hours: parseOptionalNumberInput(value),
           dailyKwhExcel: undefined,
         };
       } else if (field === "power") {
         updatedRows[index] = {
           ...updatedRows[index],
-          power: Number(value) || 0,
+          power: parseOptionalNumberInput(value),
           dailyKwhExcel: undefined,
         };
       } else if (field === "loadFactorPct") {
@@ -2049,7 +2059,7 @@ function Assesement() {
                             <h6 className="mb-1 fw-semibold ass-semi">
                               {item.title}
                             </h6>
-                            <p className="small mb-0 text-muted ass-muted">
+                            <p className="mb-0 text-muted power-descss">
                               {item.desc}
                             </p>
                           </div>
@@ -2240,7 +2250,7 @@ function Assesement() {
                             <h6 className="mb-1 fw-semibold curr-ass">
                               {item.title}
                             </h6>
-                            <p className="mb-0 small text-muted curr-ass-semi-hide">
+                            <p className="mb-0 text-muted  curr-ass-semi-hide power-descss">
                               {item.desc}
                             </p>
                           </div>
@@ -2307,7 +2317,7 @@ function Assesement() {
                               <h6 className="mb-1 fw-semibold ass-semiss">
                                 {item.title}
                               </h6>
-                              <p className="small mb-0 text-muted ass-mutedss">
+                              <p className="mb-0 text-muted power-descss">
                                 {item.desc}
                               </p>
                             </div>
@@ -2600,7 +2610,7 @@ function Assesement() {
                                         handleRowChange(
                                           index,
                                           "qty",
-                                          Number(e.target.value),
+                                          e.target.value,
                                         )
                                       }
                                     />
@@ -2615,7 +2625,7 @@ function Assesement() {
                                         handleRowChange(
                                           index,
                                           "hours",
-                                          Number(e.target.value),
+                                          e.target.value,
                                         )
                                       }
                                     />
@@ -2631,7 +2641,7 @@ function Assesement() {
                                           handleRowChange(
                                             index,
                                             "power",
-                                            Number(e.target.value),
+                                            e.target.value,
                                           )
                                         }
                                       />
@@ -2754,7 +2764,7 @@ function Assesement() {
                                       handleRowChange(
                                         index,
                                         "power",
-                                        Number(e.target.value),
+                                        e.target.value,
                                       )
                                     }
                                   />
@@ -2769,7 +2779,7 @@ function Assesement() {
                                       handleRowChange(
                                         index,
                                         "qty",
-                                        Number(e.target.value),
+                                        e.target.value,
                                       )
                                     }
                                   />
@@ -2784,7 +2794,7 @@ function Assesement() {
                                       handleRowChange(
                                         index,
                                         "hours",
-                                        Number(e.target.value),
+                                        e.target.value,
                                       )
                                     }
                                   />
@@ -2865,7 +2875,7 @@ function Assesement() {
                         <input
                           type="number"
                           className="form-control ass-field-control"
-                          placeholder="200"
+                          placeholder="400"
                           value={roofArea}
                           onChange={(e) => setRoofArea(e.target.value)}
                         />
@@ -2937,7 +2947,7 @@ function Assesement() {
                               <h6 className="mb-1 fw-semibold ass-semi clears">
                                 {item.title}
                               </h6>
-                              <p className="small mb-0 text-muted ass-muted">
+                              <p className="mb-0 text-muted power-descss">
                                 {item.desc}
                               </p>
                             </div>

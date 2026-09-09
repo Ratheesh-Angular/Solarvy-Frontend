@@ -747,6 +747,12 @@ p.mb-0.small.text-muted.curr-ass-semi {
   display: block;
 }
 
+p.mb-0.power-descss {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: sans-serif;
+}
+
 .tab-btn {
   border: 1px solid #174c90;
   background: white;
@@ -2034,6 +2040,8 @@ input[type="number"] {
   p.mb-0.small.text-muted.curr-ass-semi-hide {
     display: none;
   }
+  
+
 
   p.small.mb-0.text-muted.ass-mutedss {
     font-size: 13px;

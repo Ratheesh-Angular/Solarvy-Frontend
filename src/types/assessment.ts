@@ -1,9 +1,10 @@
 export type LoadTableRow = {
   id: string;
   kind: string;
-  qty: number;
-  hours: number;
-  power: number;
+  /** Empty string while the user clears the field; calcs treat as 0. */
+  qty: number | "";
+  hours: number | "";
+  power: number | "";
   /** Percent 0–100. Mirrors Excel duty cycle / load factor. */
   loadFactorPct?: number;
   /** Appliance_Input row number (template zone 4–20). */
@@ -144,12 +145,17 @@ export type AssessmentResults = {
   solarShare?: number | null;
   gridOffset?: number | null;
   dieselReduction?: number | null;
-  /** User_Inputs!B30 — NGN/kWh for cost comparison chart. */
-  gridCostPerKwh?: number | null;
-  /** Diesel_Economics!B6 — NGN/kWh for cost comparison chart. */
-  dieselCostPerKwh?: number | null;
-  /** LCOE: system cost / (usable solar × system life years). */
+  /** PDF Inputs!B53 — NGN/kWh for cost comparison chart. */
   solarCostPerKwh?: number | null;
+  /** PDF Inputs!B54 — NGN/kWh for cost comparison chart. */
+  gridCostPerKwh?: number | null;
+  /** PDF Inputs!B55 — NGN/kWh for cost comparison chart. */
+  dieselCostPerKwh?: number | null;
+  /** PDF Inputs!A53:B55 — labels + values for illustrative cost comparison. */
+  energyCostComparison?: Array<{
+    label: string;
+    value: number | null;
+  }>;
   systemClass?: string | null;
   calculationError?: string;
   /** OpenAI plain-language recommendation for the results sidebar. */

@@ -711,15 +711,7 @@ function AssesementResult() {
                 </div>
               </div>
 
-              <div className="important-note d-none d-lg-flex align-items-start p-3 mt-4">
-                <div className="me-2 mt-0">
-                  <img src={imp} alt="icon" />
-                </div>
-
-                <div>
-                  <span className="fw-bold">Important note:</span> {disclaimer}
-                </div>
-              </div>
+             
               </div>
 
               <div className="ass-result-compare-wrap">
@@ -838,7 +830,15 @@ function AssesementResult() {
                   </div>
                 </div>
               </div>
+              <div className="important-note d-none d-lg-flex align-items-start p-3 mt-1">
+                <div className="me-2 mt-0">
+                  <img src={imp} alt="icon" />
+                </div>
 
+                <div>
+                  <span className="fw-bold">Important note:</span> {disclaimer}
+                </div>
+              </div>
               <div className="ass-result-next-wrap">
                 <div className="p-4 shadow-sm rounded-4 ass-first">
                   <div className="d-flex align-items-start mb-3">

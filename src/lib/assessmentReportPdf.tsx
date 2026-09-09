@@ -247,10 +247,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontFamily: "NotoSans-Bold",
     color: colors.navy,
-    lineHeight: 1.1,
+    lineHeight: 1.2,
     marginBottom: 6,
   },
   subtitle: {
@@ -435,11 +435,11 @@ const styles = StyleSheet.create({
     color: colors.navy,
   },
   bluePanel: {
-    marginTop: 16,
+    marginTop: 8,
     backgroundColor: colors.panelBlue,
     borderWidth: 1,
     borderColor: colors.panelBlueBorder,
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 14,
   },
   bluePanelTitle: {
@@ -448,12 +448,12 @@ const styles = StyleSheet.create({
     color: colors.navy,
     textTransform: "uppercase",
     letterSpacing: 0.8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   bluePanelText: {
     fontSize: 9,
     color: colors.text,
-    lineHeight: 1.55,
+    lineHeight: 1.45,
   },
   mintPanel: {
     marginTop: 4,
@@ -510,9 +510,8 @@ const styles = StyleSheet.create({
 
   // Architecture diagram
   archWrap: {
-    height: 212,
     position: "relative",
-    marginTop: 6,
+    marginTop: 4,
   },
   archBox: {
     position: "absolute",
@@ -522,19 +521,32 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 5,
   },
   archBoxText: {
-    fontSize: 8.5,
+    fontSize: 7,
     fontFamily: "NotoSans-Bold",
     color: colors.navy,
     textAlign: "center",
   },
   archEdgeLabel: {
     position: "absolute",
-    fontSize: 7,
+    fontSize: 6.5,
     color: colors.muted,
     textAlign: "center",
+  },
+  // Spacing must live on a View — @react-pdf often ignores margins on bare Text.
+  archNoteWrap: {
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  archNote: {
+    fontSize: 7.5,
+    fontFamily: "NotoSans",
+    color: colors.text,
+    textAlign: "left",
+    lineHeight: 1.35,
   },
 
   // Charts
@@ -693,7 +705,7 @@ function TwoColTable({
         <View
           style={[
             styles.tableRow,
-            index === rows.length - 1 ? { borderBottomWidth: 0 } : null,
+            index === rows.length - 1 ? { borderBottomWidth: 0 } : {},
           ]}
           key={row.label}
         >
@@ -1423,7 +1435,7 @@ function archArrowHead(
   tipY: number,
   direction: "right" | "left" | "up" | "down",
   fill: string,
-  size = 5,
+  size = 4,
 ) {
   const s = size;
   const half = size * 0.65;
@@ -1440,22 +1452,25 @@ function archArrowHead(
   return <Polygon points={points} fill={fill} />;
 }
 
+const DIAG_W = 523;
+const DIAG_H = 178;
+
 function SystemArchitectureDiagram() {
-  const W = 88;
-  const H = 30;
+  const W = 72;
+  const H = 24;
   const col1 = 8;
-  const col2 = 132;
-  const col3 = 300;
-  const col4 = 428;
-  const midTop = 94;
+  const col2 = 118;
+  const col3 = 268;
+  const col4 = 388;
+  const midTop = 88;
   const boxes = {
     solar: { left: col1, top: midTop, w: W, h: H },
     inverter: { left: col2, top: midTop, w: W, h: H },
     ats: { left: col3, top: midTop, w: W, h: H },
     loads: { left: col4, top: midTop, w: W, h: H },
-    battery: { left: col2, top: 16, w: W, h: H },
-    grid: { left: col3, top: 16, w: W, h: H },
-    generator: { left: col3, top: 172, w: W, h: H },
+    battery: { left: col2, top: 12, w: W, h: H },
+    grid: { left: col3, top: 12, w: W, h: H },
+    generator: { left: col3, top: 146, w: W, h: H },
   };
 
   const midY = boxes.solar.top + H / 2;
@@ -1469,11 +1484,11 @@ function SystemArchitectureDiagram() {
   const tip = 5;
 
   return (
-    <View style={styles.archWrap}>
+    <View style={[styles.archWrap, { width: DIAG_W, height: DIAG_H }]}>
       <Svg
-        width="100%"
-        height={212}
-        viewBox="0 0 523 212"
+        width={DIAG_W}
+        height={DIAG_H}
+        viewBox={`0 0 ${DIAG_W} ${DIAG_H}`}
         style={{ position: "absolute", top: 0, left: 0 }}
       >
         {/* Solar PV -> Inverter (green) */}
@@ -1585,7 +1600,12 @@ function SystemArchitectureDiagram() {
             key={key}
             style={[
               styles.archBox,
-              { left: b.left, top: b.top, width: b.w, height: b.h },
+              {
+                left: b.left,
+                top: b.top,
+                width: b.w,
+                height: b.h,
+              },
             ]}
           >
             <Text style={styles.archBoxText}>{label}</Text>
@@ -1902,16 +1922,27 @@ export function AssessmentReportDocument({
 
   const executiveSummary = `SolarVy assessed this ${propertyLower} in ${locationPhrase} with a primary objective to ${objectiveLower}. The preliminary model recommends a ${pv} solar PV system, ${battery} battery storage and a ${inverter} hybrid inverter. Based on the assessment outputs, the system is estimated to generate ${annualPvGen} of solar energy per year, with net annual savings of approximately ${netSavings} and a simple payback of about ${payback}.`;
 
-  // Cost comparison chart
-  const solarCost = toNum(results.solarCostPerKwh) ?? 0;
-  const gridCost = toNum(results.gridCostPerKwh) ?? 0;
-  const dieselCost = toNum(results.dieselCostPerKwh) ?? 0;
-  const costCategories = [
-    { label: "Solar", value: solarCost },
-    { label: "Grid", value: gridCost },
-    { label: "Diesel", value: dieselCost },
-  ];
-  const costYMax = niceYMax(Math.max(solarCost, gridCost, dieselCost, 1), 100);
+  // Cost comparison chart — prefer PDF Inputs A53:B55 when present
+  const energyCostFromExcel = Array.isArray(results.energyCostComparison)
+    ? results.energyCostComparison
+        .map((row) => ({
+          label: String(row?.label ?? "").trim() || MISSING,
+          value: toNum(row?.value) ?? 0,
+        }))
+        .filter((row) => row.label !== MISSING)
+    : null;
+  const costCategories =
+    energyCostFromExcel && energyCostFromExcel.length > 0
+      ? energyCostFromExcel
+      : [
+          { label: "Solar", value: toNum(results.solarCostPerKwh) ?? 0 },
+          { label: "Grid", value: toNum(results.gridCostPerKwh) ?? 0 },
+          { label: "Diesel", value: toNum(results.dieselCostPerKwh) ?? 0 },
+        ];
+  const costYMax = niceYMax(
+    Math.max(...costCategories.map((c) => c.value), 1),
+    100,
+  );
 
   // Energy contribution pie
   const solarSharePct = toPercent(results.solarShare) ?? 0;
@@ -2014,12 +2045,19 @@ export function AssessmentReportDocument({
           </Text>
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
+        <Text style={[styles.sectionTitle, { marginTop: 8, marginBottom: 6 }]}>
           Illustrative system architecture
         </Text>
         <SystemArchitectureDiagram />
+        <View style={styles.archNoteWrap}>
+          <Text style={styles.archNote}>
+            Conceptual energy-flow illustration. Grid-to-battery indicates
+            charging capability, actual charging occurs through appropriate
+            inverter/charger circuitry and protection.
+          </Text>
+        </View>
 
-        <View style={[styles.bluePanel, { marginTop: 10 }]}>
+        <View style={[styles.bluePanel, { marginTop: 6 }]}>
           <Text style={styles.bluePanelTitle}>How the system works</Text>
           <Text style={styles.bluePanelText}>
             Solar PV supplies daytime household loads and charges the battery
@@ -2145,7 +2183,7 @@ export function AssessmentReportDocument({
               style={[
                 styles.tableRow,
                 { paddingVertical: 5 },
-                index === all.length - 1 ? { borderBottomWidth: 0 } : null,
+                index === all.length - 1 ? { borderBottomWidth: 0 } : {},
               ]}
               key={row.label}
             >
