@@ -1,0 +1,350 @@
+/* Solarvy Admin — forms & buttons */
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid transparent;
+  font-family: var(--admin-font);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease,
+    opacity 0.12s ease;
+}
+
+.admin-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-btn-primary {
+  background: var(--admin-navy);
+  border-color: var(--admin-navy);
+  color: #ffffff;
+}
+
+.admin-btn-primary:hover:not(:disabled) {
+  background: var(--admin-blue);
+  border-color: var(--admin-blue);
+  color: #ffffff;
+}
+
+.admin-btn-secondary {
+  background: var(--admin-surface);
+  border-color: var(--admin-border-strong);
+  color: var(--admin-ink);
+}
+
+.admin-btn-secondary:hover:not(:disabled) {
+  background: var(--admin-hover);
+  border-color: var(--admin-border-strong);
+  color: var(--admin-ink);
+}
+
+.admin-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--admin-muted);
+}
+
+.admin-btn-ghost:hover:not(:disabled) {
+  background: var(--admin-hover);
+  color: var(--admin-ink);
+}
+
+.admin-btn-danger {
+  background: #fff;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.admin-btn-danger:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #7f1d1d;
+}
+
+.admin-btn-block {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.admin-field {
+  margin-bottom: 14px;
+  width: 100%;
+}
+
+.admin-field:last-child {
+  margin-bottom: 0;
+}
+
+.admin-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.admin-input,
+.admin-file,
+.admin-prompt-textarea {
+  display: block;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  border: 1px solid var(--admin-border-strong);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  font-family: var(--admin-font);
+  font-size: 15px;
+  line-height: 1.4;
+  text-align: left;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Beat public assessment CSS that targets bare input/textarea */
+.admin-page input.admin-input,
+.admin-page input.admin-file,
+.admin-page textarea.admin-prompt-textarea,
+.admin-shell input.admin-input,
+.admin-shell input.admin-file,
+.admin-shell textarea.admin-prompt-textarea {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+  text-align: left !important;
+  background: var(--admin-surface);
+}
+
+.admin-input {
+  height: 36px;
+  padding: 0 12px;
+}
+
+.admin-file {
+  min-height: 44px;
+  height: auto;
+  padding: 10px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.admin-input:focus,
+.admin-file:focus,
+.admin-prompt-textarea:focus {
+  outline: none;
+  border-color: var(--admin-blue);
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12);
+}
+
+.admin-input:disabled,
+.admin-file:disabled,
+.admin-prompt-textarea:disabled {
+  background: #f8fafc;
+  color: var(--admin-muted);
+}
+
+.admin-prompt-textarea {
+  min-height: 420px;
+  padding: 14px;
+  font-family: var(--admin-mono);
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.admin-file-meta {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--admin-muted);
+}
+
+.admin-password-field {
+  position: relative;
+  width: 100%;
+}
+
+.admin-password-field .admin-input {
+  padding-right: 40px;
+}
+
+.admin-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--admin-radius-sm);
+  background: transparent;
+  color: var(--admin-muted);
+  cursor: pointer;
+}
+
+.admin-password-toggle:hover {
+  color: var(--admin-ink);
+  background: var(--admin-hover);
+}
+
+.admin-password-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12);
+  color: var(--admin-ink);
+}
+
+/* Chatbot FAQ admin */
+.admin-faq-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.admin-faq-form .admin-field {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.admin-faq-form .admin-field > span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.admin-faq-form .admin-field input.admin-input,
+.admin-faq-form .admin-field textarea.admin-prompt-textarea,
+.admin-page .admin-faq-form .admin-field input.admin-input,
+.admin-page .admin-faq-form .admin-field textarea.admin-prompt-textarea,
+.admin-shell .admin-faq-form .admin-field input.admin-input,
+.admin-shell .admin-faq-form .admin-field textarea.admin-prompt-textarea {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+  text-align: left !important;
+  border: 1px solid var(--admin-border-strong);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  font-family: var(--admin-font);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.admin-faq-form .admin-field textarea.admin-prompt-textarea {
+  min-height: 140px;
+  height: auto;
+  padding: 10px 12px;
+  font-family: var(--admin-font);
+  resize: vertical;
+}
+
+.admin-faq-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: flex-end;
+}
+
+.admin-faq-form-row .admin-faq-sort-field {
+  flex: 0 0 140px;
+  width: 140px;
+  min-width: 120px;
+  margin-bottom: 0;
+}
+
+.admin-faq-form-row .admin-field-checkbox {
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0 !important;
+  width: auto !important;
+  min-height: 36px;
+  padding-bottom: 0;
+}
+
+.admin-field-checkbox {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0 !important;
+  width: auto !important;
+  padding-bottom: 8px;
+}
+
+.admin-field-checkbox span {
+  margin: 0 !important;
+  font-weight: 500 !important;
+}
+
+.admin-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.admin-faq-item {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: #fafbfd;
+  padding: 0.9rem 1rem;
+}
+
+.admin-faq-item.is-inactive {
+  opacity: 0.72;
+}
+
+.admin-faq-item-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.admin-faq-question {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--admin-navy);
+}
+
+.admin-faq-badge {
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+  white-space: nowrap;
+}
+
+.admin-faq-answer {
+  margin: 0 0 0.75rem;
+  font-size: 0.92rem;
+  color: #334155;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.admin-faq-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}

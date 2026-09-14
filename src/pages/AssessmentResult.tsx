@@ -34,6 +34,7 @@ import {
   formatAssessmentDate,
   type AssessmentReportInputMethod,
 } from "../lib/assessmentReportPdf";
+import { trackCtaClick, trackEvent } from "../lib/visitorTracking";
 
 type AssessmentApiResponse = {
   success: boolean;
@@ -265,6 +266,15 @@ function AssesementResult() {
     storedRecommendation,
   ]);
 
+  useEffect(() => {
+    if (!assessmentId || !results) return;
+    void trackEvent("results_viewed", {
+      path: window.location.pathname + window.location.search,
+      entityType: "assessment",
+      entityId: assessmentId,
+    });
+  }, [assessmentId, results]);
+
   const handleDownloadReport = async () => {
     if (!results || !assessmentId || isDownloadingReport) return;
 
@@ -279,6 +289,10 @@ function AssesementResult() {
           country: results.country ?? formData?.country,
         },
         assessmentDate: formatAssessmentDate(),
+      });
+      void trackEvent("pdf_download", {
+        entityType: "assessment",
+        entityId: assessmentId,
       });
     } catch {
       showError("Unable to generate the PDF report. Please try again.");
@@ -926,7 +940,17 @@ function AssesementResult() {
                     <button
                       type="button"
                       className="btn-outline-customsss2-req"
-                      onClick={() => navigate("/matched-installers")}
+                      onClick={() => {
+                        void trackCtaClick("matched_installers", {
+                          entityType: "assessment",
+                          entityId: assessmentId || undefined,
+                        });
+                        navigate(
+                          assessmentId
+                            ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+                            : "/matched-installers",
+                        );
+                      }}
                     >
                       <span className="icon-get">
                         <img src={save} alt="icon" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
@@ -7,6 +7,25 @@ import sunthree from "../assets/images/icon/sun1.svg";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { apiPost, ApiError } from "../lib/api";
 import PageSeo from "../components/PageSeo";
+import FeedbackToast from "../components/FeedbackToast";
+import { useFeedbackToast } from "../hooks/useFeedbackToast";
+import type { AssessmentResults } from "../types/assessment";
+
+type InstallerMatch = NonNullable<
+  AssessmentResults["installerMatches"]
+>[number];
+
+type RequestIntroLocationState = {
+  installer?: InstallerMatch;
+};
+
+const FALLBACK_INSTALLER = {
+  installerName: "PrimeVolt Energy",
+  matchPct: 82,
+  coverage: "Lagos",
+  bestSuitedFor: "SME fit",
+  matchTier: "Solar + battery",
+} as const;
 
 const PROJECT_SUMMARY_DATA = [
   { label: "Location", value: "Lagos" },
@@ -18,7 +37,32 @@ const PROJECT_SUMMARY_DATA = [
 function RequestIntro() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
+  const { toast, showSuccess, clearToast } = useFeedbackToast();
+
+  const installerFromState = (
+    location.state as RequestIntroLocationState | null
+  )?.installer;
+  const installerName =
+    installerFromState?.installerName?.trim() ||
+    FALLBACK_INSTALLER.installerName;
+  const matchPct = installerFromState
+    ? installerFromState.matchPct
+    : FALLBACK_INSTALLER.matchPct;
+  const coverage =
+    installerFromState?.coverage?.trim() ||
+    (installerFromState ? null : FALLBACK_INSTALLER.coverage);
+  const bestSuitedFor =
+    installerFromState?.bestSuitedFor?.trim() ||
+    (installerFromState ? null : FALLBACK_INSTALLER.bestSuitedFor);
+  const matchTier =
+    installerFromState?.matchTier?.trim() ||
+    (installerFromState ? null : FALLBACK_INSTALLER.matchTier);
+  const matchScoreLabel =
+    typeof matchPct === "number" && Number.isFinite(matchPct)
+      ? `Match score: ${Math.round(matchPct)}/100`
+      : null;
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -29,7 +73,6 @@ function RequestIntro() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const handleToggle = () => {
     if (window.innerWidth < 768) {
@@ -53,14 +96,15 @@ function RequestIntro() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError("");
-    setSubmitSuccess(false);
 
     try {
       await apiPost("/request-intro", {
         ...formData,
         projectSummary: PROJECT_SUMMARY_DATA,
       });
-      setSubmitSuccess(true);
+      showSuccess(
+        "Your introduction request was submitted successfully.",
+      );
     } catch (error) {
       setSubmitError(
         error instanceof ApiError
@@ -103,6 +147,7 @@ function RequestIntro() {
         description="Request an introduction to matched solar installers based on your Solarvy assessment."
         path="/request-intro"
       />
+      <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>
@@ -167,7 +212,7 @@ function RequestIntro() {
               <div className="nav-bottom-section row align-items-center">
                 <div className="col-12 col-lg-12 text-white ">
                   <h1 className="bannr-text start-assesement-banner-text display-5 ass-page ">
-                    Request Introduction to PrimeVolt Energy
+                    Request Introduction to {installerName}
                   </h1>
 
                   <p className="bannr-text-s text-light mt-2 mb-5 ass-page-two">
@@ -189,17 +234,25 @@ function RequestIntro() {
                     {/* <div className="installer-avatar-placeholder"></div> */}
                     <div className="flex-grow-1">
                       <h5 className="fw-bold mb-2 heading-ass">
-                        PrimeVolt Energy
+                        {installerName}
                       </h5>
                       <div className="d-flex flex-wrap gap-2">
-                        <span className="badge bg-success">
-                          Match score: 82/100
-                        </span>
-                        <span className="badge bg-secondary">Lagos</span>
-                        <span className="badge bg-secondary">SME fit</span>
-                        <span className="badge bg-secondary">
-                          Solar + battery
-                        </span>
+                        {matchScoreLabel && (
+                          <span className="badge bg-success">
+                            {matchScoreLabel}
+                          </span>
+                        )}
+                        {coverage && (
+                          <span className="badge bg-secondary">{coverage}</span>
+                        )}
+                        {bestSuitedFor && (
+                          <span className="badge bg-secondary">
+                            {bestSuitedFor}
+                          </span>
+                        )}
+                        {matchTier && (
+                          <span className="badge bg-secondary">{matchTier}</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -314,12 +367,6 @@ function RequestIntro() {
                   </div>
                 )}
 
-                {submitSuccess && (
-                  <div className="alert alert-success mt-3" role="alert">
-                    Your introduction request was submitted successfully.
-                  </div>
-                )}
-
                 <div className="d-none d-lg-flex gap-3 flex-wrap mt-3 mb-4">
                   <button
                     type="submit"
@@ -347,84 +394,87 @@ function RequestIntro() {
             </div>
 
             <div className="col-lg-4">
-              <div className="p-4 rounded-4 shadow-sm right-panel assts-right mt-4 mt-md-0">
-                <h5 className="fw-bold mb-2 heading-ass">Project Summary</h5>
-                <p className="text-muted small mb-3 para-ass">
-                  This is the project information already carried over from your
-                  Solarvy results.
-                </p>
+              <aside className="ri-aside">
+                <div className="ri-aside-card">
+                  <h5 className="ri-aside-title">Project Summary</h5>
+                  <p className="ri-aside-desc">
+                    This is the project information already carried over from
+                    your Solarvy results.
+                  </p>
 
-                <div className="row g-2">
-                  {PROJECT_SUMMARY_DATA.map((item) => (
-                    <div className="col-6" key={item.label}>
-                      <div className="project-summary-mini-card">
-                        <div className="project-summary-label">
-                          {item.label}
-                        </div>
-                        <div className="project-summary-value">
-                          {item.value}
-                        </div>
+                  <div className="ri-summary-grid">
+                    {PROJECT_SUMMARY_DATA.map((item) => (
+                      <div className="ri-summary-cell" key={item.label}>
+                        <span className="ri-summary-label">{item.label}</span>
+                        <span className="ri-summary-value">{item.value}</span>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-4 rounded-4 shadow-sm right-panel assts-right mt-4 ">
-                <h5 className="fw-bold mb-3 heading-ass">Why This Works</h5>
+                <div className="ri-aside-card">
+                  <h5 className="ri-aside-title">Why This Works</h5>
 
-                <ul className="review-benefits-list">
-                  <li className="review-benefit-item">
-                    <CheckCircle2
-                      size={18}
-                      className="text-success me-2"
-                      strokeWidth={2.5}
-                    />
-                    <div>
-                      <strong>Selected installer only</strong>
-                      <div className="small text-muted">
-                        Your request is tied to the installer you chose.
+                  <ul className="ri-benefits">
+                    <li className="ri-benefit">
+                      <CheckCircle2
+                        size={18}
+                        className="ri-benefit-icon"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
+                      <div className="ri-benefit-body">
+                        <strong className="ri-benefit-heading">
+                          Selected installer only
+                        </strong>
+                        <p className="ri-benefit-copy">
+                          Your request is tied to the installer you chose.
+                        </p>
                       </div>
-                    </div>
-                  </li>
-                  <li className="review-benefit-item">
-                    <CheckCircle2
-                      size={18}
-                      className="text-success me-2"
-                      strokeWidth={2.5}
-                    />
-                    <div>
-                      <strong>No repeated assessment</strong>
-                      <div className="small text-muted">
-                        You do not need to enter all your project details again.
+                    </li>
+                    <li className="ri-benefit">
+                      <CheckCircle2
+                        size={18}
+                        className="ri-benefit-icon"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
+                      <div className="ri-benefit-body">
+                        <strong className="ri-benefit-heading">
+                          No repeated assessment
+                        </strong>
+                        <p className="ri-benefit-copy">
+                          You do not need to enter all your project details
+                          again.
+                        </p>
                       </div>
-                    </div>
-                  </li>
-                  <li className="review-benefit-item">
-                    <CheckCircle2
-                      size={18}
-                      className="text-success me-2"
-                      strokeWidth={2.5}
-                    />
-                    <div>
-                      <strong>Easy next step</strong>
-                      <div className="small text-muted">
-                        Just send your contact details and move forward.
+                    </li>
+                    <li className="ri-benefit">
+                      <CheckCircle2
+                        size={18}
+                        className="ri-benefit-icon"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
+                      <div className="ri-benefit-body">
+                        <strong className="ri-benefit-heading">
+                          Easy next step
+                        </strong>
+                        <p className="ri-benefit-copy">
+                          Just send your contact details and move forward.
+                        </p>
                       </div>
-                    </div>
-                  </li>
-                </ul>
+                    </li>
+                  </ul>
 
-                <div className="request-intro-sidebar-back-link-wrap">
-                  <Link
-                    to="/matched-installers"
-                    className="request-intro-back-link"
-                  >
-                    <ArrowLeft size={14} strokeWidth={2} aria-hidden />
-                    Back to matched installers
-                  </Link>
+                  <div className="ri-aside-back">
+                    <Link to="/matched-installers" className="ri-aside-back-link">
+                      <ArrowLeft size={14} strokeWidth={2} aria-hidden />
+                      Back to matched installers
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              </aside>
             </div>
           </div>
 

@@ -1,0 +1,38 @@
+/* Solarvy Admin — tokens & base typography (scoped; does not affect public site) */
+
+.admin-page,
+.admin-shell {
+  --admin-navy: #174c90;
+  --admin-blue: #123a70;
+  --admin-ink: #0f172a;
+  --admin-muted: #64748b;
+  --admin-subtle: #94a3b8;
+  --admin-border: #e2e8f0;
+  --admin-border-strong: #cbd5e1;
+  --admin-surface: #ffffff;
+  --admin-canvas: #f5f7fb;
+  --admin-hover: #f1f5f9;
+  --admin-active-bg: #eef2f8;
+  --admin-radius: 8px;
+  --admin-radius-sm: 6px;
+  --admin-font: system-ui, "Segoe UI", sans-serif;
+  --admin-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, monospace;
+
+  font-family: var(--admin-font);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--admin-ink);
+  background: var(--admin-canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+.admin-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-page *,
+.admin-shell * {
+  font-family: inherit;
+}

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import {
-  adminGetBillPrompt,
-  adminSaveBillPrompt,
+  adminGetChatbotPrompt,
+  adminSaveChatbotPrompt,
   type AiPromptSetting,
 } from "../lib/adminApi";
 
@@ -12,7 +12,7 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleString();
 }
 
-export default function AdminBillInput() {
+export default function AdminChatbotPrompt() {
   const { toast, showError, showSuccess, clearToast } = useFeedbackToast();
   const [prompt, setPrompt] = useState("");
   const [meta, setMeta] = useState<AiPromptSetting | null>(null);
@@ -22,7 +22,7 @@ export default function AdminBillInput() {
   const loadPrompt = async () => {
     setIsLoading(true);
     try {
-      const data = await adminGetBillPrompt();
+      const data = await adminGetChatbotPrompt();
       setMeta(data);
       setPrompt(data.value);
     } catch (error) {
@@ -49,11 +49,11 @@ export default function AdminBillInput() {
     setIsSaving(true);
     clearToast();
     try {
-      const saved = await adminSaveBillPrompt(value);
+      const saved = await adminSaveChatbotPrompt(value);
       setMeta(saved);
       setPrompt(saved.value);
       showSuccess(
-        "Bill analyzer will use this prompt on the next Analyze Bill request.",
+        "Website chatbot will use this prompt on the next visitor message.",
         "Prompt saved",
       );
     } catch (error) {
@@ -71,13 +71,11 @@ export default function AdminBillInput() {
       <FeedbackToast toast={toast} onClose={clearToast} />
 
       <div className="admin-page-header">
-        <h1 className="admin-page-title">
-          Bill Input Analyzer : AI training prompt
-        </h1>
+        <h1 className="admin-page-title">Chatbot : AI training prompt</h1>
         <p className="admin-page-subtitle">
-          This system prompt trains the OpenAI bill analyzer used on the
-          assessment Monthly Bill upload. Changes apply to the next Analyze Bill
-          request.
+          This system prompt trains the site-wide Solarvy Assistant. Combine it
+          with active FAQ entries to guide tone, scope, and redirects for
+          unsupported questions.
         </p>
       </div>
 

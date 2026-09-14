@@ -1,12 +1,12 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
 import {
   adminGetMe,
   clearAdminToken,
   type AdminUser,
 } from "../lib/adminApi";
 import PageSeo from "./PageSeo";
+import logo from "../assets/images/logo.png";
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -42,34 +42,70 @@ export default function AdminLayout() {
         noindex
       />
       <header className="admin-header">
-        <div className="admin-header-brand">
-          <span className="admin-header-title">Solarvy Admin</span>
-          <span className="admin-header-sub">
-            {user ? `Signed in as ${user.username}` : "Loading..."}
+        <Link to="/admin/dashboard" className="admin-header-brand">
+          <img src={logo} alt="Solarvy" className="admin-header-logo" />
+          <span className="admin-header-badge">Admin</span>
+        </Link>
+        <div className="admin-header-actions">
+          <span className="admin-header-user">
+            {user ? user.username : "Loading..."}
           </span>
+          <button
+            type="button"
+            className="admin-btn admin-btn-secondary"
+            onClick={handleLogout}
+          >
+            Log out
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary"
-          onClick={handleLogout}
-        >
-          Log out
-        </button>
       </header>
 
       <div className="admin-body">
         <aside className="admin-sidebar">
           <nav className="admin-nav">
             <p className="admin-nav-label">Workspace</p>
-            <NavLink
+            {/* <NavLink
               to="/admin/dashboard"
+              end
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Dashboard
+            </NavLink>
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Users
+            </NavLink>
+            <NavLink
+              to="/admin/assessments"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Assessments
+            </NavLink>
+            <NavLink
+              to="/admin/leads"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Leads
+            </NavLink> */}
+            <NavLink
+              to="/admin/excel-template"
               className={({ isActive }) =>
                 `admin-nav-link${isActive ? " is-active" : ""}`
               }
             >
               Excel Template
             </NavLink>
-            <p className="admin-nav-label mt-3">AI Training</p>
+            <p className="admin-nav-label admin-nav-label-spaced">AI Training</p>
             <NavLink
               to="/admin/bill-input"
               className={({ isActive }) =>
@@ -86,6 +122,22 @@ export default function AdminLayout() {
             >
               Recommendations
             </NavLink>
+            {/* <NavLink
+              to="/admin/chatbot-prompt"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Chatbot Prompt
+            </NavLink>
+            <NavLink
+              to="/admin/faqs"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Chatbot FAQs
+            </NavLink> */}
           </nav>
         </aside>
 

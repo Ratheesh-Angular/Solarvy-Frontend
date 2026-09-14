@@ -5,6 +5,7 @@ import {
   Outlet,
   Navigate,
   useLocation,
+  useParams,
 } from "react-router-dom";
 import "./App.css";
 import "./css/ass.css";
@@ -28,11 +29,22 @@ import ExpertReview from "./pages/ExpertReview.tsx";
 import RequestIntro from "./pages/RequestIntro.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import AdminUsers from "./pages/AdminUsers.tsx";
+import AdminUserDetail from "./pages/AdminUserDetail.tsx";
+import AdminAssessmentDetail from "./pages/AdminAssessmentDetail.tsx";
+import AdminAssessmentResults from "./pages/AdminAssessmentResults.tsx";
+import AdminAssessments from "./pages/AdminAssessments.tsx";
+import AdminLeads from "./pages/AdminLeads.tsx";
+import AdminExcelTemplate from "./pages/AdminExcelTemplate.tsx";
 import AdminBillInput from "./pages/AdminBillInput.tsx";
 import AdminRecommendations from "./pages/AdminRecommendations.tsx";
+import AdminChatbotPrompt from "./pages/AdminChatbotPrompt.tsx";
+import AdminFaqs from "./pages/AdminFaqs.tsx";
 import AdminRoute from "./components/AdminRoute.tsx";
 import AdminLayout from "./components/AdminLayout.tsx";
-import "./css/admin.css";
+import VisitorTracker from "./components/VisitorTracker.tsx";
+import ChatbotWidget from "./components/ChatbotWidget.tsx";
+import "./css/admin/index.css";
 
 function MainLayout() {
   return (
@@ -49,17 +61,45 @@ function RedirectWithSearch({ to }: { to: string }) {
   return <Navigate to={`${to}${search}`} replace />;
 }
 
+function RedirectVisitorToUser() {
+  const { id } = useParams();
+  return <Navigate to={`/admin/users/${id ?? ""}`} replace />;
+}
+
 function App() {
   return (
     <Router>
       <ScrollToTop />
+      <VisitorTracker />
+      <ChatbotWidget />
       <Routes>
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminRoute />}>
           <Route element={<AdminLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="users/:id" element={<AdminUserDetail />} />
+            <Route
+              path="users/:id/assessments/:assessmentId"
+              element={<AdminAssessmentDetail />}
+            />
+            <Route
+              path="users/:id/assessments/:assessmentId/results"
+              element={<AdminAssessmentResults />}
+            />
+            <Route
+              path="visitors"
+              element={<Navigate to="/admin/users" replace />}
+            />
+            <Route path="visitors/:id" element={<RedirectVisitorToUser />} />
+            <Route path="assessments" element={<AdminAssessments />} />
+            <Route path="leads" element={<AdminLeads />} />
+            <Route path="excel-template" element={<AdminExcelTemplate />} />
             <Route path="bill-input" element={<AdminBillInput />} />
             <Route path="recommendations" element={<AdminRecommendations />} />
+            <Route path="chatbot-prompt" element={<AdminChatbotPrompt />} />
+            <Route path="faqs" element={<AdminFaqs />} />
           </Route>
         </Route>
 

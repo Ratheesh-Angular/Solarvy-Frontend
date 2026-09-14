@@ -1,0 +1,84 @@
+/* Solarvy Admin — shared components */
+
+.admin-empty {
+  padding: 36px 20px;
+  text-align: center;
+}
+
+.admin-empty-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--admin-ink);
+}
+
+.admin-empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--admin-muted);
+}
+
+.admin-info-list {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.admin-info-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.admin-info-row dt {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-muted);
+}
+
+.admin-info-row dd {
+  margin: 0;
+  font-size: 15px;
+  color: var(--admin-ink);
+  word-break: break-word;
+}
+
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--admin-subtle);
+}
+
+.admin-status.is-active .admin-status-dot {
+  background: #16a34a;
+}
+
+.admin-status.is-missing .admin-status-dot {
+  background: #dc2626;
+}
+
+.admin-checking {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--admin-canvas);
+  font-family: var(--admin-font);
+  font-size: 15px;
+  color: var(--admin-muted);
+}
+
+.admin-checking p {
+  margin: 0;
+}

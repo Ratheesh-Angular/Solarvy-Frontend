@@ -1,0 +1,8 @@
+/* Solarvy Admin — entry (import this only; keeps public CSS separate) */
+@import "./base.css";
+@import "./layout.css";
+@import "./forms.css";
+@import "./login.css";
+@import "./components.css";
+@import "./analytics.css";
+@import "./users.css";

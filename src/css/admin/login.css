@@ -1,0 +1,59 @@
+/* Solarvy Admin — login page */
+
+.admin-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(23, 76, 144, 0.08), transparent),
+    var(--admin-canvas);
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 360px;
+}
+
+.admin-login-panel {
+  padding: 32px 28px;
+}
+
+.admin-login-brand {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.admin-login-logo {
+  height: 40px;
+  width: auto;
+  margin: 0 auto 20px;
+  display: block;
+}
+
+.admin-login-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--admin-ink);
+}
+
+.admin-login-subtitle {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--admin-muted);
+}
+
+.admin-login-panel .admin-field {
+  width: 100%;
+}
+
+.admin-login-panel .admin-input {
+  display: block;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  text-align: left;
+}

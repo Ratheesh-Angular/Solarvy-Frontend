@@ -33,8 +33,8 @@ export default function AdminRoute() {
 
   if (status === "checking") {
     return (
-      <div className="admin-page d-flex align-items-center justify-content-center min-vh-100">
-        <p className="text-muted mb-0">Checking session...</p>
+      <div className="admin-page admin-checking">
+        <p>Checking session...</p>
       </div>
     );
   }

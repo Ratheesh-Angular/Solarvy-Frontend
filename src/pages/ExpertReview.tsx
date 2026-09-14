@@ -1,18 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
 import { CheckCircle2 } from "lucide-react";
-import { apiPost, ApiError } from "../lib/api";
+import { apiPostFormData, ApiError } from "../lib/api";
 import PageSeo from "../components/PageSeo";
+import FeedbackToast from "../components/FeedbackToast";
+import { useFeedbackToast } from "../hooks/useFeedbackToast";
+import {
+  detectUserLocation,
+  formatCityState,
+} from "../lib/geolocation";
+import { ensureTrackingSession } from "../lib/visitorTracking";
 
 function ExpertReview() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [fileName, setFileName] = useState("No file chosen");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const locationTouched = useRef(false);
+  const { toast, showSuccess, clearToast } = useFeedbackToast();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -24,7 +34,6 @@ function ExpertReview() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const handleToggle = () => {
     if (window.innerWidth < 768) {
@@ -38,6 +47,9 @@ function ExpertReview() {
     >,
   ) => {
     const { name, value } = e.target;
+    if (name === "projectLocation") {
+      locationTouched.current = true;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -46,8 +58,10 @@ function ExpertReview() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      setAttachmentFile(e.target.files[0]);
       setFileName(e.target.files[0].name);
     } else {
+      setAttachmentFile(null);
       setFileName("No file chosen");
     }
   };
@@ -56,14 +70,23 @@ function ExpertReview() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError("");
-    setSubmitSuccess(false);
 
     try {
-      await apiPost("/expert-review", {
-        ...formData,
-        attachmentFileName: fileName === "No file chosen" ? "" : fileName,
-      });
-      setSubmitSuccess(true);
+      const payload = new FormData();
+      payload.append("fullName", formData.fullName);
+      payload.append("phoneNumber", formData.phoneNumber);
+      payload.append("email", formData.email);
+      payload.append("projectLocation", formData.projectLocation);
+      payload.append("reviewType", formData.reviewType);
+      payload.append("additionalNotes", formData.additionalNotes);
+      if (attachmentFile) {
+        payload.append("attachment", attachmentFile);
+      }
+
+      await apiPostFormData("/expert-review", payload);
+      showSuccess(
+        "Your expert review request was submitted successfully.",
+      );
     } catch (error) {
       setSubmitError(
         error instanceof ApiError
@@ -74,6 +97,32 @@ function ExpertReview() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const location = await detectUserLocation();
+      if (!location || cancelled) return;
+
+      if (!locationTouched.current) {
+        const formatted = formatCityState(location);
+        if (formatted) {
+          setFormData((prev) =>
+            prev.projectLocation ? prev : { ...prev, projectLocation: formatted },
+          );
+        }
+      }
+
+      void ensureTrackingSession({
+        city: location.city,
+        region: location.state,
+        country: location.country,
+      }).catch(() => {});
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -106,6 +155,7 @@ function ExpertReview() {
         description="Request an expert review of your Solarvy assessment for clearer recommendations before you buy or install."
         path="/expert-review"
       />
+      <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>
@@ -346,12 +396,6 @@ function ExpertReview() {
                 {submitError && (
                   <div className="alert alert-danger mt-3" role="alert">
                     {submitError}
-                  </div>
-                )}
-
-                {submitSuccess && (
-                  <div className="alert alert-success mt-3" role="alert">
-                    Your expert review request was submitted successfully.
                   </div>
                 )}
 

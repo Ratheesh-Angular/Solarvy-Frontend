@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import logo from "../assets/images/logo.png";
@@ -39,7 +39,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import FeedbackToast from "../components/FeedbackToast";
 import SolarvyLoader from "../components/SolarvyLoader";
@@ -47,6 +46,11 @@ import PageSeo from "../components/PageSeo";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { useSyncedProgress } from "../hooks/useSyncedProgress";
 import { ApiError } from "../lib/api";
+import {
+  detectUserLocation,
+  matchNigeriaState,
+} from "../lib/geolocation";
+import { ensureTrackingSession } from "../lib/visitorTracking";
 import {
   completeAssessment,
   completeAssessmentDraft,
@@ -924,6 +928,44 @@ function Assesement() {
   const [fileName, setFileName] = useState("No file chosen");
   const [billFile, setBillFile] = useState<File | null>(null);
   const [billAiApplied, setBillAiApplied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const location = await detectUserLocation();
+      if (!location || cancelled) return;
+
+      const isNigeria =
+        location.countryCode === "NG" ||
+        /nigeria/i.test(location.country || "");
+
+      if (isNigeria) {
+        const stateOptions = catalogs?.states?.length
+          ? catalogs.states
+          : NIGERIA_STATES_SORTED.map(([, label]) => label);
+        const matchedState = matchNigeriaState(location.state, stateOptions);
+
+        setFormData((prev) => {
+          if (prev.country || prev.state) return prev;
+          return {
+            country: "Nigeria",
+            state: matchedState || prev.state,
+          };
+        });
+      }
+
+      void ensureTrackingSession({
+        city: location.city,
+        region: location.state,
+        country: location.country,
+      }).catch(() => {});
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,

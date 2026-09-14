@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { Eye, EyeOff } from "lucide-react";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { adminLogin, getAdminToken } from "../lib/adminApi";
-import logo from "../assets/images/logo.png";
+import logo from "../assets/images/logo-dark.png";
 import PageSeo from "../components/PageSeo";
 
 export default function AdminLogin() {
@@ -12,6 +12,7 @@ export default function AdminLogin() {
   const { toast, showError, showSuccess, clearToast } = useFeedbackToast();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (getAdminToken()) {
@@ -38,7 +39,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="admin-page min-vh-100 d-flex align-items-center py-5">
+    <div className="admin-page admin-login">
       <PageSeo
         title="Admin Sign In | SolarVy"
         description="Solarvy admin sign in."
@@ -46,63 +47,67 @@ export default function AdminLogin() {
         noindex
       />
       <FeedbackToast toast={toast} onClose={clearToast} />
-      <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-md-5 col-lg-4">
-            <div className="text-center mb-4">
-              {/* <Link to="/">
-                <img src={logo} alt="Solarvy" className="admin-logo mb-3" />
-              </Link> */}
-              <h1 className="h4 fw-bold mb-1">Admin sign in</h1>
-              <p className="text-muted small mb-0">
-                Manage the Solarvy Excel calculator template.
-              </p>
+      <div className="admin-login-card">
+        <div className="admin-panel admin-login-panel">
+          <div className="admin-login-brand">
+            <Link to="/">
+              <img src={logo} alt="Solarvy" className="admin-login-logo" />
+            </Link>
+            <h1 className="admin-login-title">Admin sign in</h1>
+            <p className="admin-login-subtitle">
+              Sign in to the Solarvy admin console.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="admin-field">
+              <label htmlFor="admin-username" className="admin-label">
+                Username
+              </label>
+              <input
+                id="admin-username"
+                type="text"
+                className="admin-input"
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
             </div>
 
-            <div className="card shadow-sm border-0 rounded-4">
-              <div className="card-body p-4">
-                <form onSubmit={handleSubmit}>
-                  <div className="mb-3">
-                    <label htmlFor="admin-username" className="form-label">
-                      Username
-                    </label>
-                    <input
-                      id="admin-username"
-                      type="text"
-                      className="form-control"
-                      autoComplete="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label htmlFor="admin-password" className="form-label">
-                      Password
-                    </label>
-                    <input
-                      id="admin-password"
-                      type="password"
-                      className="form-control"
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-danger w-100"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Signing in..." : "Sign in"}
-                  </button>
-                </form>
+            <div className="admin-field">
+              <label htmlFor="admin-password" className="admin-label">
+                Password
+              </label>
+              <div className="admin-password-field">
+                <input
+                  id="admin-password"
+                  type={showPassword ? "text" : "password"}
+                  className="admin-input"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="admin-password-toggle"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
-          </div>
+
+            <button
+              type="submit"
+              className="admin-btn admin-btn-primary admin-btn-block"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
         </div>
       </div>
     </div>

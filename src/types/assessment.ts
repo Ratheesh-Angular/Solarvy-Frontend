@@ -175,6 +175,20 @@ export type AssessmentResults = {
       estimatedAnnualLoadKwh?: number | null;
     }
   >;
+  /** Installer_Results_Output rows A16:K — matched installer shortlist. */
+  installerMatches?: Array<{
+    cardNumber: number | null;
+    installerName: string;
+    matchPct: number | null;
+    matchTier: string | null;
+    bestSuitedFor: string | null;
+    coverage: string | null;
+    strengths: string | null;
+    pricing: string | null;
+    response: string | null;
+    primaryCta: string | null;
+    secondaryCta: string | null;
+  }>;
 };
 
 export type LiveSummaryResponse = {
