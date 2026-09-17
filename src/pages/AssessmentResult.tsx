@@ -1093,7 +1093,7 @@ function AssesementResult() {
                     <div>
                       <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
                         <h6 className="fw-bold mb-0 rang-head section-card-title">
-                          Solarvy's AI Recommendation
+                          Solarvy Recommendation
                         </h6>
                         {/* <span className="bill-ai-badge">AI</span> */}
                       </div>

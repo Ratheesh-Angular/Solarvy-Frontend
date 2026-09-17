@@ -39,7 +39,7 @@ const MOCK_INSTALLERS: readonly InstallerMatch[] = [
     pricing: "Mid-range",
     response: "Same day",
     primaryCta: "Request Introduction",
-    secondaryCta: "Get Independent Review",
+    secondaryCta: "Get Expert Review",
   },
   {
     cardNumber: 2,
@@ -52,7 +52,7 @@ const MOCK_INSTALLERS: readonly InstallerMatch[] = [
     pricing: "Premium",
     response: "24-48 hours",
     primaryCta: "Request Introduction",
-    secondaryCta: "Get Independent Review",
+    secondaryCta: "Get Expert Review",
   },
   {
     cardNumber: 3,
@@ -65,7 +65,7 @@ const MOCK_INSTALLERS: readonly InstallerMatch[] = [
     pricing: "Mid-range",
     response: "2-3 days",
     primaryCta: "Request Introduction",
-    secondaryCta: "Get Independent Review",
+    secondaryCta: "Get Expert Review",
   },
   {
     cardNumber: 4,
@@ -78,7 +78,7 @@ const MOCK_INSTALLERS: readonly InstallerMatch[] = [
     pricing: "Mid-range",
     response: "24-48 hours",
     primaryCta: "Request Introduction",
-    secondaryCta: "Get Independent Review",
+    secondaryCta: "Get Expert Review",
   },
   {
     cardNumber: 5,
@@ -91,7 +91,7 @@ const MOCK_INSTALLERS: readonly InstallerMatch[] = [
     pricing: "Value",
     response: "2-3 days",
     primaryCta: "Request Introduction",
-    secondaryCta: "Get Independent Review",
+    secondaryCta: "Get Expert Review",
   },
 ] as const;
 
@@ -501,7 +501,7 @@ function MatchedInstallers() {
                   const primaryLabel =
                     installer.primaryCta?.trim() || "Request Introduction";
                   const secondaryLabel =
-                    installer.secondaryCta?.trim() || "Get Independent Review";
+                    installer.secondaryCta?.trim() || "Get Expert Review";
 
                   return (
                     <article
