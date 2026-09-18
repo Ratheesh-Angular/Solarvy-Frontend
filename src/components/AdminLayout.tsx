@@ -64,7 +64,7 @@ export default function AdminLayout() {
         <aside className="admin-sidebar">
           <nav className="admin-nav">
             <p className="admin-nav-label">Workspace</p>
-            {/* <NavLink
+            <NavLink
               to="/admin/dashboard"
               end
               className={({ isActive }) =>
@@ -96,7 +96,7 @@ export default function AdminLayout() {
               }
             >
               Leads
-            </NavLink> */}
+            </NavLink>
             <NavLink
               to="/admin/excel-template"
               className={({ isActive }) =>

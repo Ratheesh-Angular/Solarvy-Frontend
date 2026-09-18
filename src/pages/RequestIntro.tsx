@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { apiPost, ApiError } from "../lib/api";
+import { getAssessment } from "../lib/assessmentApi";
 import PageSeo from "../components/PageSeo";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
@@ -19,6 +20,11 @@ type RequestIntroLocationState = {
   installer?: InstallerMatch;
 };
 
+type ProjectSummaryItem = {
+  label: string;
+  value: string;
+};
+
 const FALLBACK_INSTALLER = {
   installerName: "PrimeVolt Energy",
   matchPct: 82,
@@ -27,19 +33,75 @@ const FALLBACK_INSTALLER = {
   matchTier: "Solar + battery",
 } as const;
 
-const PROJECT_SUMMARY_DATA = [
+const DEFAULT_PROJECT_SUMMARY: ProjectSummaryItem[] = [
   { label: "Location", value: "Lagos" },
   { label: "Project type", value: "Small business" },
   { label: "Estimated size", value: "15–25 kWp" },
   { label: "Budget range", value: "₦18m–₦24m" },
-] as const;
+];
+
+function formatNairaShort(value: unknown): string | null {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  if (Math.abs(n) >= 1_000_000) {
+    const millions = n / 1_000_000;
+    const rounded =
+      Math.abs(millions) >= 10
+        ? Math.round(millions)
+        : Math.round(millions * 10) / 10;
+    return `₦${rounded}m`;
+  }
+  return `₦${Math.round(n).toLocaleString("en-NG")}`;
+}
+
+function formatKwp(value: unknown): string | null {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return `${(Math.round(n * 10) / 10).toLocaleString("en-NG")} kWp`;
+}
+
+function buildProjectSummary(
+  results: AssessmentResults | null | undefined,
+): ProjectSummaryItem[] {
+  if (!results) return [...DEFAULT_PROJECT_SUMMARY];
+
+  const location =
+    results.city?.trim() || results.country?.trim() || null;
+  const propertyType = results.propertyType?.trim() || null;
+  const estimatedSize = formatKwp(results.recommendedSolarKwp);
+  const budgetRange = formatNairaShort(results.estimatedSystemCost);
+
+  return [
+    {
+      label: "Location",
+      value: location || DEFAULT_PROJECT_SUMMARY[0].value,
+    },
+    {
+      label: "Project type",
+      value: propertyType || DEFAULT_PROJECT_SUMMARY[1].value,
+    },
+    {
+      label: "Estimated size",
+      value: estimatedSize || DEFAULT_PROJECT_SUMMARY[2].value,
+    },
+    {
+      label: "Budget range",
+      value: budgetRange || DEFAULT_PROJECT_SUMMARY[3].value,
+    },
+  ];
+}
 
 function RequestIntro() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const assessmentId = searchParams.get("assessment")?.trim() || "";
   const [scrolled, setScrolled] = useState(false);
   const { toast, showSuccess, clearToast } = useFeedbackToast();
+  const [projectSummary, setProjectSummary] = useState<ProjectSummaryItem[]>(
+    () => [...DEFAULT_PROJECT_SUMMARY],
+  );
 
   const installerFromState = (
     location.state as RequestIntroLocationState | null
@@ -100,7 +162,7 @@ function RequestIntro() {
     try {
       await apiPost("/request-intro", {
         ...formData,
-        projectSummary: PROJECT_SUMMARY_DATA,
+        projectSummary,
       });
       showSuccess(
         "Your introduction request was submitted successfully.",
@@ -115,6 +177,30 @@ function RequestIntro() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!assessmentId) {
+      setProjectSummary([...DEFAULT_PROJECT_SUMMARY]);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await getAssessment(assessmentId);
+        if (cancelled) return;
+        setProjectSummary(buildProjectSummary(data.results ?? null));
+      } catch {
+        if (cancelled) return;
+        setProjectSummary([...DEFAULT_PROJECT_SUMMARY]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assessmentId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -403,7 +489,7 @@ function RequestIntro() {
                   </p>
 
                   <div className="ri-summary-grid">
-                    {PROJECT_SUMMARY_DATA.map((item) => (
+                    {projectSummary.map((item) => (
                       <div className="ri-summary-cell" key={item.label}>
                         <span className="ri-summary-label">{item.label}</span>
                         <span className="ri-summary-value">{item.value}</span>
