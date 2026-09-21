@@ -466,6 +466,10 @@ export default function AdminUserDetail() {
                           <dt>Location</dt>
                           <dd>{valueOrDash(row.location)}</dd>
                         </div>
+                        <div className="admin-info-row">
+                          <dt>Notes</dt>
+                          <dd>{valueOrDash(row.additional_notes)}</dd>
+                        </div>
                         {row.storage_path ? (
                           <div className="admin-info-row">
                             <dt>Download</dt>

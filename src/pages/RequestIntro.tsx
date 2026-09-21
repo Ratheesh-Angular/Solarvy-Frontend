@@ -10,7 +10,10 @@ import { getAssessment } from "../lib/assessmentApi";
 import PageSeo from "../components/PageSeo";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
-import type { AssessmentResults } from "../types/assessment";
+import type {
+  AssessmentFormData,
+  AssessmentResults,
+} from "../types/assessment";
 
 type InstallerMatch = NonNullable<
   AssessmentResults["installerMatches"]
@@ -40,6 +43,13 @@ const DEFAULT_PROJECT_SUMMARY: ProjectSummaryItem[] = [
   { label: "Budget range", value: "₦18m–₦24m" },
 ];
 
+const EMPTY_PROJECT_SUMMARY: ProjectSummaryItem[] = [
+  { label: "Location", value: "—" },
+  { label: "Project type", value: "—" },
+  { label: "Estimated size", value: "—" },
+  { label: "Budget range", value: "—" },
+];
+
 function formatNairaShort(value: unknown): string | null {
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
@@ -62,31 +72,43 @@ function formatKwp(value: unknown): string | null {
 
 function buildProjectSummary(
   results: AssessmentResults | null | undefined,
+  formData?: AssessmentFormData | null,
+  options?: { useDemoDefaults?: boolean },
 ): ProjectSummaryItem[] {
-  if (!results) return [...DEFAULT_PROJECT_SUMMARY];
+  const useDemoDefaults = options?.useDemoDefaults !== false;
+  const fallback = useDemoDefaults
+    ? DEFAULT_PROJECT_SUMMARY
+    : EMPTY_PROJECT_SUMMARY;
+
+  if (!results && !formData) return [...fallback];
 
   const location =
-    results.city?.trim() || results.country?.trim() || null;
-  const propertyType = results.propertyType?.trim() || null;
-  const estimatedSize = formatKwp(results.recommendedSolarKwp);
-  const budgetRange = formatNairaShort(results.estimatedSystemCost);
+    results?.city?.trim() ||
+    formData?.city?.trim() ||
+    results?.country?.trim() ||
+    formData?.country?.trim() ||
+    null;
+  const propertyType =
+    results?.propertyType?.trim() || formData?.propertyType?.trim() || null;
+  const estimatedSize = formatKwp(results?.recommendedSolarKwp);
+  const budgetRange = formatNairaShort(results?.estimatedSystemCost);
 
   return [
     {
       label: "Location",
-      value: location || DEFAULT_PROJECT_SUMMARY[0].value,
+      value: location || fallback[0].value,
     },
     {
       label: "Project type",
-      value: propertyType || DEFAULT_PROJECT_SUMMARY[1].value,
+      value: propertyType || fallback[1].value,
     },
     {
       label: "Estimated size",
-      value: estimatedSize || DEFAULT_PROJECT_SUMMARY[2].value,
+      value: estimatedSize || fallback[2].value,
     },
     {
       label: "Budget range",
-      value: budgetRange || DEFAULT_PROJECT_SUMMARY[3].value,
+      value: budgetRange || fallback[3].value,
     },
   ];
 }
@@ -190,10 +212,14 @@ function RequestIntro() {
       try {
         const data = await getAssessment(assessmentId);
         if (cancelled) return;
-        setProjectSummary(buildProjectSummary(data.results ?? null));
+        setProjectSummary(
+          buildProjectSummary(data.results ?? null, data.formData ?? null, {
+            useDemoDefaults: false,
+          }),
+        );
       } catch {
         if (cancelled) return;
-        setProjectSummary([...DEFAULT_PROJECT_SUMMARY]);
+        setProjectSummary([...EMPTY_PROJECT_SUMMARY]);
       }
     })();
 
@@ -471,7 +497,13 @@ function RequestIntro() {
                   <button
                     type="button"
                     className="btn-outline-custom2 calu-2"
-                    onClick={() => navigate("/matched-installers")}
+                    onClick={() =>
+                      navigate(
+                        assessmentId
+                          ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+                          : "/matched-installers",
+                      )
+                    }
                   >
                     <span>Cancel</span>
                   </button>
@@ -554,9 +586,16 @@ function RequestIntro() {
                   </ul>
 
                   <div className="ri-aside-back">
-                    <Link to="/matched-installers" className="ri-aside-back-link">
+                    <Link
+                      to={
+                        assessmentId
+                          ? `/assessment-result?assessment=${encodeURIComponent(assessmentId)}`
+                          : "/assessment-result"
+                      }
+                      className="ri-aside-back-link"
+                    >
                       <ArrowLeft size={14} strokeWidth={2} aria-hidden />
-                      Back to matched installers
+                      Back to results
                     </Link>
                   </div>
                 </div>
@@ -581,7 +620,13 @@ function RequestIntro() {
             <button
               type="button"
               className="btn-outline-custom2 calu-2"
-              onClick={() => navigate("/matched-installers")}
+              onClick={() =>
+                navigate(
+                  assessmentId
+                    ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+                    : "/matched-installers",
+                )
+              }
             >
               <span>Cancel</span>
             </button>

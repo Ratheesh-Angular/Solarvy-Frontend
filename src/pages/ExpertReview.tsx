@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { apiPostFormData, ApiError } from "../lib/api";
 import PageSeo from "../components/PageSeo";
 import FeedbackToast from "../components/FeedbackToast";
@@ -18,6 +18,8 @@ import { ensureTrackingSession } from "../lib/visitorTracking";
 function ExpertReview() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const assessmentId = searchParams.get("assessment")?.trim() || "";
   const [scrolled, setScrolled] = useState(false);
   const [fileName, setFileName] = useState("No file chosen");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
@@ -479,6 +481,20 @@ function ExpertReview() {
                     Your information is used only for preparing your independent
                     assessment. We typically respond within 24-48 hours.
                   </p>
+                </div>
+
+                <div className="ri-aside-back mt-3">
+                  <Link
+                    to={
+                      assessmentId
+                        ? `/assessment-result?assessment=${encodeURIComponent(assessmentId)}`
+                        : "/assessment-result"
+                    }
+                    className="ri-aside-back-link"
+                  >
+                    <ArrowLeft size={14} strokeWidth={2} aria-hidden />
+                    Back to results
+                  </Link>
                 </div>
               </div>
             </div>

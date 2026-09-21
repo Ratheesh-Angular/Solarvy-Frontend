@@ -1055,6 +1055,13 @@ function AssesementResult() {
                   <button
                     className="btn-primary-customss"
                     style={{ height: "45px" }}
+                    onClick={() =>
+                      navigate(
+                        assessmentId
+                          ? `/expert-review?assessment=${encodeURIComponent(assessmentId)}`
+                          : "/expert-review",
+                      )
+                    }
                   >
                     <span className="icon-get">
                       <i className="whit-icon bi bi-file-earmark-text"></i>

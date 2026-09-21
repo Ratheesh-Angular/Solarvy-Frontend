@@ -6,6 +6,8 @@ import bttnarrow from "../assets/images/btton-arrow.png";
 import donw from "../assets/images/icon/d11.svg";
 import "../css/MatchedInstallers.css";
 import PageSeo from "../components/PageSeo";
+import FeedbackToast from "../components/FeedbackToast";
+import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { getAssessment } from "../lib/assessmentApi";
 import { apiPostFormData, ApiError } from "../lib/api";
 import type { AssessmentResults } from "../types/assessment";
@@ -199,13 +201,18 @@ function MatchedInstallers() {
     phoneNumber: "",
     email: "",
     location: "",
+    additionalNotes: "",
   });
   const [quoteFile, setQuoteFile] = useState<File | null>(null);
   const [quoteFileName, setQuoteFileName] = useState("");
   const [quoteUploading, setQuoteUploading] = useState(false);
-  const [quoteMessage, setQuoteMessage] = useState<string | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [quoteModalError, setQuoteModalError] = useState<string | null>(null);
+  const { toast, showSuccess, clearToast } = useFeedbackToast();
+
+  const expertReviewPath = assessmentId
+    ? `/expert-review?assessment=${encodeURIComponent(assessmentId)}`
+    : "/expert-review";
 
   const handleToggle = () => {
     if (window.innerWidth < 768) {
@@ -219,6 +226,7 @@ function MatchedInstallers() {
       phoneNumber: "",
       email: "",
       location: "",
+      additionalNotes: "",
     });
     setQuoteFile(null);
     setQuoteModalError(null);
@@ -232,7 +240,6 @@ function MatchedInstallers() {
       entityType: assessmentId ? "assessment" : "",
       entityId: assessmentId || undefined,
     });
-    setQuoteMessage(null);
     setQuoteError(null);
     setQuoteModalError(null);
     setQuoteModalOpen(true);
@@ -245,7 +252,7 @@ function MatchedInstallers() {
   };
 
   const handleQuoteFormChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setQuoteForm((prev) => ({ ...prev, [name]: value }));
@@ -267,7 +274,6 @@ function MatchedInstallers() {
 
     setQuoteUploading(true);
     setQuoteModalError(null);
-    setQuoteMessage(null);
     setQuoteError(null);
 
     try {
@@ -277,16 +283,15 @@ function MatchedInstallers() {
       formData.append("phoneNumber", quoteForm.phoneNumber.trim());
       formData.append("email", quoteForm.email.trim());
       formData.append("location", quoteForm.location.trim());
+      formData.append("additionalNotes", quoteForm.additionalNotes.trim());
       if (assessmentId) {
         formData.append("assessmentId", assessmentId);
       }
       await apiPostFormData("/quote-uploads", formData);
       setQuoteFileName(quoteFile.name);
-      setQuoteMessage(
-        "Quote uploaded successfully. Our team can use it for comparison.",
-      );
       setQuoteModalOpen(false);
       resetQuoteModal();
+      showSuccess("Quote uploaded successfully. Our team can use it for comparison.");
     } catch (error) {
       setQuoteModalError(
         error instanceof ApiError
@@ -336,13 +341,13 @@ function MatchedInstallers() {
         const data = await getAssessment(assessmentId);
         if (cancelled) return;
         const matches = data.results?.installerMatches ?? [];
-        setInstallers(matches.length > 0 ? matches : MOCK_INSTALLERS);
+        setInstallers(matches);
         setProjectSummary(buildProjectSnapshot(data.results ?? null));
       } catch {
         if (cancelled) return;
-        setInstallers(MOCK_INSTALLERS);
+        setInstallers([]);
         setProjectSummary(DEFAULT_PROJECT_SUMMARY);
-        setLoadError("Could not load your assessment matches. Showing sample results.");
+        setLoadError("Could not load your assessment matches.");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -355,6 +360,7 @@ function MatchedInstallers() {
 
   const resultCountLabel = useMemo(() => {
     const n = installers.length;
+    if (n === 0) return "0 results";
     return `Top ${n} result${n === 1 ? "" : "s"}`;
   }, [installers.length]);
 
@@ -591,7 +597,7 @@ function MatchedInstallers() {
                               {primaryLabel}
                             </button>
                             <Link
-                              to="/expert-review"
+                              to={expertReviewPath}
                               className="installer-secondary-cta"
                               onClick={() => {
                                 void trackCtaClick("expert_review", {
@@ -715,7 +721,7 @@ function MatchedInstallers() {
                   className="btn-orange installer-sidebar-review-btn mt-3"
                   onClick={() => {
                     void trackCtaClick("expert_review");
-                    navigate("/expert-review");
+                    navigate(expertReviewPath);
                   }}
                 >
                   Get expert review
@@ -757,9 +763,6 @@ function MatchedInstallers() {
                   Upload file
                 </button>
 
-                {quoteMessage ? (
-                  <p className="text-success small mt-2 mb-0">{quoteMessage}</p>
-                ) : null}
                 {quoteError ? (
                   <p className="text-danger small mt-2 mb-0">{quoteError}</p>
                 ) : null}
@@ -769,11 +772,12 @@ function MatchedInstallers() {
         </section>
       </div>
 
+      <FeedbackToast toast={toast} onClose={clearToast} />
+
       {quoteModalOpen ? (
         <div
           className="quote-upload-modal-overlay"
           role="presentation"
-          onClick={closeQuoteModal}
         >
           <div
             className="quote-upload-modal"
@@ -882,6 +886,25 @@ function MatchedInstallers() {
                   <p className="upload-desc mb-0 mt-1">
                     PDF, image, or document (max 15MB)
                   </p>
+                </div>
+
+                <div className="mb-3">
+                  <label
+                    className="form-label ass-field-label"
+                    htmlFor="quote-additionalNotes"
+                  >
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    id="quote-additionalNotes"
+                    name="additionalNotes"
+                    value={quoteForm.additionalNotes}
+                    onChange={handleQuoteFormChange}
+                    className="form-control ass-field-control"
+                    rows={4}
+                    placeholder="Example: I received a quote and want confirmation before proceeding"
+                    disabled={quoteUploading}
+                  />
                 </div>
 
                 {quoteModalError ? (

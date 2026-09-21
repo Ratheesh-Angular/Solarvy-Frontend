@@ -167,6 +167,16 @@ export default function AdminLeads() {
                                     </span>
                                   </>
                                 ) : null}
+                                {row.additional_notes ? (
+                                  <>
+                                    <br />
+                                    <span className="admin-muted">
+                                      {String(row.additional_notes).length > 80
+                                        ? `${String(row.additional_notes).slice(0, 80)}…`
+                                        : row.additional_notes}
+                                    </span>
+                                  </>
+                                ) : null}
                               </>
                             )}
                     </td>

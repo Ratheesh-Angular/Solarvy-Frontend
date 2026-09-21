@@ -6,30 +6,17 @@ import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
 import save from "../assets/images/icon/save.svg";
-import buleone from "../assets/images/icon/bule1.svg";
-import buletwo from "../assets/images/icon/bule2.svg";
-import bulethree from "../assets/images/icon/bule3.svg";
-import bulefour from "../assets/images/icon/sun-blue.svg";
 import {
-  AirVent,
   BatteryCharging,
   Building2,
   Calculator,
-  Factory,
-  Fan,
   Fuel,
-  Home,
-  Hospital,
-  Hotel,
   LayoutGrid,
-  Lightbulb,
   PlugZap,
   Receipt,
-  School,
   Sparkles,
   Sun,
   Trash2,
-  Tv,
   Upload,
   Wallet,
   Wrench,
@@ -46,6 +33,15 @@ import PageSeo from "../components/PageSeo";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { useSyncedProgress } from "../hooks/useSyncedProgress";
 import { ApiError } from "../lib/api";
+import { getApplianceIconSrc } from "../lib/applianceIcons";
+import { getBuildingIconSrc } from "../lib/buildingIcons";
+import { getInputMethodIconSrc } from "../lib/inputMethodIcons";
+import {
+  getLiveSummaryIconSrc,
+  getLiveSummaryPathIconSrc,
+} from "../lib/liveSummaryIcons";
+import { getObjectiveIconSrc } from "../lib/objectiveIcons";
+import { getPowerSetupIconSrc } from "../lib/powerSetupIcons";
 import {
   detectUserLocation,
   matchNigeriaState,
@@ -90,39 +86,22 @@ type ApplianceCatalogItem = {
   defaultHours: number;
   /** Duty cycle as 0–1 from Equipment Default. */
   defaultDutyCycle: number;
-  Icon: LucideIcon;
+  iconSrc?: string;
 };
 
-const EQUIPMENT_ICON_RULES: Array<[RegExp, LucideIcon]> = [
-  [/bulb|light|led/i, Lightbulb],
-  [/fan/i, Fan],
-  [/tv|television|display/i, Tv],
-  [/ac\b|a\/c|air/i, AirVent],
-  [/fridge|refrigerator|freezer|cold/i, BatteryCharging],
-  [/router|wifi|cctv|computer|pos|charger/i, PlugZap],
-  [/pump|motor|compressor|machine|cnc/i, Wrench],
-];
-
-function iconForEquipment(name: string): LucideIcon {
-  for (const [pattern, Icon] of EQUIPMENT_ICON_RULES) {
-    if (pattern.test(name)) return Icon;
-  }
-  return PlugZap;
-}
-
-/** Icon for a row kind even when Excel library names differ from catalog kinds. */
-function resolveApplianceIcon(
+/** Image URL for a row kind even when Excel library names differ from catalog kinds. */
+function resolveApplianceIconSrc(
   kind: string,
   catalog: ApplianceCatalogItem[],
-): LucideIcon {
+): string | undefined {
   const trimmed = kind.trim();
-  if (!trimmed) return PlugZap;
+  if (!trimmed) return undefined;
   const exact = catalog.find((o) => o.kind === trimmed);
-  if (exact?.Icon) return exact.Icon;
+  if (exact?.iconSrc) return exact.iconSrc;
   const lower = trimmed.toLowerCase();
   const ci = catalog.find((o) => o.kind.toLowerCase() === lower);
-  if (ci?.Icon) return ci.Icon;
-  return iconForEquipment(trimmed);
+  if (ci?.iconSrc) return ci.iconSrc;
+  return getApplianceIconSrc(trimmed);
 }
 
 /** Excel-relevant row fields only; omit derived dailyKwhExcel so writeback does not retrigger live-summary. */
@@ -185,7 +164,7 @@ function catalogFromEquipment(
       Number.isFinite(item.dutyCycle) && item.dutyCycle > 0
         ? item.dutyCycle
         : 1,
-    Icon: iconForEquipment(item.name),
+    iconSrc: getApplianceIconSrc(item.name),
   }));
 }
 
@@ -196,7 +175,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 10,
     defaultHours: 6,
     defaultDutyCycle: 1,
-    Icon: Lightbulb,
+    iconSrc: getApplianceIconSrc("LED bulb"),
   },
   {
     kind: "Fan",
@@ -204,7 +183,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 60,
     defaultHours: 8,
     defaultDutyCycle: 1,
-    Icon: Fan,
+    iconSrc: getApplianceIconSrc("Fan"),
   },
   {
     kind: "TV",
@@ -212,7 +191,7 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 100,
     defaultHours: 6,
     defaultDutyCycle: 1,
-    Icon: Tv,
+    iconSrc: getApplianceIconSrc("TV"),
   },
   {
     kind: "AC 1HP",
@@ -220,18 +199,9 @@ const FALLBACK_EQUIPMENT_CATALOG: ApplianceCatalogItem[] = [
     defaultPower: 900,
     defaultHours: 5,
     defaultDutyCycle: 0.6,
-    Icon: AirVent,
+    iconSrc: getApplianceIconSrc("AC 1HP"),
   },
 ];
-
-const PROPERTY_ICONS: Record<string, LucideIcon> = {
-  Home: Home,
-  Hotel: Hotel,
-  Factory: Factory,
-  Commercial: Building2,
-  Hospital: Hospital,
-  School: School,
-};
 
 const PROPERTY_DESCRIPTIONS: Record<string, string> = {
   Home: "Backup and lower energy bills",
@@ -241,6 +211,8 @@ const PROPERTY_DESCRIPTIONS: Record<string, string> = {
   Hospital: "Reliable power for critical systems",
   School: "Maximise daytime solar savings",
 };
+
+const PROPERTY_TYPE_FALLBACKS = Object.keys(PROPERTY_DESCRIPTIONS);
 
 const POWER_SETUP_ICONS: Record<string, LucideIcon> = {
   "Grid + Generator": PlugZap,
@@ -371,14 +343,12 @@ function TablePagination({
 
   const label =
     totalRows <= ROWS_PER_PAGE
-      ? `Showing all ${totalRows} row${totalRows === 1 ? "" : "s"}`
-      : `Showing ${showFrom}–${showTo} of ${totalRows} rows`;
+      ? `all ${totalRows}`
+      : `${showFrom}–${showTo} of ${totalRows}`;
 
   return (
     <div className="ass-table-pagination">
-      <span className="ass-table-pagination__summary text-muted small">
-        {label}
-      </span>
+      <span className="ass-table-pagination__summary">{label}</span>
       {totalRows > ROWS_PER_PAGE && (
         <div className="ass-table-pagination__controls">
           <button
@@ -388,10 +358,10 @@ function TablePagination({
             aria-label="Previous page"
             onClick={() => onPageChange(safePage - 1)}
           >
-            Previous
+            ‹
           </button>
-          <span className="ass-table-pagination__page small">
-            Page {safePage} of {totalPages}
+          <span className="ass-table-pagination__page">
+            {safePage}/{totalPages}
           </span>
           <button
             type="button"
@@ -400,7 +370,7 @@ function TablePagination({
             aria-label="Next page"
             onClick={() => onPageChange(safePage + 1)}
           >
-            Next
+            ›
           </button>
         </div>
       )}
@@ -515,7 +485,7 @@ function ApplianceKindSelect({
   const selected = catalog.find((o) => o.kind === valueKind);
   const isCustomKind = Boolean(allowCustomName && valueKind && !selected);
   const isOpen = openRow === rowIndex;
-  const TriggerIcon = resolveApplianceIcon(valueKind, catalog);
+  const triggerIconSrc = resolveApplianceIconSrc(valueKind, catalog);
   const triggerLabel = selected?.label ?? (valueKind?.trim() || "—");
 
   const filteredCatalog = (() => {
@@ -597,12 +567,21 @@ function ApplianceKindSelect({
       >
         <span className="appliance-select-trigger-inner">
           <span className="tables-icon-box-custom appliance-select-icon-wrap">
-            <TriggerIcon
-              size={18}
-              strokeWidth={2}
-              aria-hidden
-              className="appliance-select-trigger-icon"
-            />
+            {triggerIconSrc ? (
+              <img
+                src={triggerIconSrc}
+                alt=""
+                className="appliance-select-trigger-icon"
+                aria-hidden
+              />
+            ) : (
+              <PlugZap
+                size={18}
+                strokeWidth={2}
+                aria-hidden
+                className="appliance-select-trigger-icon"
+              />
+            )}
           </span>
           <span className="appliance-select-label">{triggerLabel}</span>
           <ChevronDown
@@ -660,7 +639,8 @@ function ApplianceKindSelect({
                     </li>
                   ) : (
                     filteredCatalog.map((opt) => {
-                      const OptionIcon = opt.Icon;
+                      const optionIconSrc =
+                        opt.iconSrc ?? getApplianceIconSrc(opt.kind);
                       const active = opt.kind === valueKind;
                       return (
                         <li key={opt.kind} role="none">
@@ -678,11 +658,19 @@ function ApplianceKindSelect({
                             }}
                           >
                             <span className="tables-icon-box-custom appliance-select-icon-wrap">
-                              <OptionIcon
-                                size={18}
-                                strokeWidth={2}
-                                aria-hidden
-                              />
+                              {optionIconSrc ? (
+                                <img
+                                  src={optionIconSrc}
+                                  alt=""
+                                  aria-hidden
+                                />
+                              ) : (
+                                <PlugZap
+                                  size={18}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                              )}
                             </span>
                             <span className="appliance-select-option-label">
                               {opt.label}
@@ -860,38 +848,43 @@ function Assesement() {
     id: string;
     title: string;
     desc: string;
+    iconSrc?: string;
     Icon: LucideIcon;
   }[] = [
     {
       id: "bill",
       title: "Monthly Bill",
       desc: "Upload a bill and let AI fill your usage values.",
+      iconSrc: getInputMethodIconSrc("Monthly Bill"),
       Icon: Receipt,
     },
     {
       id: "appliance",
       title: "Appliance Calculator",
       desc: "Select appliances and hours.",
+      iconSrc: getInputMethodIconSrc("Appliance Calculator"),
       Icon: Calculator,
     },
     {
       id: "custom",
       title: "Custom Equipment",
       desc: "For factories, specialist loads.",
+      iconSrc: getInputMethodIconSrc("Custom Equipment"),
       Icon: Wrench,
     },
   ];
 
   /** Property / power / objective cards driven by Excel catalogs (with fallbacks). */
   const propertyOptions = (
-    catalogs?.propertyTypes ?? Object.keys(PROPERTY_ICONS)
+    catalogs?.propertyTypes ?? PROPERTY_TYPE_FALLBACKS
   ).map((label) => ({
     title: label,
     desc:
       catalogs?.categoryDescriptions?.[label]?.bestFor ||
       PROPERTY_DESCRIPTIONS[label] ||
       "",
-    Icon: PROPERTY_ICONS[label] ?? Building2,
+    iconSrc: getBuildingIconSrc(label),
+    Icon: Building2 as LucideIcon,
   }));
 
   const powerOptions = (
@@ -899,6 +892,7 @@ function Assesement() {
   ).map((label) => ({
     title: label,
     desc: POWER_SETUP_DESCRIPTIONS[label] ?? "",
+    iconSrc: getPowerSetupIconSrc(label),
     Icon: POWER_SETUP_ICONS[label] ?? PlugZap,
   }));
 
@@ -907,6 +901,7 @@ function Assesement() {
   ).map((label) => ({
     title: label,
     desc: OBJECTIVE_DESCRIPTIONS[label] ?? "",
+    iconSrc: getObjectiveIconSrc(label),
     Icon: OBJECTIVE_ICONS[label] ?? Wallet,
   }));
 
@@ -1816,6 +1811,11 @@ function Assesement() {
         ? "Appliance"
         : "Custom";
 
+  const summaryEnergyIconSrc = getLiveSummaryIconSrc("energy");
+  const summaryStatisticsIconSrc = getLiveSummaryIconSrc("statistics");
+  const summaryAnnualReportIconSrc = getLiveSummaryIconSrc("annual-report");
+  const summaryPathIconSrc = getLiveSummaryPathIconSrc(inputMethod);
+
   const summaryFirstMetricLabel =
     inputMethod === "bill" ? "MONTHLY USAGE" : "Daily Energy";
   const summaryFirstMetricUnit =
@@ -1979,7 +1979,7 @@ function Assesement() {
       />
       <FeedbackToast toast={toast} onClose={clearToast} />
       <div className="full-body-color">
-        <section className="hero d-flex align-items-center ass-bannr py-4">
+        <section className="hero d-flex align-items-center ass-bannr start-assessment-hero">
           <div className="overlay"></div>
 
           <div className="container-fluid px-lg-4 px-3 position-relative z-1 menu-div ass-div">
@@ -2089,12 +2089,21 @@ function Assesement() {
                       >
                         <div className="d-flex gap-2 building-info-cards-content">
                           <div className="icon-box-tops">
-                            <item.Icon
-                              className="mobile-iconssss"
-                              size={22}
-                              strokeWidth={2}
-                              aria-hidden
-                            />
+                            {item.iconSrc ? (
+                              <img
+                                src={item.iconSrc}
+                                alt=""
+                                className="building-type-icon mobile-iconssss"
+                                aria-hidden
+                              />
+                            ) : (
+                              <item.Icon
+                                className="mobile-iconssss"
+                                size={22}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                            )}
                           </div>
 
                           <div>
@@ -2285,7 +2294,16 @@ function Assesement() {
                       <div className="d-flex align-items-center justify-content-between w-100">
                         <div className="d-flex align-items-center gap-3">
                           <div className="icon-boxs">
-                            <item.Icon size={20} strokeWidth={2} aria-hidden />
+                            {item.iconSrc ? (
+                              <img
+                                src={item.iconSrc}
+                                alt=""
+                                className="power-setup-icon mobile-iconssss"
+                                aria-hidden
+                              />
+                            ) : (
+                              <item.Icon size={20} strokeWidth={2} aria-hidden />
+                            )}
                           </div>
 
                           <div>
@@ -2348,11 +2366,20 @@ function Assesement() {
                         >
                           <div className="d-flex align-items-start">
                             <div className="icon-box-topss me-2 icon-box-topss-choose-input-method">
-                              <item.Icon
-                                size={20}
-                                strokeWidth={2}
-                                aria-hidden
-                              />
+                              {item.iconSrc ? (
+                                <img
+                                  src={item.iconSrc}
+                                  alt=""
+                                  className="input-method-icon mobile-iconssss"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <item.Icon
+                                  size={20}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                              )}
                             </div>
 
                             <div className="flex-grow-1">
@@ -2629,7 +2656,7 @@ function Assesement() {
                                       : undefined
                                   }
                                 >
-                                  <td className="appliance-cell py-2">
+                                  <td className="appliance-cell">
                                     <ApplianceKindSelect
                                       rowIndex={index}
                                       catalog={equipmentCatalog}
@@ -2695,7 +2722,7 @@ function Assesement() {
                                       {calculateRowDailyKwh(item)}
                                     </div>
                                   </td>
-                                  <td className="appliance-table-td-actions text-center align-middle py-2">
+                                  <td className="appliance-table-td-actions text-center align-middle">
                                     <button
                                       type="button"
                                       className="ass-row-remove-btn"
@@ -2780,10 +2807,7 @@ function Assesement() {
                                     : undefined
                                 }
                               >
-                                <td
-                                  className="appliance-cell py-2"
-                                  style={{ minWidth: "180px" }}
-                                >
+                                <td className="appliance-cell">
                                   <ApplianceKindSelect
                                     rowIndex={index}
                                     catalog={equipmentCatalog}
@@ -2848,7 +2872,7 @@ function Assesement() {
                                   </div>
                                 </td>
 
-                                <td className="appliance-table-td-actions text-center align-middle py-2">
+                                <td className="appliance-table-td-actions text-center align-middle">
                                   <button
                                     type="button"
                                     className="ass-row-remove-btn"
@@ -2978,11 +3002,20 @@ function Assesement() {
                         >
                           <div className="d-flex option-card-main-objective-individual">
                             <div className="icon-box-topsss me-2 ">
-                              <item.Icon
-                                size={20}
-                                strokeWidth={2}
-                                aria-hidden
-                              />
+                              {item.iconSrc ? (
+                                <img
+                                  src={item.iconSrc}
+                                  alt=""
+                                  className="main-objective-icon mobile-iconssss"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <item.Icon
+                                  size={20}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                              )}
                             </div>
 
                             <div className="flex-grow-1">
@@ -3052,7 +3085,7 @@ function Assesement() {
                   <>
                     <div className="assessment-summary-mobile-row">
                       <div className="assessment-summary-mobile-icon-wrap">
-                        <img src={buleone} alt="" />
+                        <img src={summaryEnergyIconSrc} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
                         <div
@@ -3072,7 +3105,7 @@ function Assesement() {
 
                     <div className="assessment-summary-mobile-row">
                       <div className="assessment-summary-mobile-icon-wrap">
-                        <img src={buletwo} alt="" />
+                        <img src={summaryStatisticsIconSrc} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
                         <div
@@ -3092,7 +3125,7 @@ function Assesement() {
 
                     <div className="assessment-summary-mobile-row">
                       <div className="assessment-summary-mobile-icon-wrap">
-                        <img src={bulefour} alt="" />
+                        <img src={summaryAnnualReportIconSrc} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
                         <div
@@ -3111,7 +3144,7 @@ function Assesement() {
 
                     <div className="assessment-summary-mobile-row">
                       <div className="assessment-summary-mobile-icon-wrap">
-                        <img src={bulethree} alt="" />
+                        <img src={summaryPathIconSrc} alt="" />
                       </div>
                       <div className="assessment-summary-mobile-body">
                         <div
@@ -3166,7 +3199,7 @@ function Assesement() {
                       <div className="col-6">
                         <div className="stat-card text-center">
                           <div className="icon-box-build-right mb-2">
-                            <img src={buleone} alt="icon" />
+                            <img src={summaryEnergyIconSrc} alt="icon" />
                           </div>
                           <h5
                             className="asst-h"
@@ -3186,7 +3219,7 @@ function Assesement() {
                       <div className="col-6">
                         <div className="stat-card text-center">
                           <div className="icon-box-build-right  mb-2">
-                            <img src={buletwo} alt="icon" />
+                            <img src={summaryStatisticsIconSrc} alt="icon" />
                           </div>
                           <h5
                             className="asst-h"
@@ -3205,7 +3238,7 @@ function Assesement() {
                       <div className="col-6">
                         <div className="stat-card text-center">
                           <div className="icon-box-build-right mb-2">
-                            <img src={bulefour} alt="icon" />
+                            <img src={summaryAnnualReportIconSrc} alt="icon" />
                           </div>
                           <h5
                             className="asst-h"
@@ -3226,7 +3259,7 @@ function Assesement() {
                       <div className="col-6">
                         <div className="stat-card text-center">
                           <div className="icon-box-build-right mb-2">
-                            <img src={bulethree} alt="icon" />
+                            <img src={summaryPathIconSrc} alt="icon" />
                           </div>
                           <h5
                             className="asst-h"

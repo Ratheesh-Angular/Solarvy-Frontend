@@ -274,7 +274,7 @@ function Home() {
                     Quick Assessment Preview
                   </h2>
 
-                  <div className="row g-2 mb-3">
+                  <div className="row g-2 mb-2">
                     <div className="col">
                       <label className="quick-lable">Property Type</label>
                       <select
@@ -347,7 +347,7 @@ function Home() {
                     </p>
                   )}
 
-                  <div className="row g-2 mb-3">
+                  <div className="row g-2 mb-2">
                     <div className="col">
                       <label className="quick-lable">Power Setup</label>
                       <select
@@ -428,9 +428,9 @@ function Home() {
         </div>
       </section>
 
-      <section className="how-it-works py-4">
+      <section className="how-it-works">
         <div className="text-center">
-          <h2 className="head-nor" style={{ fontSize: "25px !important" }}>
+          <h2 className="head-nor">
             How Solarvy Works
           </h2>
           <p className="subtitle ">
@@ -495,8 +495,8 @@ function Home() {
         </div>
       </section>
 
-      <section className="d-flex align-items-center bannar-see py-4">
-        <div className="container px-lg-5 px-3 text-center mb-3">
+      <section className="d-flex align-items-center bannar-see">
+        <div className="container text-center mb-0">
           <h2 className="head-nor">See A Sample Energy Assessment</h2>
 
           <p className="subtitle mb-4">
@@ -505,7 +505,7 @@ function Home() {
             problem-solving, not just calculations.
           </p>
 
-          <div className="row g-4">
+          <div className="row g-3">
             <div className="col-md-6 d-flex">
               <div className="left-wrapper w-100">
                 <div className="card-box d-flex justify-content-between align-items-center">
@@ -535,14 +535,14 @@ function Home() {
             </div>
 
             <div className="col-md-6 ">
-              <div className="row g-4 w-100 h-100">
+              <div className="row g-3 w-100 h-100">
                 <div className="col-6 d-flex">
                   <div className="card-boxs text-center w-100">
                     <small>
                       <img src={enery} alt="icon" className="graph-image" />
                       Solar PV
                     </small>
-                    <h3>28 kWp</h3>
+                    <h3 className="sample-card-value">28 kWp</h3>
                     <p>Indicative size</p>
                   </div>
                 </div>
@@ -553,7 +553,7 @@ function Home() {
                       <img src={enery} alt="icon" className="graph-image" />
                       Battery
                     </small>
-                    <h3>40 kWh</h3>
+                    <h3 className="sample-card-value">40 kWh</h3>
                     <p>Backup storage</p>
                   </div>
                 </div>
@@ -564,7 +564,7 @@ function Home() {
                       <img src={enery} alt="icon" className="graph-image" />
                       Annual savings
                     </small>
-                    <h3>NGN 7.8m</h3>
+                    <h3 className="sample-card-value">NGN 7.8m</h3>
                     <p>Indicative</p>
                   </div>
                 </div>
@@ -575,7 +575,7 @@ function Home() {
                       <img src={enery} alt="icon" className="graph-image" />
                       Payback
                     </small>
-                    <h3>4.2 yrs</h3>
+                    <h3 className="sample-card-value">4.2 yrs</h3>
                     <p>Simple payback</p>
                   </div>
                 </div>
@@ -585,8 +585,8 @@ function Home() {
         </div>
       </section>
 
-      <section className="usecase-section py-1 mt-4 mb-4">
-        <div className="container-fluid px-lg-5 px-3">
+      <section className="usecase-section">
+        <div className="container-fluid">
           <h2 className="head-nor">Built for real use cases</h2>
 
           <div className="row g-4">
