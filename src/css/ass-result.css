@@ -336,7 +336,13 @@ small.text-muted.sub-down {
   }
 
   h1.bannr-text.display-5.ass-page.ass-result-banner-text {
-    font-size: 27px;
+    font-family: "Poppins", sans-serif;
+    font-size: 28px;
+  }
+
+  p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
+    font-family: "Poppins", sans-serif;
+    font-size: 16px;
   }
 
   .icon-box-maony {
@@ -638,15 +644,18 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
 }
 
 h1.bannr-text.display-5.ass-page.ass-result-banner-text {
-  font-size: 27px;
+  font-family: "Poppins", sans-serif;
+  font-size: 30px;
 }
 
 p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
-  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  font-size: 18px;
 }
 
 .ass-result-banner-desc {
-  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  font-size: 18px;
 }
 
 .ass-result-banner-phrase {
@@ -657,6 +666,15 @@ p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
 @media (max-width: 768px) {
   .ass-result-banner-text {
     margin-top: 100px;
+  }
+
+  h1.bannr-text.display-5.ass-page.ass-result-banner-text {
+    font-size: 28px;
+  }
+
+  p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc,
+  .ass-result-banner-desc {
+    font-size: 16px;
   }
 
   .button-group {
@@ -671,12 +689,12 @@ p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
 /* iPhone 12 / 13 / 14 (390px) — keep the same 2-line title wrap as ~430px */
 @media (max-width: 429px) {
   h1.bannr-text.display-5.ass-page.ass-result-banner-text {
-    font-size: 27px;
+    font-size: 28px;
     letter-spacing: -0.02em;
   }
 
   p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
-    font-size: 13px;
+    font-size: 16px;
     width: 100%;
   }
 }

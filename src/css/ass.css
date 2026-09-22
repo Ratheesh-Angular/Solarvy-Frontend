@@ -574,9 +574,9 @@ input.form-control.ass-field-control--table {
 }
 
 p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two {
-  font-size: clamp(16px, 1.2vw, 18px);
+  font-size: 18px;
   font-weight: 400;
-  font-family: "Poppins";
+  font-family: "Poppins", sans-serif;
   line-height: 1.45;
   position: relative;
   top: 0px;
@@ -703,7 +703,7 @@ h5.asst-h {
   p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two {
     font-size: 16px;
     font-weight: 400;
-    font-family: "Poppins";
+    font-family: "Poppins", sans-serif;
     line-height: 1.4;
     position: relative;
     top: 0px;
@@ -973,7 +973,8 @@ nav.navbar {
 }
 
 h1.bannr-text.display-5.ass-page {
-  font-size: 27px;
+  font-family: "Poppins", sans-serif;
+  font-size: 30px;
   font-weight: 500;
   letter-spacing: -0.03em;
   line-height: 1.3;
@@ -1012,6 +1013,10 @@ nav.navbar.scrolled {
 }
 
 @media (max-width: 768px) {
+  h1.bannr-text.display-5.ass-page {
+    font-size: 28px;
+  }
+
   nav.navbar.navbar-expand-md.mb-2.asst-menuss {
     position: relative;
     top: 5px;
