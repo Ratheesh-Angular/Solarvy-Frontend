@@ -554,12 +554,6 @@
   padding: 10px 12px;
 }
 
-.installer-card--loading {
-  min-height: 88px;
-  display: flex;
-  align-items: center;
-}
-
 @media (max-width: 991.98px) {
   .installer-dossier__header {
     grid-template-columns: auto 1fr;

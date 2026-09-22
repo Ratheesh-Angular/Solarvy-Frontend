@@ -539,7 +539,7 @@ p.bannr-text-s.text-light {
   }
 
   .solar-main-desc {
-    font-size: 16px;
+    font-size: 14px;
     line-height: 20px;
     margin-top: 16px;
     margin-bottom: 0;
@@ -602,7 +602,7 @@ p.bannr-text-s.text-light {
 
 @media (max-width: 480px) {
   .solar-main-title {
-    font-size: 32px;
+    font-size: 27px;
     margin-bottom: 12px;
     margin-top: 0;
   }

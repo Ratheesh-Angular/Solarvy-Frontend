@@ -7,6 +7,7 @@ import donw from "../assets/images/icon/d11.svg";
 import "../css/MatchedInstallers.css";
 import PageSeo from "../components/PageSeo";
 import FeedbackToast from "../components/FeedbackToast";
+import SolarvyLoader from "../components/SolarvyLoader";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { getAssessment } from "../lib/assessmentApi";
 import { apiPostFormData, ApiError } from "../lib/api";
@@ -398,6 +399,10 @@ function MatchedInstallers() {
         description="Review installer matches aligned to your Solarvy project size, location, and budget range."
         path="/matched-installers"
       />
+      <SolarvyLoader
+        open={isLoading}
+        message="Loading matched installers..."
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>
@@ -487,7 +492,9 @@ function MatchedInstallers() {
                   </p>
                 </div>
 
-                <div className="result-badge">{resultCountLabel}</div>
+                {!isLoading && (
+                  <div className="result-badge">{resultCountLabel}</div>
+                )}
               </div>
 
               {loadError && (
@@ -496,11 +503,7 @@ function MatchedInstallers() {
                 </p>
               )}
 
-              {isLoading ? (
-                <div className="installer-card installer-card--loading p-4">
-                  <p className="sub-text mb-0">Loading matched installers…</p>
-                </div>
-              ) : (
+              {!isLoading &&
                 installers.map((installer, index) => {
                   const accent = matchScoreAccent(installer.matchPct);
                   const rank = installer.cardNumber ?? index + 1;
@@ -618,8 +621,7 @@ function MatchedInstallers() {
                       </div>
                     </article>
                   );
-                })
-              )}
+                })}
             </div>
 
             <div className="col-lg-4">

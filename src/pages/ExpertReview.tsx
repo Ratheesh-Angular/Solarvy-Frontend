@@ -4,7 +4,7 @@ import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
-import { CheckCircle2, ArrowLeft } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { apiPostFormData, ApiError } from "../lib/api";
 import PageSeo from "../components/PageSeo";
 import FeedbackToast from "../components/FeedbackToast";
@@ -484,17 +484,23 @@ function ExpertReview() {
                 </div>
 
                 <div className="ri-aside-back mt-3">
-                  <Link
-                    to={
-                      assessmentId
-                        ? `/assessment-result?assessment=${encodeURIComponent(assessmentId)}`
-                        : "/assessment-result"
+                  <button
+                    type="button"
+                    className="btn-outline-customss2"
+                    style={{ height: "45px" }}
+                    onClick={() =>
+                      navigate(
+                        assessmentId
+                          ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+                          : "/matched-installers",
+                      )
                     }
-                    className="ri-aside-back-link"
                   >
-                    <ArrowLeft size={14} strokeWidth={2} aria-hidden />
-                    Back to results
-                  </Link>
+                    <span className="icon-get">
+                      <i className="bi bi-arrow-left"></i>
+                    </span>
+                    <span>Back to installers</span>
+                  </button>
                 </div>
               </div>
             </div>

@@ -336,7 +336,7 @@ small.text-muted.sub-down {
   }
 
   h1.bannr-text.display-5.ass-page.ass-result-banner-text {
-    font-size: 32px;
+    font-size: 27px;
   }
 
   .icon-box-maony {
@@ -638,7 +638,7 @@ nav.navbar.navbar-expand-md.mb-2.asst-menuss {
 }
 
 h1.bannr-text.display-5.ass-page.ass-result-banner-text {
-  font-size: 32px;
+  font-size: 27px;
 }
 
 p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
@@ -650,7 +650,7 @@ p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
 }
 
 .ass-result-banner-phrase {
-  white-space: nowrap;
+  /* white-space: nowrap; */
 }
 
 /* Mobile view */
@@ -671,7 +671,7 @@ p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two.ass-result-banner-desc {
 /* iPhone 12 / 13 / 14 (390px) — keep the same 2-line title wrap as ~430px */
 @media (max-width: 429px) {
   h1.bannr-text.display-5.ass-page.ass-result-banner-text {
-    font-size: 32px;
+    font-size: 27px;
     letter-spacing: -0.02em;
   }
 
