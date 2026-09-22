@@ -441,56 +441,60 @@ export default function AdminUserDetail() {
                       </span>
                     </button>
                     {open ? (
-                      <dl className="admin-info-list admin-lead-detail">
-                        <div className="admin-info-row">
-                          <dt>File</dt>
-                          <dd>{valueOrDash(row.original_name)}</dd>
-                        </div>
-                        <div className="admin-info-row">
-                          <dt>Assessment</dt>
-                          <dd>
-                            {row.assessment_id
-                              ? `SV-${String(row.assessment_id).padStart(4, "0")}`
-                              : "—"}
-                          </dd>
-                        </div>
-                        <div className="admin-info-row">
-                          <dt>Contact</dt>
-                          <dd>
-                            {[row.full_name, row.email, row.phone_number]
-                              .filter(Boolean)
-                              .join(" · ") || "—"}
-                          </dd>
-                        </div>
-                        <div className="admin-info-row">
-                          <dt>Location</dt>
-                          <dd>{valueOrDash(row.location)}</dd>
-                        </div>
-                        <div className="admin-info-row">
-                          <dt>Notes</dt>
-                          <dd>{valueOrDash(row.additional_notes)}</dd>
-                        </div>
-                        {row.storage_path ? (
+                      <div className="admin-lead-detail">
+                        <dl className="admin-info-list">
                           <div className="admin-info-row">
-                            <dt>Download</dt>
+                            <dt>File</dt>
+                            <dd>{valueOrDash(row.original_name)}</dd>
+                          </div>
+                          <div className="admin-info-row">
+                            <dt>Assessment</dt>
                             <dd>
-                              <button
-                                type="button"
-                                className="admin-btn admin-btn-secondary admin-btn-sm"
-                                onClick={() =>
-                                  void adminDownloadLeadFile(
-                                    "quote-uploads",
-                                    row.id,
-                                    row.original_name || "quote",
-                                  )
-                                }
-                              >
-                                Download
-                              </button>
+                              {row.assessment_id
+                                ? `SV-${String(row.assessment_id).padStart(4, "0")}`
+                                : "—"}
                             </dd>
                           </div>
-                        ) : null}
-                      </dl>
+                          <div className="admin-info-row">
+                            <dt>Contact</dt>
+                            <dd>
+                              {[row.full_name, row.email, row.phone_number]
+                                .filter(Boolean)
+                                .join(" · ") || "—"}
+                            </dd>
+                          </div>
+                          <div className="admin-info-row">
+                            <dt>Location</dt>
+                            <dd>{valueOrDash(row.location)}</dd>
+                          </div>
+                          {row.storage_path ? (
+                            <div className="admin-info-row">
+                              <dt>Download</dt>
+                              <dd>
+                                <button
+                                  type="button"
+                                  className="admin-btn admin-btn-secondary admin-btn-sm"
+                                  onClick={() =>
+                                    void adminDownloadLeadFile(
+                                      "quote-uploads",
+                                      row.id,
+                                      row.original_name || "quote",
+                                    )
+                                  }
+                                >
+                                  Download
+                                </button>
+                              </dd>
+                            </div>
+                          ) : null}
+                        </dl>
+                        <div className="admin-lead-notes">
+                          <span className="admin-lead-field-label">
+                            Additional Notes
+                          </span>
+                          <p>{valueOrDash(row.additional_notes)}</p>
+                        </div>
+                      </div>
                     ) : null}
                   </article>
                 );
