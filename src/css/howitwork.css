@@ -155,6 +155,6 @@ span.dots-texts {
 
 @media (max-width: 768px) {
   .how-it-works-banner-text {
-    margin-top: 30px;
+    margin-top: 0;
   }
 }

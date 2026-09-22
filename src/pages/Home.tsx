@@ -647,7 +647,7 @@ function Home() {
                   installer quotes.
                 </p>
 
-                <div className="d-flex justify-content-center align-items-center gap-3 mt-4 flex-wrap text-center">
+                <div className="overlay-cta-group">
                   <button
                     type="button"
                     className="custom-btn other-section strst"

@@ -574,13 +574,15 @@ input.form-control.ass-field-control--table {
 }
 
 p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two {
-  font-size: 14px;
-  font-weight: 100;
+  font-size: clamp(16px, 1.2vw, 18px);
+  font-weight: 400;
   font-family: "Poppins";
+  line-height: 1.45;
   position: relative;
   top: 0px;
-  width: 55%;
-  margin-top: 20px !important;
+  width: 100%;
+  max-width: 700px;
+  margin-top: 16px !important;
   left: 0px;
 }
 
@@ -699,13 +701,15 @@ h5.asst-h {
   }
 
   p.bannr-text-s.text-light.mt-2.mb-5.ass-page-two {
-    font-size: 14px;
-    font-weight: 100;
+    font-size: 16px;
+    font-weight: 400;
     font-family: "Poppins";
+    line-height: 1.4;
     position: relative;
     top: 0px;
     width: 100%;
-    margin-top: 10px;
+    max-width: 100%;
+    margin-top: 12px !important;
   }
 
   .dashed-btn {
@@ -969,10 +973,12 @@ nav.navbar {
 }
 
 h1.bannr-text.display-5.ass-page {
-  font-size: 34px;
-  font-weight: 400;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
   position: relative;
-  top: 10px !important;
+  top: 0 !important;
   left: 0px;
 }
 
@@ -1297,9 +1303,33 @@ button.btn.btn-outline-custom.btn-start {
 }
 
 section.hero.d-flex.align-items-center.ass-bannr {
-  height: 100%;
-  min-height: 445px;
+  height: auto;
+  min-height: 400px;
   margin-bottom: 0px;
+  align-items: center !important;
+}
+
+section.hero.ass-bannr > .container-fluid.menu-div.ass-div {
+  padding-left: var(--hp-page-x) !important;
+  padding-right: var(--hp-page-x) !important;
+  width: 100%;
+}
+
+section.hero.ass-bannr .text-divs {
+  margin-top: 0;
+}
+
+section.hero.ass-bannr .nav-bottom-section {
+  padding-bottom: 8px;
+}
+
+section.hero.ass-bannr h1.bannr-text.display-5,
+section.hero.ass-bannr .bannr-text {
+  margin-bottom: 12px;
+}
+
+section.hero.ass-bannr p.bannr-text-s {
+  margin-bottom: 0 !important;
 }
 
 /* Start Assessment hero — scoped to match Figma crop + logo-aligned text */
@@ -1307,31 +1337,28 @@ section.hero.start-assessment-hero {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: flex-end;
-  min-height: 445px;
-  height: 445px;
-  max-height: 445px;
-  padding-top: 0;
+  justify-content: center;
+  min-height: 400px;
+  height: 400px;
+  max-height: 400px;
+  padding-top: 120px;
   padding-bottom: 48px;
   margin-bottom: 0;
   overflow: hidden;
+  background-image: var(--sv-banner-image);
   background-size: cover;
-  background-position: center bottom;
+  background-position: center;
   background-repeat: no-repeat;
 }
 
 section.hero.start-assessment-hero .overlay {
-  background: linear-gradient(
-    to right,
-    rgba(0, 30, 60, 0.55),
-    rgba(0, 0, 0, 0.3)
-  );
+  background: var(--sv-banner-overlay);
 }
 
 section.hero.start-assessment-hero > .container-fluid.menu-div.ass-div {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   flex: 1 1 auto;
   height: 100%;
   padding-left: var(--hp-page-x) !important;
@@ -1344,7 +1371,7 @@ section.hero.start-assessment-hero .text-divs {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 section.hero.start-assessment-hero .nav-bottom-section {
