@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import {
+  adminGetQuickSnapshotRecommendationPrompt,
   adminGetRecommendationPrompt,
+  adminSaveQuickSnapshotRecommendationPrompt,
   adminSaveRecommendationPrompt,
   type AiPromptSetting,
 } from "../lib/adminApi";
+
+type RecommendationTab = "assessment-result" | "quick-snapshot";
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -14,15 +18,21 @@ function formatDate(value: string | null) {
 
 export default function AdminRecommendations() {
   const { toast, showError, showSuccess, clearToast } = useFeedbackToast();
+  const [tab, setTab] = useState<RecommendationTab>("assessment-result");
   const [prompt, setPrompt] = useState("");
   const [meta, setMeta] = useState<AiPromptSetting | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const loadPrompt = async () => {
+  const isQuickSnapshot = tab === "quick-snapshot";
+
+  const loadPrompt = async (activeTab: RecommendationTab = tab) => {
     setIsLoading(true);
     try {
-      const data = await adminGetRecommendationPrompt();
+      const data =
+        activeTab === "quick-snapshot"
+          ? await adminGetQuickSnapshotRecommendationPrompt()
+          : await adminGetRecommendationPrompt();
       setMeta(data);
       setPrompt(data.value);
     } catch (error) {
@@ -35,9 +45,9 @@ export default function AdminRecommendations() {
   };
 
   useEffect(() => {
-    loadPrompt();
+    loadPrompt(tab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tab]);
 
   const handleSave = async () => {
     const value = prompt.trim();
@@ -49,11 +59,15 @@ export default function AdminRecommendations() {
     setIsSaving(true);
     clearToast();
     try {
-      const saved = await adminSaveRecommendationPrompt(value);
+      const saved = isQuickSnapshot
+        ? await adminSaveQuickSnapshotRecommendationPrompt(value)
+        : await adminSaveRecommendationPrompt(value);
       setMeta(saved);
       setPrompt(saved.value);
       showSuccess(
-        "Recommendations will use this prompt on the next assessment that does not already have stored AI text.",
+        isQuickSnapshot
+          ? "Quick Snapshot recommendations will use this prompt on the next assessment that does not already have stored Quick Snapshot AI text."
+          : "Recommendations will use this prompt on the next assessment that does not already have stored AI text.",
         "Prompt saved",
       );
     } catch (error) {
@@ -75,9 +89,9 @@ export default function AdminRecommendations() {
           AI Recommendation : training prompt
         </h1>
         <p className="admin-page-subtitle">
-          This system prompt trains OpenAI to write the AI Recommendation on the
-          assessment results page. The model receives the full assessment form
-          and all Excel outputs as JSON under ASSESSMENT_CONTEXT.
+          {isQuickSnapshot
+            ? "This system prompt trains OpenAI to write the short “What this means” blurb inside Quick Snapshot on the assessment results page. The model receives the full assessment form and all Excel outputs as JSON under ASSESSMENT_CONTEXT."
+            : "This system prompt trains OpenAI to write the AI Recommendation on the assessment results page. The model receives the full assessment form and all Excel outputs as JSON under ASSESSMENT_CONTEXT."}
         </p>
         <p className="admin-page-subtitle">
           Available form values include property type, template, country, city,
@@ -86,8 +100,28 @@ export default function AdminRecommendations() {
           costs, savings, payback, diesel, shares, system class,
           primaryRecommendation, confidenceNote, disclaimer, the strategy
           comparison table, and summary cells. Changes apply to new completions
-          and to assessments that do not yet have stored AI text.
+          and to assessments that do not yet have stored AI text
+          {isQuickSnapshot ? " for Quick Snapshot" : ""}.
         </p>
+      </div>
+
+      <div className="admin-tabs">
+        {(
+          [
+            ["assessment-result", "Assessment Result Recommendation"],
+            ["quick-snapshot", "Quick Snapshot Recommendation"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`admin-tab${tab === key ? " is-active" : ""}`}
+            onClick={() => setTab(key)}
+            disabled={isSaving}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="admin-panel">
@@ -100,7 +134,7 @@ export default function AdminRecommendations() {
               type="button"
               className="admin-btn admin-btn-secondary"
               disabled={isLoading || isSaving}
-              onClick={loadPrompt}
+              onClick={() => loadPrompt(tab)}
             >
               Reload
             </button>

@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import "../assets/images/logo.png";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
@@ -7,14 +12,18 @@ import donw from "../assets/images/icon/d11.svg";
 import "../css/MatchedInstallers.css";
 import PageSeo from "../components/PageSeo";
 import FeedbackToast from "../components/FeedbackToast";
+import QuoteUploadModal from "../components/QuoteUploadModal";
 import SolarvyLoader from "../components/SolarvyLoader";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { getAssessment } from "../lib/assessmentApi";
-import { apiPostFormData, ApiError } from "../lib/api";
 import type { AssessmentResults } from "../types/assessment";
 import { trackCtaClick, trackEvent } from "../lib/visitorTracking";
 
 type SnapshotItem = { label: string; value: string };
+
+type MatchedInstallersLocationState = {
+  from?: "assessment-result" | "expert-review" | "request-intro";
+};
 
 type InstallerMatch = NonNullable<
   AssessmentResults["installerMatches"]
@@ -184,8 +193,36 @@ function formatMatchPct(score: number | null | undefined): string {
 function MatchedInstallers() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const assessmentId = searchParams.get("assessment");
+  const shouldOpenQuoteUpload = searchParams.get("upload") === "quote";
+  const fromPage = (location.state as MatchedInstallersLocationState | null)
+    ?.from;
+
+  const backLabel =
+    fromPage === "expert-review"
+      ? "Back to Expert Review"
+      : fromPage === "request-intro"
+        ? "Back to Request Introduction"
+        : assessmentId || fromPage === "assessment-result"
+          ? "Back to Assessment Results"
+          : "Back to Home";
+
+  const backPath =
+    fromPage === "expert-review"
+      ? assessmentId
+        ? `/expert-review?assessment=${encodeURIComponent(assessmentId)}`
+        : "/expert-review"
+      : fromPage === "request-intro"
+        ? assessmentId
+          ? `/request-intro?assessment=${encodeURIComponent(assessmentId)}`
+          : "/request-intro"
+        : assessmentId || fromPage === "assessment-result"
+          ? assessmentId
+            ? `/assessment-result?assessment=${encodeURIComponent(assessmentId)}`
+            : "/assessment-result"
+          : "/";
 
   const [scrolled, setScrolled] = useState(false);
   const [installers, setInstallers] =
@@ -195,20 +232,10 @@ function MatchedInstallers() {
   );
   const [isLoading, setIsLoading] = useState(Boolean(assessmentId));
   const [loadError, setLoadError] = useState<string | null>(null);
-  const quoteFileInputRef = useRef<HTMLInputElement>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
-  const [quoteForm, setQuoteForm] = useState({
-    fullName: "",
-    phoneNumber: "",
-    email: "",
-    location: "",
-    additionalNotes: "",
-  });
-  const [quoteFile, setQuoteFile] = useState<File | null>(null);
   const [quoteFileName, setQuoteFileName] = useState("");
-  const [quoteUploading, setQuoteUploading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-  const [quoteModalError, setQuoteModalError] = useState<string | null>(null);
+  const [snapshotOpen, setSnapshotOpen] = useState(false);
   const { toast, showSuccess, clearToast } = useFeedbackToast();
 
   const expertReviewPath = assessmentId
@@ -221,88 +248,26 @@ function MatchedInstallers() {
     }
   };
 
-  const resetQuoteModal = () => {
-    setQuoteForm({
-      fullName: "",
-      phoneNumber: "",
-      email: "",
-      location: "",
-      additionalNotes: "",
-    });
-    setQuoteFile(null);
-    setQuoteModalError(null);
-    if (quoteFileInputRef.current) {
-      quoteFileInputRef.current.value = "";
-    }
-  };
-
   const openQuoteModal = () => {
     void trackCtaClick("quote_upload", {
       entityType: assessmentId ? "assessment" : "",
       entityId: assessmentId || undefined,
     });
     setQuoteError(null);
-    setQuoteModalError(null);
     setQuoteModalOpen(true);
   };
 
-  const closeQuoteModal = () => {
-    if (quoteUploading) return;
-    setQuoteModalOpen(false);
-    resetQuoteModal();
-  };
+  useEffect(() => {
+    if (!shouldOpenQuoteUpload) return;
 
-  const handleQuoteFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setQuoteForm((prev) => ({ ...prev, [name]: value }));
-  };
+    openQuoteModal();
 
-  const handleQuoteModalFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0] ?? null;
-    setQuoteFile(file);
-  };
-
-  const handleQuoteSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quoteFile) {
-      setQuoteModalError("Please upload an installer quote file.");
-      return;
-    }
-
-    setQuoteUploading(true);
-    setQuoteModalError(null);
-    setQuoteError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", quoteFile);
-      formData.append("fullName", quoteForm.fullName.trim());
-      formData.append("phoneNumber", quoteForm.phoneNumber.trim());
-      formData.append("email", quoteForm.email.trim());
-      formData.append("location", quoteForm.location.trim());
-      formData.append("additionalNotes", quoteForm.additionalNotes.trim());
-      if (assessmentId) {
-        formData.append("assessmentId", assessmentId);
-      }
-      await apiPostFormData("/quote-uploads", formData);
-      setQuoteFileName(quoteFile.name);
-      setQuoteModalOpen(false);
-      resetQuoteModal();
-      showSuccess("Quote uploaded successfully. Our team can use it for comparison.");
-    } catch (error) {
-      setQuoteModalError(
-        error instanceof ApiError
-          ? error.message
-          : "Unable to upload quote. Please try again.",
-      );
-    } finally {
-      setQuoteUploading(false);
-    }
-  };
+    const next = new URLSearchParams(searchParams);
+    next.delete("upload");
+    setSearchParams(next, { replace: true });
+    // Open once when landing with upload=quote; strip param so refresh does not re-open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldOpenQuoteUpload]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -404,7 +369,7 @@ function MatchedInstallers() {
         message="Loading matched installers..."
       />
       <div className="full-body-color">
-        <section className="hero d-flex align-items-center ass-bannr py-4">
+        <section className="hero d-flex align-items-center ass-bannr matched-installers-hero py-4">
           <div className="overlay"></div>
 
           <div className="container-fluid px-lg-4 px-3 position-relative z-1 menu-div ass-div">
@@ -470,7 +435,7 @@ function MatchedInstallers() {
                     Your matched installers
                   </h1>
 
-                  <p className="bannr-text-s text-light mt-2 mb-5 ass-page-two">
+                  <p className="bannr-text-s text-light mt-2 mb-2 ass-page-two">
                     These installers match your project using your location,
                     system size, project cost, and the savings and payback
                     calculated from your results.
@@ -481,20 +446,19 @@ function MatchedInstallers() {
           </div>
         </section>
 
-        <section className="container-fluid px-lg-4 px-3 py-5">
+        <section className="container-fluid px-lg-4 px-3 matched-installers-list">
           <div className="row align-items-start">
             <div className="col-lg-8 ">
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-                <div>
-                  <h5 className="title-main mb-1">Installer shortlist</h5>
+              <div className="matched-installers-list__header">
+                <h5 className="title-main mb-0">Installer shortlist</h5>
+                <div className="matched-installers-list__meta-row">
                   <p className="sub-text mb-0 mobile-view-match">
                     Matched to your size, cost, timing, and energy setup
                   </p>
+                  {!isLoading && (
+                    <div className="result-badge">{resultCountLabel}</div>
+                  )}
                 </div>
-
-                {!isLoading && (
-                  <div className="result-badge">{resultCountLabel}</div>
-                )}
               </div>
 
               {loadError && (
@@ -502,6 +466,36 @@ function MatchedInstallers() {
                   {loadError}
                 </p>
               )}
+
+              {isLoading &&
+                Array.from({ length: 3 }, (_, i) => (
+                  <article
+                    key={`installer-skeleton-${i}`}
+                    className="installer-card installer-dossier installer-card--skeleton"
+                    aria-hidden
+                  >
+                    <div className="installer-dossier__body">
+                      <div className="installer-dossier__top">
+                        <span className="installer-skeleton-bar installer-skeleton-bar--eyebrow" />
+                        <span className="installer-skeleton-block installer-skeleton-block--score" />
+                      </div>
+                      <span className="installer-skeleton-bar installer-skeleton-bar--name" />
+                      <span className="installer-skeleton-bar installer-skeleton-bar--subtitle" />
+                      <div className="installer-chip-row">
+                        <span className="installer-skeleton-bar installer-skeleton-bar--chip" />
+                        <span className="installer-skeleton-bar installer-skeleton-bar--chip" />
+                      </div>
+                      <div className="installer-skeleton-meta">
+                        <span className="installer-skeleton-bar installer-skeleton-bar--meta" />
+                        <span className="installer-skeleton-bar installer-skeleton-bar--meta-short" />
+                      </div>
+                      <div className="installer-dossier__actions">
+                        <span className="installer-skeleton-bar installer-skeleton-bar--cta" />
+                        <span className="installer-skeleton-bar installer-skeleton-bar--cta-secondary" />
+                      </div>
+                    </div>
+                  </article>
+                ))}
 
               {!isLoading &&
                 installers.map((installer, index) => {
@@ -511,6 +505,17 @@ function MatchedInstallers() {
                     installer.primaryCta?.trim() || "Request Introduction";
                   const secondaryLabel =
                     installer.secondaryCta?.trim() || "Get Expert Review";
+                  const coverageLabel = installer.coverage
+                    ?.replace(/;/g, ",")
+                    .trim();
+                  const suitedFor = installer.bestSuitedFor?.trim();
+                  const subtitleParts = [coverageLabel, suitedFor].filter(
+                    Boolean,
+                  );
+                  const strengthItems = (installer.strengths ?? "")
+                    .split(";")
+                    .map((s) => s.trim())
+                    .filter(Boolean);
 
                   return (
                     <article
@@ -518,105 +523,100 @@ function MatchedInstallers() {
                       className={`installer-card installer-dossier match-accent--${accent}`}
                     >
                       <div className="installer-dossier__body">
-                        <div className="installer-dossier__header">
-                          <div className="installer-dossier__score-block">
-                            <span className="installer-rank">#{rank}</span>
-                            <div
-                              className={`installer-match-pct ${matchScoreAccentClass(installer.matchPct)}`}
-                            >
-                              {formatMatchPct(installer.matchPct)}
-                            </div>
-                            {installer.matchTier && (
-                              <p
-                                className={`installer-match-tier match-tier--${accent}`}
-                              >
-                                {installer.matchTier}
-                              </p>
-                            )}
+                        <div className="installer-dossier__top">
+                          <p className="installer-dossier__eyebrow">
+                            #{rank}
+                            {installer.matchTier
+                              ? ` · ${installer.matchTier}`
+                              : ""}
+                          </p>
+                          <div
+                            className={`installer-match-pct ${matchScoreAccentClass(installer.matchPct)}`}
+                          >
+                            {formatMatchPct(installer.matchPct)}
                           </div>
+                        </div>
 
-                          <div className="installer-dossier__main">
-                            <h6 className="installer-dossier__name">
-                              {installer.installerName}
-                            </h6>
+                        <h6 className="installer-dossier__name">
+                          {installer.installerName}
+                        </h6>
 
-                            {installer.bestSuitedFor && (
-                              <span className="installer-suited-pill">
-                                {installer.bestSuitedFor}
+                        {subtitleParts.length > 0 && (
+                          <p className="installer-dossier__subtitle">
+                            {subtitleParts.join(" · ")}
+                          </p>
+                        )}
+
+                        {(installer.pricing || installer.response) && (
+                          <div className="installer-chip-row">
+                            {installer.pricing && (
+                              <span className="installer-chip">
+                                {installer.pricing}
                               </span>
                             )}
-
-                            <dl className="installer-meta-grid">
-                              {installer.coverage && (
-                                <div className="installer-meta-row">
-                                  <dt>Coverage</dt>
-                                  <dd>{installer.coverage.replace(/;/g, ",")}</dd>
-                                </div>
-                              )}
-                              {installer.strengths && (
-                                <div className="installer-meta-row">
-                                  <dt>Strengths</dt>
-                                  <dd>{installer.strengths}</dd>
-                                </div>
-                              )}
-                            </dl>
-
-                            <div className="installer-chip-row">
-                              {installer.pricing && (
-                                <span className="installer-chip">
-                                  {installer.pricing}
-                                </span>
-                              )}
-                              {installer.response && (
-                                <span className="installer-chip">
-                                  {installer.response}
-                                </span>
-                              )}
-                            </div>
+                            {installer.response && (
+                              <span className="installer-chip">
+                                {installer.response}
+                              </span>
+                            )}
                           </div>
+                        )}
 
-                          <div className="installer-dossier__actions">
-                            <button
-                              type="button"
-                              className="btn-primary-custom-match installer-primary-cta"
-                              onClick={() => {
-                                void trackCtaClick("request_intro", {
-                                  entityType: assessmentId
-                                    ? "assessment"
-                                    : "installer",
-                                  entityId: assessmentId || undefined,
-                                  metadata: {
-                                    installerName: installer.installerName,
-                                  },
-                                });
-                                navigate(
-                                  assessmentId
-                                    ? `/request-intro?assessment=${encodeURIComponent(assessmentId)}`
-                                    : "/request-intro",
-                                  { state: { installer } },
-                                );
-                              }}
-                            >
-                              {primaryLabel}
-                            </button>
-                            <Link
-                              to={expertReviewPath}
-                              className="installer-secondary-cta"
-                              onClick={() => {
-                                void trackCtaClick("expert_review", {
-                                  entityType: assessmentId
-                                    ? "assessment"
-                                    : "installer",
-                                  entityId: assessmentId || undefined,
-                                  metadata: {
-                                    installerName: installer.installerName,
-                                  },
-                                });
-                              }}
-                            >
-                              {secondaryLabel}
-                            </Link>
+                        {strengthItems.length > 0 && (
+                          <div className="installer-dossier__strengths">
+                            <p className="installer-dossier__strengths-label">
+                              Why this match
+                            </p>
+                            <ul className="installer-dossier__strengths-list">
+                              {strengthItems.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                            </ul>
                           </div>
+                        )}
+
+                        <div className="installer-dossier__actions">
+                          <button
+                            type="button"
+                            className="btn-primary-custom-match installer-primary-cta"
+                            onClick={() => {
+                              void trackCtaClick("request_intro", {
+                                entityType: assessmentId
+                                  ? "assessment"
+                                  : "installer",
+                                entityId: assessmentId || undefined,
+                                metadata: {
+                                  installerName: installer.installerName,
+                                },
+                              });
+                              navigate(
+                                assessmentId
+                                  ? `/request-intro?assessment=${encodeURIComponent(assessmentId)}`
+                                  : "/request-intro",
+                                { state: { installer } },
+                              );
+                            }}
+                          >
+                            {primaryLabel}
+                          </button>
+                          <Link
+                            to={expertReviewPath}
+                            state={{ from: "matched-installers" }}
+                            className="installer-secondary-cta"
+                            onClick={() => {
+                              void trackCtaClick("expert_review", {
+                                entityType: assessmentId
+                                  ? "assessment"
+                                  : "installer",
+                                entityId: assessmentId || undefined,
+                                metadata: {
+                                  installerName: installer.installerName,
+                                },
+                              });
+                            }}
+                          >
+                            {secondaryLabel}
+                          </Link>
                         </div>
                       </div>
                     </article>
@@ -626,23 +626,35 @@ function MatchedInstallers() {
 
             <div className="col-lg-4">
               <div
-                className="match-snapshot mb-4"
+                className={`match-snapshot mb-4${snapshotOpen ? " is-expanded" : ""}`}
                 role="region"
                 aria-labelledby="match-snapshot-heading"
               >
-                <div className="match-snapshot__header">
-                  <h2
-                    id="match-snapshot-heading"
-                    className="match-snapshot__title"
-                  >
-                    Your project snapshot
-                  </h2>
-                  <p className="match-snapshot__hint">
-                    These details come from your assessment and shape how we
-                    rank installers.
-                  </p>
-                </div>
-                <ul className="match-snapshot__list">
+                <button
+                  type="button"
+                  className="match-snapshot__toggle"
+                  aria-expanded={snapshotOpen}
+                  aria-controls="match-snapshot-list"
+                  onClick={() => setSnapshotOpen((v) => !v)}
+                >
+                  <div className="match-snapshot__header">
+                    <h2
+                      id="match-snapshot-heading"
+                      className="match-snapshot__title"
+                    >
+                      Your project snapshot
+                    </h2>
+                    <p className="match-snapshot__hint">
+                      These details come from your assessment and shape how we
+                      rank installers.
+                    </p>
+                  </div>
+                  <i
+                    className="bi bi-chevron-down match-snapshot__chevron"
+                    aria-hidden="true"
+                  />
+                </button>
+                <ul id="match-snapshot-list" className="match-snapshot__list">
                   {projectSummary.map((item) => (
                     <li key={item.label} className="match-snapshot__row">
                       <span className="match-snapshot__label">
@@ -723,7 +735,9 @@ function MatchedInstallers() {
                   className="btn-orange installer-sidebar-review-btn mt-3"
                   onClick={() => {
                     void trackCtaClick("expert_review");
-                    navigate(expertReviewPath);
+                    navigate(expertReviewPath, {
+                      state: { from: "matched-installers" },
+                    });
                   }}
                 >
                   Get expert review
@@ -759,10 +773,18 @@ function MatchedInstallers() {
                 <button
                   type="button"
                   className="upload-btn"
-                  disabled={quoteUploading}
                   onClick={openQuoteModal}
                 >
                   Upload file
+                </button>
+
+                <button
+                  type="button"
+                  className="upload-btn mt-2"
+                  onClick={() => navigate(backPath)}
+                >
+                  <i className="bi bi-arrow-left" aria-hidden />
+                  <span>{backLabel}</span>
                 </button>
 
                 {quoteError ? (
@@ -776,165 +798,18 @@ function MatchedInstallers() {
 
       <FeedbackToast toast={toast} onClose={clearToast} />
 
-      {quoteModalOpen ? (
-        <div
-          className="quote-upload-modal-overlay"
-          role="presentation"
-        >
-          <div
-            className="quote-upload-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="quote-upload-modal-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="quote-upload-modal-header">
-              <h5 id="quote-upload-modal-title">Upload installer quote</h5>
-              <button
-                type="button"
-                className="quote-upload-modal-close"
-                aria-label="Close"
-                disabled={quoteUploading}
-                onClick={closeQuoteModal}
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleQuoteSubmit}>
-              <div className="quote-upload-modal-body">
-                <div className="mb-3">
-                  <label className="form-label ass-field-label" htmlFor="quote-fullName">
-                    Full Name
-                  </label>
-                  <input
-                    id="quote-fullName"
-                    type="text"
-                    name="fullName"
-                    value={quoteForm.fullName}
-                    onChange={handleQuoteFormChange}
-                    className="form-control ass-field-control"
-                    placeholder="Your full name"
-                    required
-                    disabled={quoteUploading}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label ass-field-label" htmlFor="quote-phoneNumber">
-                    Phone Number
-                  </label>
-                  <input
-                    id="quote-phoneNumber"
-                    type="tel"
-                    name="phoneNumber"
-                    value={quoteForm.phoneNumber}
-                    onChange={handleQuoteFormChange}
-                    className="form-control ass-field-control"
-                    placeholder="+234..."
-                    required
-                    disabled={quoteUploading}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label ass-field-label" htmlFor="quote-email">
-                    Email Address
-                  </label>
-                  <input
-                    id="quote-email"
-                    type="email"
-                    name="email"
-                    value={quoteForm.email}
-                    onChange={handleQuoteFormChange}
-                    className="form-control ass-field-control"
-                    placeholder="name@email.com"
-                    required
-                    disabled={quoteUploading}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label ass-field-label" htmlFor="quote-location">
-                    Location
-                  </label>
-                  <input
-                    id="quote-location"
-                    type="text"
-                    name="location"
-                    value={quoteForm.location}
-                    onChange={handleQuoteFormChange}
-                    className="form-control ass-field-control"
-                    placeholder="City / State"
-                    required
-                    disabled={quoteUploading}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label ass-field-label" htmlFor="quote-file">
-                    Upload Installer Quote
-                  </label>
-                  <input
-                    id="quote-file"
-                    ref={quoteFileInputRef}
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
-                    className="form-control ass-field-control"
-                    onChange={handleQuoteModalFileChange}
-                    required
-                    disabled={quoteUploading}
-                  />
-                  <p className="upload-desc mb-0 mt-1">
-                    PDF, image, or document (max 15MB)
-                  </p>
-                </div>
-
-                <div className="mb-3">
-                  <label
-                    className="form-label ass-field-label"
-                    htmlFor="quote-additionalNotes"
-                  >
-                    Additional Notes (Optional)
-                  </label>
-                  <textarea
-                    id="quote-additionalNotes"
-                    name="additionalNotes"
-                    value={quoteForm.additionalNotes}
-                    onChange={handleQuoteFormChange}
-                    className="form-control ass-field-control"
-                    rows={4}
-                    placeholder="Example: I received a quote and want confirmation before proceeding"
-                    disabled={quoteUploading}
-                  />
-                </div>
-
-                {quoteModalError ? (
-                  <p className="text-danger small mb-0">{quoteModalError}</p>
-                ) : null}
-              </div>
-
-              <div className="quote-upload-modal-footer">
-                <button
-                  type="button"
-                  className="quote-upload-modal-cancel"
-                  disabled={quoteUploading}
-                  onClick={closeQuoteModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="quote-upload-modal-submit"
-                  disabled={quoteUploading}
-                >
-                  {quoteUploading ? "Submitting..." : "Submit"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+      <QuoteUploadModal
+        open={quoteModalOpen}
+        onClose={() => setQuoteModalOpen(false)}
+        assessmentId={assessmentId || undefined}
+        onSuccess={(fileName) => {
+          setQuoteFileName(fileName);
+          setQuoteError(null);
+          showSuccess(
+            "Quote uploaded successfully. Our team can use it for comparison.",
+          );
+        }}
+      />
     </div>
   );
 }

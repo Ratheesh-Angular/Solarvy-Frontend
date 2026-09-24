@@ -13,18 +13,21 @@ import compare from "../assets/images/icon/compare.svg";
 import thunder from "../assets/images/icon/thunder.svg";
 import imp from "../assets/images/icon/imporent.svg";
 import donw from "../assets/images/icon/d11.svg";
-import save from "../assets/images/icon/saves.svg";
 import qut from "../assets/images/icon/qut.svg";
+import financeIcon from "../assets/result cards icons/finance.png";
+import installersIcon from "../assets/result cards icons/insallers.png";
+import quotationIcon from "../assets/result cards icons/quotation.png";
+import expertReviewIcon from "../assets/result cards icons/expert review.png";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Sparkles } from "lucide-react";
-import whitearrow from "../assets/images/icon/w-arror.svg";
 import FeedbackToast from "../components/FeedbackToast";
+import QuoteUploadModal from "../components/QuoteUploadModal";
 import SolarvyLoader from "../components/SolarvyLoader";
 import PageSeo from "../components/PageSeo";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { apiGet } from "../lib/api";
-import { getAssessmentRecommendation } from "../lib/assessmentApi";
+import { getAssessmentRecommendation, getQuickSnapshotRecommendation } from "../lib/assessmentApi";
 import type {
   AssessmentFormData,
   AssessmentResults,
@@ -158,7 +161,12 @@ function AssesementResult() {
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
   const [recommendationFailed, setRecommendationFailed] = useState(false);
-  const { toast, showError, clearToast } = useFeedbackToast();
+  const [isLoadingQuickSnapshotRecommendation, setIsLoadingQuickSnapshotRecommendation] =
+    useState(false);
+  const [quickSnapshotRecommendationFailed, setQuickSnapshotRecommendationFailed] =
+    useState(false);
+  const { toast, showError, showSuccess, clearToast } = useFeedbackToast();
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
 
   useEffect(() => {
     if (!assessmentId) {
@@ -167,6 +175,7 @@ function AssesementResult() {
     }
 
     setRecommendationFailed(false);
+    setQuickSnapshotRecommendationFailed(false);
     let cancelled = false;
 
     (async () => {
@@ -218,6 +227,8 @@ function AssesementResult() {
   }, [assessmentId]);
 
   const storedRecommendation = results?.aiRecommendation?.trim() || "";
+  const storedQuickSnapshotRecommendation =
+    results?.quickSnapshotRecommendation?.trim() || "";
   const canGenerateRecommendation =
     Boolean(results) && !results?.calculationError;
 
@@ -264,6 +275,51 @@ function AssesementResult() {
     isLoadingResults,
     canGenerateRecommendation,
     storedRecommendation,
+  ]);
+
+  useEffect(() => {
+    if (!assessmentId || isLoadingResults) return;
+    if (!canGenerateRecommendation) {
+      setIsLoadingQuickSnapshotRecommendation(false);
+      return;
+    }
+    if (storedQuickSnapshotRecommendation) {
+      setIsLoadingQuickSnapshotRecommendation(false);
+      setQuickSnapshotRecommendationFailed(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingQuickSnapshotRecommendation(true);
+    setQuickSnapshotRecommendationFailed(false);
+
+    (async () => {
+      try {
+        const data = await getQuickSnapshotRecommendation(assessmentId);
+        if (cancelled) return;
+        const text = data.quickSnapshotRecommendation?.trim() || "";
+        if (text) {
+          setResults((prev) =>
+            prev ? { ...prev, quickSnapshotRecommendation: text } : prev,
+          );
+        } else {
+          setQuickSnapshotRecommendationFailed(true);
+        }
+      } catch {
+        if (!cancelled) setQuickSnapshotRecommendationFailed(true);
+      } finally {
+        if (!cancelled) setIsLoadingQuickSnapshotRecommendation(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    assessmentId,
+    isLoadingResults,
+    canGenerateRecommendation,
+    storedQuickSnapshotRecommendation,
   ]);
 
   useEffect(() => {
@@ -338,10 +394,24 @@ function AssesementResult() {
     !results?.calculationError &&
     (isLoadingResults || isLoadingRecommendation || canGenerateRecommendation);
 
+  const showQuickSnapshotRecommendationSkeleton =
+    Boolean(assessmentId) &&
+    !storedQuickSnapshotRecommendation &&
+    !quickSnapshotRecommendationFailed &&
+    !results?.calculationError &&
+    (isLoadingResults ||
+      isLoadingQuickSnapshotRecommendation ||
+      canGenerateRecommendation);
+
   const recommendationFallback =
     primaryRecommendation !== MISSING
       ? `Based on this assessment, ${primaryRecommendation} is the recommended option. Treat these figures as a planning baseline, then confirm sizing with a site review before you invest.`
       : "Your recommendation will appear here once the assessment results are ready.";
+
+  const quickSnapshotRecommendationFallback =
+    primaryRecommendation !== MISSING
+      ? `${primaryRecommendation} is the planning baseline for this site. Confirm sizing with a site review before you invest.`
+      : "Your snapshot summary will appear here once the assessment results are ready.";
 
   const strategyComparisonRows =
     results?.strategyComparison && results.strategyComparison.length > 0
@@ -388,6 +458,16 @@ function AssesementResult() {
         message="Loading your assessment results..."
       />
       <FeedbackToast toast={toast} onClose={clearToast} />
+      <QuoteUploadModal
+        open={quoteModalOpen}
+        onClose={() => setQuoteModalOpen(false)}
+        assessmentId={assessmentId || undefined}
+        onSuccess={() => {
+          showSuccess(
+            "Quote uploaded successfully. Our team can use it for comparison.",
+          );
+        }}
+      />
       <div className="full-body-color">
         <section className="hero d-flex align-items-center ass-bannr py-4">
           <div className="overlay"></div>
@@ -560,7 +640,10 @@ function AssesementResult() {
                 </div>
               </div>
 
-              <div className="p-4 shadow-sm rounded-4 ass-resul-first mt-4">
+              <div
+                id="ass-result-financial"
+                className="p-4 shadow-sm rounded-4 ass-resul-first mt-4"
+              >
                 <div className="d-flex align-items-center mb-4">
                   <div className="icon-box-maony me-3">
                     <img src={money} alt="icon" />
@@ -569,10 +652,10 @@ function AssesementResult() {
                     <h5 className="fw-bold mb-1 rang-head section-card-title">
                       Financial Summary
                     </h5>
-                    <small className="text-muted">
+                    <p className="text-muted small mb-0 para-ass">
                       Understand the commercial side quickly, without technical
                       jargon.
-                    </small>
+                    </p>
                   </div>
                 </div>
 
@@ -738,10 +821,10 @@ function AssesementResult() {
                       <h5 className="fw-bold mb-1 rang-head section-card-title">
                         Compare Your Power Options
                       </h5>
-                      <small className="text-muted">
+                      <p className="text-muted small mb-0 para-ass">
                         This helps you assess your options and see which one
                         gives you the best results.
-                      </small>
+                      </p>
                     </div>
                   </div>
                   <div className="custom-table">
@@ -853,123 +936,21 @@ function AssesementResult() {
                   <span className="fw-bold">Important note:</span> {disclaimer}
                 </div>
               </div>
-              <div className="ass-result-next-wrap">
-                <div className="p-4 shadow-sm rounded-4 ass-first">
-                  <div className="d-flex align-items-start mb-3">
-                    <div className="next-icon me-3">
-                      <img src={whitearrow} alt="arrow" />
-                    </div>
-                    <div>
-                      <h5 className="fw-bold mb-1 rang-head">
-                        What Happens Next
-                      </h5>
-                      <small className="text-muted sub-down">
-                        The best results don’t stop at numbers. Move forward
-                        with a clear next step.
-                      </small>
-                    </div>
-                  </div>
-
-                  <div
-                    className="container my-4"
-                    style={{ marginLeft: 0, paddingLeft: 0 }}
-                  >
-                    <div className="row g-4">
-                      <div className="col-12 col-md-4">
-                        <div className="info-card ms-0">
-                          <div className="info-badge">1</div>
-                          <h6 className="info-title">
-                            <i className="bi bi-download me-2"></i>
-                            Download your report
-                          </h6>
-                          <p className="info-text">
-                            Send a PDF summary by email with the recommended
-                            system, savings, and payback period.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="col-12 col-md-4">
-                        <div className="info-card">
-                          <div className="info-badge">2</div>
-                          <h6 className="info-title">
-                            <i className="bi bi-people me-2"></i>
-                            View installer quotes
-                          </h6>
-                          <p className="info-text">
-                            Use the result to match you with installers suited
-                            to the location and system size.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="col-12 col-md-4">
-                        <div className="info-card">
-                          <div className="info-badge">3</div>
-                          <h6 className="info-title">
-                            <i className="bi bi-bar-chart me-2"></i>
-                            Upgrade to expert review
-                          </h6>
-                          <p className="info-text">
-                            For more confidence before investment, route into a
-                            deeper technical review with our advisory team.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="button-group mt-3 justify-content-end">
-                    <button
-                      type="button"
-                      className="btn-primary-customss-down"
-                      onClick={handleDownloadReport}
-                      disabled={!results || isDownloadingReport}
-                      aria-busy={isDownloadingReport}
-                    >
-                      <span className="icon-get">
-                        <img src={donw} alt="" />
-                      </span>
-                      <span>
-                        {isDownloadingReport
-                          ? "Preparing PDF…"
-                          : "Download Report"}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn-outline-customsss2-req"
-                      onClick={() => {
-                        void trackCtaClick("matched_installers", {
-                          entityType: "assessment",
-                          entityId: assessmentId || undefined,
-                        });
-                        navigate(
-                          assessmentId
-                            ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
-                            : "/matched-installers",
-                        );
-                      }}
-                    >
-                      <span className="icon-get">
-                        <img src={save} alt="icon" />
-                      </span>
-                      <span>View Installer Quotes</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="ass-result-right">
               <div className="ass-result-snapshot">
                 <div className="p-4 rounded-4 shadow-sm right-panel assts-right">
-                  <div className="d-flex align-items-center mb-3">
-                    <div className="qs-icon me-2">
-                      <img src={qut} alt="icon" />
+                  <div className="ass-result-snapshot-header mb-3">
+                    <div className="qs-icon" aria-hidden>
+                      <img src={qut} alt="" />
                     </div>
-                    <h6 className="qt-text fw-bold mb-0">Quick Snapshot</h6>
+                    <div className="ass-result-snapshot-heading">
+                      <h6 className="qt-text fw-bold mb-0">Quick Snapshot</h6>
+                      <p className="ass-result-snapshot-subtitle mb-0">
+                        Your assessment at a glance.
+                      </p>
+                    </div>
                   </div>
 
                   <hr className="liness" />
@@ -1020,74 +1001,28 @@ function AssesementResult() {
                     </div>
                   </div>
 
-                  <div className="mt-4">
-                    <div className="d-flex align-items-start mb-3">
-                      <div className="info-icon-box me-3">
-                        <i className="bi bi-file-earmark-text"></i>
+                  <div className="ass-result-what-means mt-4">
+                    <h6 className="ass-result-what-means-title mb-2">
+                      What this means
+                    </h6>
+                    {showQuickSnapshotRecommendationSkeleton ? (
+                      <div
+                        className="ai-recommendation-skeleton qs-what-means-skeleton"
+                        aria-busy="true"
+                        aria-label="Loading recommendation"
+                      >
+                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
+                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
+                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
+                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
                       </div>
-                      <div>
-                        <div className="det-text fw-semibold info-title">
-                          Detailed technical review
-                        </div>
-                        <small className="text-muted info-desc">
-                          Best for hotels, hospitals, factories, estates, and
-                          higher-value projects.
-                        </small>
-                      </div>
-                    </div>
-
-                    <div className="d-flex align-items-start mb-4">
-                      <div className="info-icon-box me-3">
-                        <i className="bi bi-people"></i>
-                      </div>
-                      <div>
-                        <div className="det-text fw-semibold info-title">
-                          Installer matching
-                        </div>
-                        <small className="text-muted info-desc">
-                          Best for users ready to compare implementation options
-                          immediately.
-                        </small>
-                      </div>
-                    </div>
+                    ) : (
+                      <p className="ass-result-what-means-body mb-0">
+                        {storedQuickSnapshotRecommendation ||
+                          quickSnapshotRecommendationFallback}
+                      </p>
+                    )}
                   </div>
-
-                  <button
-                    className="btn-primary-customss"
-                    style={{ height: "45px" }}
-                    onClick={() =>
-                      navigate(
-                        assessmentId
-                          ? `/expert-review?assessment=${encodeURIComponent(assessmentId)}`
-                          : "/expert-review",
-                      )
-                    }
-                  >
-                    <span className="icon-get">
-                      <i className="whit-icon bi bi-file-earmark-text"></i>
-                    </span>
-                    <span>Get Detailed Review</span>
-                    <span className="arrows">
-                      <img src={save} alt="icon" />
-                    </span>
-                  </button>
-
-                  <button
-                    className="btn-outline-customss2 "
-                    style={{ height: "45px" }}
-                    onClick={() =>
-                      navigate(
-                        assessmentId
-                          ? `/start-assessment?assessment=${encodeURIComponent(assessmentId)}`
-                          : "/start-assessment",
-                      )
-                    }
-                  >
-                    <span className="icon-get">
-                      <i className="bi bi-arrow-left"></i>
-                    </span>
-                    <span>Back to Assessment</span>
-                  </button>
                 </div>
               </div>
 
@@ -1122,6 +1057,203 @@ function AssesementResult() {
                       {storedRecommendation || recommendationFallback}
                     </p>
                   )}
+                </div>
+              </div>
+            </div>
+
+            <div className="ass-result-next-wrap">
+              <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first ass-result-forward">
+                <div className="ass-result-forward-header">
+                  <h5 className="fw-bold mb-1 rang-head section-card-title">
+                    Take Your Project Forward
+                  </h5>
+                  <p className="text-muted small mb-0 para-ass">
+                    Your assessment is complete. Choose the next step that fits
+                    you.
+                  </p>
+                </div>
+
+                <div className="ass-result-forward-grid">
+                  <div className="ass-result-forward-card">
+                    <div className="ass-result-forward-card-top">
+                      <span
+                        className="ass-result-forward-card-icon"
+                        aria-hidden
+                      >
+                        <img src={financeIcon} alt="" />
+                      </span>
+                      <div>
+                        <h6 className="ass-result-forward-card-title">
+                          Explore Financing
+                        </h6>
+                        <p className="ass-result-forward-card-desc">
+                          See potential ways to fund your recommended energy
+                          system.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="ass-result-forward-card-link"
+                      onClick={() => {
+                        document
+                          .getElementById("ass-result-financial")
+                          ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                      }}
+                    >
+                      Explore financing
+                      <i className="bi bi-arrow-right" aria-hidden />
+                    </button>
+                  </div>
+
+                  <div className="ass-result-forward-card">
+                    <div className="ass-result-forward-card-top">
+                      <span
+                        className="ass-result-forward-card-icon"
+                        aria-hidden
+                      >
+                        <img src={installersIcon} alt="" />
+                      </span>
+                      <div>
+                        <h6 className="ass-result-forward-card-title">
+                          Find Installers
+                        </h6>
+                        <p className="ass-result-forward-card-desc">
+                          View installers matched to your location, project type
+                          and system requirements.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="ass-result-forward-card-link"
+                      onClick={() => {
+                        void trackCtaClick("matched_installers", {
+                          entityType: "assessment",
+                          entityId: assessmentId || undefined,
+                        });
+                        navigate(
+                          assessmentId
+                            ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+                            : "/matched-installers",
+                          { state: { from: "assessment-result" } },
+                        );
+                      }}
+                    >
+                      View matches
+                      <i className="bi bi-arrow-right" aria-hidden />
+                    </button>
+                  </div>
+
+                  <div className="ass-result-forward-card">
+                    <div className="ass-result-forward-card-top">
+                      <span
+                        className="ass-result-forward-card-icon"
+                        aria-hidden
+                      >
+                        <img src={quotationIcon} alt="" />
+                      </span>
+                      <div>
+                        <h6 className="ass-result-forward-card-title">
+                          Review a Quote
+                        </h6>
+                        <p className="ass-result-forward-card-desc">
+                          Already have a quotation? Upload it and compare it
+                          with your SolarVy assessment.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="ass-result-forward-card-link"
+                      onClick={() => {
+                        void trackCtaClick("quote_upload", {
+                          entityType: "assessment",
+                          entityId: assessmentId || undefined,
+                        });
+                        setQuoteModalOpen(true);
+                      }}
+                    >
+                      Upload quote
+                      <i className="bi bi-arrow-right" aria-hidden />
+                    </button>
+                  </div>
+
+                  <div className="ass-result-forward-card">
+                    <div className="ass-result-forward-card-top">
+                      <span
+                        className="ass-result-forward-card-icon"
+                        aria-hidden
+                      >
+                        <img src={expertReviewIcon} alt="" />
+                      </span>
+                      <div>
+                        <h6 className="ass-result-forward-card-title">
+                          Independent Expert Review
+                        </h6>
+                        <p className="ass-result-forward-card-desc">
+                          Get a deeper technical and commercial review before
+                          committing to an investment.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="ass-result-forward-card-link"
+                      onClick={() => {
+                        void trackCtaClick("expert_review", {
+                          entityType: "assessment",
+                          entityId: assessmentId || undefined,
+                        });
+                        navigate(
+                          assessmentId
+                            ? `/expert-review?assessment=${encodeURIComponent(assessmentId)}`
+                            : "/expert-review",
+                          { state: { from: "assessment-result" } },
+                        );
+                      }}
+                    >
+                      Get expert review
+                      <i className="bi bi-arrow-right" aria-hidden />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="ass-result-forward-actions">
+                  <button
+                    type="button"
+                    className="btn-primary-customss-down ass-result-forward-download"
+                    onClick={handleDownloadReport}
+                    disabled={!results || isDownloadingReport}
+                    aria-busy={isDownloadingReport}
+                  >
+                    <span className="icon-get">
+                      <img src={donw} alt="" />
+                    </span>
+                    <span>
+                      {isDownloadingReport
+                        ? "Preparing PDF…"
+                        : "Download Free Report"}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ass-result-forward-back"
+                    onClick={() =>
+                      navigate(
+                        assessmentId
+                          ? `/start-assessment?assessment=${encodeURIComponent(assessmentId)}`
+                          : "/start-assessment",
+                      )
+                    }
+                  >
+                    <i className="bi bi-arrow-left" aria-hidden />
+                    <span>Back to Assessment</span>
+                  </button>
                 </div>
               </div>
             </div>

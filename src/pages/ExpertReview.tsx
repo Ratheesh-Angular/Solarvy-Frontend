@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
@@ -15,11 +15,29 @@ import {
 } from "../lib/geolocation";
 import { ensureTrackingSession } from "../lib/visitorTracking";
 
+type ExpertReviewLocationState = {
+  from?: "assessment-result" | "matched-installers";
+};
+
 function ExpertReview() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get("assessment")?.trim() || "";
+  const fromPage = (location.state as ExpertReviewLocationState | null)?.from;
+  const backLabel =
+    fromPage === "assessment-result"
+      ? "Back to Assessment Results"
+      : "Back to installers";
+  const backPath =
+    fromPage === "assessment-result"
+      ? assessmentId
+        ? `/assessment-result?assessment=${encodeURIComponent(assessmentId)}`
+        : "/assessment-result"
+      : assessmentId
+        ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+        : "/matched-installers";
   const [scrolled, setScrolled] = useState(false);
   const [fileName, setFileName] = useState("No file chosen");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
@@ -342,12 +360,9 @@ function ExpertReview() {
                           className="form-control ass-field-control"
                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                         />
-                        <small
-                          className="text-muted d-block mt-1"
-                          style={{ fontSize: "10px" }}
-                        >
+                        <p className="text-muted small mb-0 para-ass d-block mt-1">
                           PDF, image, or document
-                        </small>
+                        </p>
                       </div>
                     </div>
 
@@ -490,16 +505,17 @@ function ExpertReview() {
                     style={{ height: "45px" }}
                     onClick={() =>
                       navigate(
-                        assessmentId
-                          ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
-                          : "/matched-installers",
+                        backPath,
+                        fromPage === "assessment-result"
+                          ? undefined
+                          : { state: { from: "expert-review" } },
                       )
                     }
                   >
                     <span className="icon-get">
                       <i className="bi bi-arrow-left"></i>
                     </span>
-                    <span>Back to installers</span>
+                    <span>{backLabel}</span>
                   </button>
                 </div>
               </div>

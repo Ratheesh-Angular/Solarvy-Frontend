@@ -202,6 +202,27 @@ export async function adminSaveRecommendationPrompt(value: string) {
   return data.data!;
 }
 
+export async function adminGetQuickSnapshotRecommendationPrompt() {
+  const data = await adminFetch<ApiEnvelope<AiPromptSetting>>(
+    "/admin/ai-prompts/quick-snapshot-recommendation",
+  );
+  return data.data!;
+}
+
+export async function adminSaveQuickSnapshotRecommendationPrompt(
+  value: string,
+) {
+  const data = await adminFetch<ApiEnvelope<AiPromptSetting>>(
+    "/admin/ai-prompts/quick-snapshot-recommendation",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value }),
+    },
+  );
+  return data.data!;
+}
+
 export async function adminGetChatbotPrompt() {
   const data = await adminFetch<ApiEnvelope<AiPromptSetting>>(
     "/admin/ai-prompts/chatbot",

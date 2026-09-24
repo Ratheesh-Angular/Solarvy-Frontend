@@ -350,20 +350,24 @@ function RequestIntro() {
                       </h5>
                       <div className="d-flex flex-wrap gap-2">
                         {matchScoreLabel && (
-                          <span className="badge bg-success">
+                          <span className="badge bg-success ri-match-badge">
                             {matchScoreLabel}
                           </span>
                         )}
                         {coverage && (
-                          <span className="badge bg-secondary">{coverage}</span>
+                          <span className="badge bg-secondary ri-match-badge">
+                            {coverage}
+                          </span>
                         )}
                         {bestSuitedFor && (
-                          <span className="badge bg-secondary">
+                          <span className="badge bg-secondary ri-match-badge">
                             {bestSuitedFor}
                           </span>
                         )}
                         {matchTier && (
-                          <span className="badge bg-secondary">{matchTier}</span>
+                          <span className="badge bg-secondary ri-match-badge">
+                            {matchTier}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -502,6 +506,7 @@ function RequestIntro() {
                         assessmentId
                           ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
                           : "/matched-installers",
+                        { state: { from: "request-intro" } },
                       )
                     }
                   >
@@ -595,6 +600,7 @@ function RequestIntro() {
                           assessmentId
                             ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
                             : "/matched-installers",
+                          { state: { from: "request-intro" } },
                         )
                       }
                     >
@@ -631,6 +637,7 @@ function RequestIntro() {
                   assessmentId
                     ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
                     : "/matched-installers",
+                  { state: { from: "request-intro" } },
                 )
               }
             >

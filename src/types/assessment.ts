@@ -160,6 +160,8 @@ export type AssessmentResults = {
   calculationError?: string;
   /** OpenAI plain-language recommendation for the results sidebar. */
   aiRecommendation?: string | null;
+  /** Short OpenAI blurb for Quick Snapshot “What this means”. */
+  quickSnapshotRecommendation?: string | null;
   /** Power_Options_Comparison website mapping B12:E16. */
   strategyComparison?: Array<{
     strategy: string;

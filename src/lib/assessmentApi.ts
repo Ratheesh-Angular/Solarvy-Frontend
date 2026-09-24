@@ -66,3 +66,11 @@ export async function getAssessmentRecommendation(id: string) {
   }>(`/assessments/${id}/recommendation`, {});
   return response.data!;
 }
+
+export async function getQuickSnapshotRecommendation(id: string) {
+  const response = await apiPost<{
+    success: boolean;
+    data: { quickSnapshotRecommendation: string | null };
+  }>(`/assessments/${id}/quick-snapshot-recommendation`, {});
+  return response.data!;
+}
