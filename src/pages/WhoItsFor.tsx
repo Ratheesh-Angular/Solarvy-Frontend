@@ -38,7 +38,7 @@ function WhoItsFor() {
         description="Solarvy is built for homes, hospitals, factories, and commercial buildings that need clearer solar and backup planning."
         path="/who-its-for"
       />
-      <div className="full-body-color">
+      <div className="full-body-color who-its-for-page">
         <section className="hero d-flex align-items-center ass-bannr ">
           <div className="overlay"></div>
 
@@ -295,7 +295,7 @@ function WhoItsFor() {
             <div className="container my-2">
               <div className="row  g-3">
                 <div className="col-12 col-md-6">
-                  <div className="p-4 shadow-sm rounded-4 ass-first mt-4">
+                  <div className="p-4 shadow-sm rounded-4 ass-first h-100">
                     <div>
                       <h5 className="fw-bold mb-2 rang-head">
                         Common starting points
@@ -330,7 +330,7 @@ function WhoItsFor() {
                 </div>
 
                 <div className="col-12 col-md-6">
-                  <div className="p-4 shadow-sm rounded-4 ass-first mt-4">
+                  <div className="p-4 shadow-sm rounded-4 ass-first h-100">
                     <div>
                       <h5 className="fw-bold mb-2 rang-head">
                         Hybrid-focused environments

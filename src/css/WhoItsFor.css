@@ -66,3 +66,81 @@
   font-size: 17px;
   color: #174c90;
 }
+
+/* Who It's For page typography */
+.who-its-for-page {
+  font-family: "Poppins", sans-serif;
+}
+
+.who-its-for-page .dashboard-container h2.dashboard-title {
+  font-family: "Poppins", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a2259;
+}
+
+.who-its-for-page .dashboard-container p.dashboard-subtitle {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #6f7196;
+}
+
+.who-its-for-page .custom-card h5.rang-head,
+.who-its-for-page .feature-card h6,
+.who-its-for-page .ass-first h5.rang-head {
+  font-family: "Poppins", sans-serif;
+  font-size: 17px;
+  font-weight: 600 !important;
+  color: #1a2259;
+}
+
+.who-its-for-page .custom-card p.text-muted,
+.who-its-for-page .feature-card p.text-muted,
+.who-its-for-page .ass-first small.text-muted {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #6f7196 !important;
+}
+
+.who-its-for-page .custom-card .tag {
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #174c90;
+}
+
+.who-its-for-page .ass-first span.dots-texts {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a2259;
+}
+
+/* Who It's For page section spacing and gutters */
+.who-its-for-page {
+  --wif-section-gap: 27px;
+}
+
+.who-its-for-page > section:not(.hero) {
+  padding: var(--wif-section-gap) var(--wif-section-gap) 0 !important;
+  margin: 0 !important;
+}
+
+.who-its-for-page > section:not(.hero):last-of-type {
+  padding-bottom: var(--wif-section-gap) !important;
+}
+
+.who-its-for-page > section:not(.hero) > .row > .container {
+  max-width: 100%;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .who-its-for-page .dashboard-container h2.dashboard-title {
+    font-size: 18px;
+  }
+}

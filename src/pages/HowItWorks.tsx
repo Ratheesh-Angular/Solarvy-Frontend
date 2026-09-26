@@ -48,7 +48,7 @@ function HowItWorks() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
   return (
-    <div>
+    <div className="how-it-works-page">
       <PageSeo
         title="How It Works | SolarVy"
         description="See how Solarvy turns your energy data into solar sizing, battery storage, savings estimates, and a clear next step."

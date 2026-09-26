@@ -516,6 +516,14 @@ function MatchedInstallers() {
                     .split(";")
                     .map((s) => s.trim())
                     .filter(Boolean);
+                  const strengthsSentence = strengthItems.length
+                    ? (() => {
+                        const joined = strengthItems.join(", ");
+                        const text =
+                          joined.charAt(0).toUpperCase() + joined.slice(1);
+                        return /[.!?]$/.test(text) ? text : `${text}.`;
+                      })()
+                    : "";
 
                   return (
                     <article
@@ -562,17 +570,10 @@ function MatchedInstallers() {
                           </div>
                         )}
 
-                        {strengthItems.length > 0 && (
-                          <div className="installer-dossier__strengths">
-                            <p className="installer-dossier__strengths-label">
-                              Why this match
-                            </p>
-                            <ul className="installer-dossier__strengths-list">
-                              {strengthItems.map((item) => (
-                                <li key={item}>{item}</li>
-                              ))}
-                            </ul>
-                          </div>
+                        {strengthsSentence && (
+                          <p className="installer-dossier__summary">
+                            {strengthsSentence}
+                          </p>
                         )}
 
                         <div className="installer-dossier__actions">

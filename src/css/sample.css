@@ -1,8 +1,12 @@
-/* Even vertical rhythm between Sample Results content blocks (mobile + desktop) */
+/* Even vertical rhythm: same gap below the hero, between sections, and above the footer */
 .sample-page-section {
   box-sizing: border-box;
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
+  padding-top: 27px;
+  padding-bottom: 0;
+}
+
+.sample-page-section:last-child {
+  padding-bottom: 27px;
 }
 
 .dashboard-card {
@@ -209,9 +213,6 @@ p.dashboard-subtitle {
     border-radius: 8px;
   }
 
-  .financial-summary-title {
-    margin-top: 40px !important;
-  }
   .sample-results-banner-text {
     margin-top: 30px;
   }
@@ -247,4 +248,97 @@ p.dashboard-subtitle {
   .title-cell {
     flex-wrap: nowrap;
   }
+}
+
+/* Sample Results typography — matched to Start Assessment */
+.sample-results-page {
+  font-family: "Poppins", sans-serif;
+}
+
+.sample-results-page h2.dashboard-title {
+  font-family: "Poppins", sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.18px;
+}
+
+.sample-results-page p.dashboard-subtitle,
+.sample-results-page .ass-first small.text-muted,
+.sample-results-page p.card-sub {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.sample-results-page h5.rang-head {
+  font-family: "Poppins", sans-serif;
+  font-size: 17px;
+  font-weight: 600 !important;
+  line-height: 1.2;
+  letter-spacing: 0.18px;
+}
+
+.sample-results-page h6.left-rang.fw-bold {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600 !important;
+  line-height: 1.2;
+  letter-spacing: 0.18px;
+}
+
+.sample-results-page span.rang-name {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.sample-results-page strong.rang-head,
+.sample-results-page strong.per-rang {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600 !important;
+  line-height: 1.35;
+}
+
+.sample-results-page p.card-title,
+.sample-results-page .custom-table thead th {
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+}
+
+.sample-results-page h3.card-value {
+  font-family: "Poppins", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.18px;
+}
+
+.sample-results-page .custom-table tbody td {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.sample-results-page .custom-table .recommended-row td {
+  font-weight: 500;
+}
+
+.sample-results-page .custom-table td.strong {
+  font-weight: 600;
+}
+
+.sample-results-page .recommended-badge,
+.sample-results-page .badge-recommended {
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
 }

@@ -22,10 +22,7 @@ import {
   StyleSheet,
   Svg,
   Path,
-  Rect,
   Circle,
-  Line,
-  Polygon,
   Image,
   Font,
   pdf,
@@ -34,6 +31,13 @@ import type { AssessmentResults } from "../types/assessment";
 import notoSansRegular from "../assets/fonts/NotoSans-Regular.ttf";
 import notoSansBold from "../assets/fonts/NotoSans-Bold.ttf";
 import appLogo from "../assets/images/logo-dark.png";
+import homePhoto from "../assets/prperty images for photos/home.jpeg";
+import hotelPhoto from "../assets/prperty images for photos/hotel.jpeg";
+import factoryPhoto from "../assets/prperty images for photos/factoty.jpeg";
+import commercialPhoto from "../assets/prperty images for photos/commercial.jpeg";
+import hospitalPhoto from "../assets/prperty images for photos/Hospital.jpeg";
+import schoolPhoto from "../assets/prperty images for photos/school.jpeg";
+import architectureDiagram from "../assets/prperty images for photos/diagram.jpeg";
 
 // Built-in PDF fonts lack ₦ — register Noto Sans (full TTF) for reliable rendering.
 Font.register({
@@ -173,7 +177,6 @@ const colors = {
   mint: "#eaf3ea",
   mintBorder: "#d4e6d4",
   gridSlice: "#1b60a8",
-  archGreen: "#2e7d32",
 };
 
 // ---------------------------------------------------------------------------
@@ -273,6 +276,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
     paddingBottom: 8,
+  },
+  heroPhoto: {
+    width: 315,
+    height: 210,
+    objectFit: "cover",
+    borderRadius: 2,
+    borderWidth: 0.5,
+    borderColor: colors.line,
   },
   heroCaption: {
     fontSize: 8,
@@ -509,32 +520,14 @@ const styles = StyleSheet.create({
   },
 
   // Architecture diagram
-  archWrap: {
-    position: "relative",
-    marginTop: 4,
-  },
-  archBox: {
-    position: "absolute",
-    borderWidth: 1,
-    borderColor: colors.navy,
-    borderRadius: 6,
-    backgroundColor: colors.white,
+  archImageWrap: {
+    marginTop: 10,
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 3,
-    paddingHorizontal: 5,
   },
-  archBoxText: {
-    fontSize: 7,
-    fontFamily: "NotoSans-Bold",
-    color: colors.navy,
-    textAlign: "center",
-  },
-  archEdgeLabel: {
-    position: "absolute",
-    fontSize: 6.5,
-    color: colors.muted,
-    textAlign: "center",
+  archImage: {
+    width: 445,
+    height: 250,
+    objectFit: "contain",
   },
   // Spacing must live on a View — @react-pdf often ignores margins on bare Text.
   archNoteWrap: {
@@ -738,6 +731,15 @@ const PROPERTY_HERO_CAPTIONS: Record<PropertyHeroType, string> = {
   School: "Illustrative school solar + battery concept",
 };
 
+const PROPERTY_HERO_PHOTOS: Record<PropertyHeroType, string> = {
+  Home: homePhoto,
+  Hotel: hotelPhoto,
+  Factory: factoryPhoto,
+  Commercial: commercialPhoto,
+  Hospital: hospitalPhoto,
+  School: schoolPhoto,
+};
+
 function normalizePropertyType(raw: string): PropertyHeroType {
   const key = raw.trim().toLowerCase();
   if (!key || key === "—" || key === "-") return "Home";
@@ -758,860 +760,14 @@ function normalizePropertyType(raw: string): PropertyHeroType {
   return aliases[key] ?? "Home";
 }
 
-/** Shared composition for cover property heroes (viewBox 340×140). */
-const HERO = {
-  groundY: 122,
-  strokeOuter: 1.5,
-  strokeDetail: 1.2,
-  strokePv: 0.7,
-  pvH: 12,
-} as const;
-
-function HeroSun({ cx = 288, cy = 46 }: { cx?: number; cy?: number }) {
-  const rays = Array.from({ length: 8 }).map((_, i) => {
-    const a = (i * 45 * Math.PI) / 180;
-    return {
-      x1: cx + Math.cos(a) * 22,
-      y1: cy + Math.sin(a) * 22,
-      x2: cx + Math.cos(a) * 30,
-      y2: cy + Math.sin(a) * 30,
-    };
-  });
-  return (
-    <>
-      <Circle cx={cx} cy={cy} r={16} fill={colors.orange} />
-      {rays.map((r, i) => (
-        <Line
-          key={i}
-          x1={r.x1}
-          y1={r.y1}
-          x2={r.x2}
-          y2={r.y2}
-          stroke={colors.orange}
-          strokeWidth={1.8}
-        />
-      ))}
-    </>
-  );
-}
-
-/** Flat rooftop PV — bottom edge sits flush on `roofY`. */
-function FlatRoofPv({
-  x,
-  roofY,
-  width,
-  height = HERO.pvH,
-}: {
-  x: number;
-  roofY: number;
-  width: number;
-  height?: number;
-}) {
-  const y = roofY - height;
-  const midY = y + height / 2;
-  const cols = 4;
-  const colGap = width / cols;
-  return (
-    <>
-      <Rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill={colors.panelSolar}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokePv}
-      />
-      <Line
-        x1={x}
-        y1={midY}
-        x2={x + width}
-        y2={midY}
-        stroke={colors.white}
-        strokeWidth={0.6}
-      />
-      {[1, 2, 3].map((i) => (
-        <Line
-          key={i}
-          x1={x + colGap * i}
-          y1={y}
-          x2={x + colGap * i}
-          y2={y + height}
-          stroke={colors.white}
-          strokeWidth={HERO.strokePv}
-        />
-      ))}
-    </>
-  );
-}
-
-/**
- * Pitched-roof PV as a parallelogram mounted on the roof slope.
- * Bottom edge (x1,y1)→(x2,y2) sits on the roof line; the band rises
- * `drop` along the outward roof-normal (above the roof), matching FlatRoofPv.
- */
-function SlantedRoofPv({
-  x1,
-  y1,
-  x2,
-  y2,
-  drop = 14,
-  cols = 3,
-}: {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  drop?: number;
-  cols?: number;
-}) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.hypot(dx, dy) || 1;
-  const uy = dy / len;
-  // Perpendicular to slope; prefer the direction that points above the roof
-  // (upward in SVG) so the array sits mounted on the roof line.
-  let nx = -uy;
-  let ny = dx / len;
-  if (ny > 0) {
-    nx = -nx;
-    ny = -ny;
-  }
-  const tx1 = x1 + nx * drop;
-  const ty1 = y1 + ny * drop;
-  const tx2 = x2 + nx * drop;
-  const ty2 = y2 + ny * drop;
-  const points = `${tx1},${ty1} ${tx2},${ty2} ${x2},${y2} ${x1},${y1}`;
-  const midLines = Array.from({ length: cols - 1 }).map((_, i) => {
-    const t = (i + 1) / cols;
-    return {
-      key: i,
-      ax: tx1 + (tx2 - tx1) * t,
-      ay: ty1 + (ty2 - ty1) * t,
-      bx: x1 + (x2 - x1) * t,
-      by: y1 + (y2 - y1) * t,
-    };
-  });
-  return (
-    <>
-      <Polygon
-        points={points}
-        fill={colors.panelSolar}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokePv}
-      />
-      <Line
-        x1={tx1 + (x1 - tx1) * 0.5}
-        y1={ty1 + (y1 - ty1) * 0.5}
-        x2={tx2 + (x2 - tx2) * 0.5}
-        y2={ty2 + (y2 - ty2) * 0.5}
-        stroke={colors.white}
-        strokeWidth={0.6}
-      />
-      {midLines.map((l) => (
-        <Line
-          key={l.key}
-          x1={l.ax}
-          y1={l.ay}
-          x2={l.bx}
-          y2={l.by}
-          stroke={colors.white}
-          strokeWidth={HERO.strokePv}
-        />
-      ))}
-    </>
-  );
-}
-
-function WindowGrid({
-  originX,
-  originY,
-  cols,
-  rows,
-  size = 12,
-  gapX = 8,
-  gapY = 8,
-}: {
-  originX: number;
-  originY: number;
-  cols: number;
-  rows: number;
-  size?: number;
-  gapX?: number;
-  gapY?: number;
-}) {
-  const cells: { x: number; y: number; key: string }[] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      cells.push({
-        x: originX + c * (size + gapX),
-        y: originY + r * (size + gapY),
-        key: `${r}-${c}`,
-      });
-    }
-  }
-  return (
-    <>
-      {cells.map((w) => (
-        <Rect
-          key={w.key}
-          x={w.x}
-          y={w.y}
-          width={size}
-          height={size}
-          fill={colors.white}
-          stroke={colors.navy}
-          strokeWidth={HERO.strokeDetail}
-        />
-      ))}
-    </>
-  );
-}
-
-/** Small wall-mount battery — bottom sits on shared ground baseline. */
-function BatteryUnit({ x, width = 22, height = 28 }: { x: number; width?: number; height?: number }) {
-  const y = HERO.groundY - height;
-  const termW = 8;
-  const termH = 4;
-  return (
-    <>
-      <Rect
-        x={x + (width - termW) / 2}
-        y={y - termH + 1}
-        width={termW}
-        height={termH}
-        fill={colors.orange}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokePv}
-      />
-      <Rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Line
-        x1={x + 4}
-        y1={y + height * 0.35}
-        x2={x + width - 4}
-        y2={y + height * 0.35}
-        stroke={colors.navy}
-        strokeWidth={0.8}
-      />
-      <Line
-        x1={x + 4}
-        y1={y + height * 0.55}
-        x2={x + width - 4}
-        y2={y + height * 0.55}
-        stroke={colors.navy}
-        strokeWidth={0.8}
-      />
-      <Line
-        x1={x + 4}
-        y1={y + height * 0.75}
-        x2={x + width - 4}
-        y2={y + height * 0.75}
-        stroke={colors.orange}
-        strokeWidth={1.2}
-      />
-    </>
-  );
-}
-
-function HomeBuildingArt() {
-  const bodyX = 72;
-  const bodyW = 108;
-  const eaveY = 68;
-  const peakX = 126;
-  const peakY = 30;
-  return (
-    <>
-      {/* Chimney */}
-      <Rect
-        x={86}
-        y={34}
-        width={14}
-        height={28}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      {/* Body */}
-      <Rect
-        x={bodyX}
-        y={eaveY}
-        width={bodyW}
-        height={HERO.groundY - eaveY}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      {/* Pitched roof */}
-      <Polygon
-        points={`${bodyX - 18},${eaveY} ${peakX},${peakY} ${bodyX + bodyW + 18},${eaveY}`}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      {/* PV mounted on right roof face (peak at x=126) */}
-      <SlantedRoofPv x1={134} y1={34} x2={178} y2={57} drop={10} cols={3} />
-      {/* Windows */}
-      <Rect
-        x={86}
-        y={80}
-        width={20}
-        height={18}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Rect
-        x={146}
-        y={80}
-        width={20}
-        height={18}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      {/* Door */}
-      <Rect
-        x={116}
-        y={92}
-        width={20}
-        height={30}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Circle cx={132} cy={108} r={1.4} fill={colors.navy} />
-      <BatteryUnit x={198} />
-    </>
-  );
-}
-
-function HotelBuildingArt() {
-  const roofY = 22;
-  const mainX = 78;
-  const mainW = 104;
-  return (
-    <>
-      {/* Lower hospitality wing */}
-      <Rect
-        x={44}
-        y={72}
-        width={34}
-        height={HERO.groundY - 72}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      <WindowGrid originX={50} originY={80} cols={1} rows={2} size={14} gapX={6} gapY={8} />
-      {/* Main tower */}
-      <Rect
-        x={mainX}
-        y={roofY}
-        width={mainW}
-        height={HERO.groundY - roofY}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      <FlatRoofPv x={mainX + 8} roofY={roofY} width={mainW - 16} />
-      <WindowGrid originX={90} originY={34} cols={4} rows={3} size={13} gapX={9} gapY={9} />
-      {/* Canopy flush above door — posts frame entrance to ground */}
-      <Rect
-        x={108}
-        y={96}
-        width={44}
-        height={6}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Line
-        x1={112}
-        y1={102}
-        x2={112}
-        y2={HERO.groundY}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Line
-        x1={148}
-        y1={102}
-        x2={148}
-        y2={HERO.groundY}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      {/* Entrance */}
-      <Rect
-        x={120}
-        y={102}
-        width={20}
-        height={20}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <BatteryUnit x={198} />
-    </>
-  );
-}
-
-function FactoryBuildingArt() {
-  const eaveY = 56;
-  const left = 40;
-  const right = 200;
-  const peakX = 120;
-  const peakY = 28;
-  return (
-    <>
-      {/* Main shed */}
-      <Rect
-        x={left}
-        y={eaveY}
-        width={right - left}
-        height={HERO.groundY - eaveY}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      {/* Pitched roof */}
-      <Polygon
-        points={`${left},${eaveY} ${peakX},${peakY} ${right},${eaveY}`}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      {/* PV mounted on right roof face (peak at x=120) */}
-      <SlantedRoofPv x1={128} y1={31} x2={171} y2={46} drop={9} cols={4} />
-      {/* Twin bay doors */}
-      <Rect
-        x={54}
-        y={78}
-        width={40}
-        height={44}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Line x1={74} y1={78} x2={74} y2={122} stroke={colors.navy} strokeWidth={1} />
-      <Rect
-        x={104}
-        y={78}
-        width={40}
-        height={44}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Line x1={124} y1={78} x2={124} y2={122} stroke={colors.navy} strokeWidth={1} />
-      {/* Side office wing */}
-      <Rect
-        x={160}
-        y={86}
-        width={32}
-        height={36}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Rect
-        x={166}
-        y={94}
-        width={9}
-        height={9}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={1}
-      />
-      <Rect
-        x={178}
-        y={94}
-        width={9}
-        height={9}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={1}
-      />
-      <BatteryUnit x={210} />
-    </>
-  );
-}
-
-function CommercialBuildingArt() {
-  const roofY = 16;
-  const towerX = 98;
-  const towerW = 88;
-  return (
-    <>
-      {/* Narrow curtain-wall tower */}
-      <Rect
-        x={towerX}
-        y={roofY}
-        width={towerW}
-        height={HERO.groundY - roofY}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      <FlatRoofPv x={towerX + 6} roofY={roofY} width={towerW - 12} />
-      {/* Dense curtain-wall windows — stops above lobby */}
-      <WindowGrid originX={108} originY={28} cols={3} rows={4} size={14} gapX={10} gapY={6} />
-      {/* Recessed lobby (inset from tower sides) */}
-      <Rect
-        x={towerX + 18}
-        y={106}
-        width={towerW - 36}
-        height={16}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Line
-        x1={towerX + towerW / 2}
-        y1={106}
-        x2={towerX + towerW / 2}
-        y2={HERO.groundY}
-        stroke={colors.navy}
-        strokeWidth={1}
-      />
-      <BatteryUnit x={72} />
-    </>
-  );
-}
-
-function HospitalBuildingArt() {
-  const roofY = 28;
-  const wingX = 48;
-  const wingW = 152;
-  return (
-    <>
-      {/* Main wing */}
-      <Rect
-        x={wingX}
-        y={roofY}
-        width={wingW}
-        height={HERO.groundY - roofY}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      <FlatRoofPv x={wingX + 10} roofY={roofY} width={wingW - 20} />
-      {/* Medical cross badge — clear band below PV, above windows */}
-      <Rect
-        x={114}
-        y={42}
-        width={28}
-        height={10}
-        fill={colors.orange}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokePv}
-      />
-      <Rect
-        x={123}
-        y={36}
-        width={10}
-        height={22}
-        fill={colors.orange}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokePv}
-      />
-      <WindowGrid originX={60} originY={62} cols={5} rows={2} size={12} gapX={12} gapY={8} />
-      {/* Ambulance-bay entrance */}
-      <Rect
-        x={100}
-        y={102}
-        width={48}
-        height={20}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <Line x1={124} y1={102} x2={124} y2={HERO.groundY} stroke={colors.navy} strokeWidth={1} />
-      <BatteryUnit x={214} />
-    </>
-  );
-}
-
-function SchoolBuildingArt() {
-  const eaveY = 60;
-  const left = 52;
-  const right = 210;
-  const peakX = 131;
-  const peakY = 32;
-  return (
-    <>
-      {/* Flagpole on the left — clear of the sun */}
-      <Line
-        x1={36}
-        y1={28}
-        x2={36}
-        y2={HERO.groundY}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      <Polygon
-        points="36,30 58,38 36,46"
-        fill={colors.orange}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokePv}
-      />
-      {/* Classroom block */}
-      <Rect
-        x={left}
-        y={eaveY}
-        width={right - left}
-        height={HERO.groundY - eaveY}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      {/* Low pitched roof */}
-      <Polygon
-        points={`${left - 8},${eaveY} ${peakX},${peakY} ${right + 8},${eaveY}`}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeOuter}
-      />
-      {/* PV mounted on right roof face — bottom edge on peak→eave */}
-      <SlantedRoofPv x1={141} y1={35} x2={191} y2={51} drop={9} cols={4} />
-      <WindowGrid originX={64} originY={72} cols={5} rows={1} size={16} gapX={10} gapY={8} />
-      {/* Door */}
-      <Rect
-        x={120}
-        y={96}
-        width={22}
-        height={26}
-        fill={colors.white}
-        stroke={colors.navy}
-        strokeWidth={HERO.strokeDetail}
-      />
-      <BatteryUnit x={224} width={20} height={26} />
-    </>
-  );
-}
-
-function PropertyBuildingArt({ type }: { type: PropertyHeroType }) {
-  switch (type) {
-    case "Hotel":
-      return <HotelBuildingArt />;
-    case "Factory":
-      return <FactoryBuildingArt />;
-    case "Commercial":
-      return <CommercialBuildingArt />;
-    case "Hospital":
-      return <HospitalBuildingArt />;
-    case "School":
-      return <SchoolBuildingArt />;
-    case "Home":
-    default:
-      return <HomeBuildingArt />;
-  }
-}
-
 function PropertySolarHero({ propertyType }: { propertyType: string }) {
   const type = normalizePropertyType(propertyType);
   return (
     <View style={styles.heroWrap}>
       <View style={styles.heroImage}>
-        <Svg width={340} height={140} viewBox="0 0 340 140">
-          <PropertyBuildingArt type={type} />
-          <HeroSun />
-        </Svg>
+        <Image src={PROPERTY_HERO_PHOTOS[type]} style={styles.heroPhoto} />
       </View>
       <Text style={styles.heroCaption}>{PROPERTY_HERO_CAPTIONS[type]}</Text>
-    </View>
-  );
-}
-
-function archArrowHead(
-  tipX: number,
-  tipY: number,
-  direction: "right" | "left" | "up" | "down",
-  fill: string,
-  size = 4,
-) {
-  const s = size;
-  const half = size * 0.65;
-  let points: string;
-  if (direction === "right") {
-    points = `${tipX},${tipY} ${tipX - s},${tipY - half} ${tipX - s},${tipY + half}`;
-  } else if (direction === "left") {
-    points = `${tipX},${tipY} ${tipX + s},${tipY - half} ${tipX + s},${tipY + half}`;
-  } else if (direction === "down") {
-    points = `${tipX},${tipY} ${tipX - half},${tipY - s} ${tipX + half},${tipY - s}`;
-  } else {
-    points = `${tipX},${tipY} ${tipX - half},${tipY + s} ${tipX + half},${tipY + s}`;
-  }
-  return <Polygon points={points} fill={fill} />;
-}
-
-const DIAG_W = 523;
-const DIAG_H = 178;
-
-function SystemArchitectureDiagram() {
-  const W = 72;
-  const H = 24;
-  const col1 = 8;
-  const col2 = 118;
-  const col3 = 268;
-  const col4 = 388;
-  const midTop = 88;
-  const boxes = {
-    solar: { left: col1, top: midTop, w: W, h: H },
-    inverter: { left: col2, top: midTop, w: W, h: H },
-    ats: { left: col3, top: midTop, w: W, h: H },
-    loads: { left: col4, top: midTop, w: W, h: H },
-    battery: { left: col2, top: 12, w: W, h: H },
-    grid: { left: col3, top: 12, w: W, h: H },
-    generator: { left: col3, top: 146, w: W, h: H },
-  };
-
-  const midY = boxes.solar.top + H / 2;
-  const batteryMidY = boxes.battery.top + H / 2;
-  const inverterCx = boxes.inverter.left + boxes.inverter.w / 2;
-  const atsCx = boxes.ats.left + boxes.ats.w / 2;
-  const batteryRight = boxes.battery.left + boxes.battery.w;
-  const gridChargeGap = boxes.grid.left - batteryRight;
-  const green = colors.archGreen;
-  const navy = colors.navy;
-  const tip = 5;
-
-  return (
-    <View style={[styles.archWrap, { width: DIAG_W, height: DIAG_H }]}>
-      <Svg
-        width={DIAG_W}
-        height={DIAG_H}
-        viewBox={`0 0 ${DIAG_W} ${DIAG_H}`}
-        style={{ position: "absolute", top: 0, left: 0 }}
-      >
-        {/* Solar PV -> Inverter (green) */}
-        <Line
-          x1={boxes.solar.left + boxes.solar.w}
-          y1={midY}
-          x2={boxes.inverter.left - tip}
-          y2={midY}
-          stroke={green}
-          strokeWidth={1.6}
-        />
-        {archArrowHead(boxes.inverter.left, midY, "right", green)}
-
-        {/* Inverter <-> Battery (green, bi-directional) */}
-        <Line
-          x1={inverterCx}
-          y1={boxes.inverter.top - tip}
-          x2={inverterCx}
-          y2={boxes.battery.top + boxes.battery.h + tip}
-          stroke={green}
-          strokeWidth={1.6}
-        />
-        {archArrowHead(inverterCx, boxes.battery.top + boxes.battery.h, "up", green)}
-        {archArrowHead(inverterCx, boxes.inverter.top, "down", green)}
-
-        {/* Inverter -> Changeover (navy) */}
-        <Line
-          x1={boxes.inverter.left + boxes.inverter.w}
-          y1={midY}
-          x2={boxes.ats.left - tip}
-          y2={midY}
-          stroke={navy}
-          strokeWidth={1.6}
-        />
-        {archArrowHead(boxes.ats.left, midY, "right", navy)}
-
-        {/* Grid -> Battery "Grid charging" (navy, straight) */}
-        <Line
-          x1={boxes.grid.left}
-          y1={batteryMidY}
-          x2={batteryRight + tip}
-          y2={batteryMidY}
-          stroke={navy}
-          strokeWidth={1.6}
-        />
-        {archArrowHead(batteryRight, batteryMidY, "left", navy)}
-
-        {/* Grid -> Changeover (navy, down) */}
-        <Line
-          x1={atsCx}
-          y1={boxes.grid.top + boxes.grid.h}
-          x2={atsCx}
-          y2={boxes.ats.top - tip}
-          stroke={navy}
-          strokeWidth={1.6}
-        />
-        {archArrowHead(atsCx, boxes.ats.top, "down", navy)}
-
-        {/* Generator -> Changeover (navy, up) */}
-        <Line
-          x1={atsCx}
-          y1={boxes.generator.top}
-          x2={atsCx}
-          y2={boxes.ats.top + boxes.ats.h + tip}
-          stroke={navy}
-          strokeWidth={1.6}
-        />
-        {archArrowHead(atsCx, boxes.ats.top + boxes.ats.h, "up", navy)}
-
-        {/* Changeover -> Loads (navy) */}
-        <Line
-          x1={boxes.ats.left + boxes.ats.w}
-          y1={midY}
-          x2={boxes.loads.left - tip}
-          y2={midY}
-          stroke={navy}
-          strokeWidth={1.6}
-        />
-        {archArrowHead(boxes.loads.left, midY, "right", navy)}
-      </Svg>
-
-      <Text
-        style={[
-          styles.archEdgeLabel,
-          {
-            left: batteryRight + 8,
-            top: batteryMidY - 14,
-            width: gridChargeGap - 16,
-          },
-        ]}
-      >
-        Grid charging
-      </Text>
-
-      {(
-        [
-          ["solar", "Solar PV"],
-          ["inverter", "Inverter"],
-          ["ats", "Changeover"],
-          ["loads", "Loads"],
-          ["battery", "Battery"],
-          ["grid", "Grid"],
-          ["generator", "Generator"],
-        ] as const
-      ).map(([key, label]) => {
-        const b = boxes[key];
-        return (
-          <View
-            key={key}
-            style={[
-              styles.archBox,
-              {
-                left: b.left,
-                top: b.top,
-                width: b.w,
-                height: b.h,
-              },
-            ]}
-          >
-            <Text style={styles.archBoxText}>{label}</Text>
-          </View>
-        );
-      })}
     </View>
   );
 }
@@ -2045,10 +1201,9 @@ export function AssessmentReportDocument({
           </Text>
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 8, marginBottom: 6 }]}>
-          Illustrative system architecture
-        </Text>
-        <SystemArchitectureDiagram />
+        <View style={styles.archImageWrap}>
+          <Image src={architectureDiagram} style={styles.archImage} />
+        </View>
         <View style={styles.archNoteWrap}>
           <Text style={styles.archNote}>
             Conceptual energy-flow illustration. Grid-to-battery indicates

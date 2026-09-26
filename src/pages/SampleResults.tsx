@@ -37,7 +37,7 @@ function SampleResults() {
         description="Preview a sample Solarvy energy assessment with indicative system size, storage, cost, and payback."
         path="/sample-results"
       />
-      <div className="full-body-color">
+      <div className="full-body-color sample-results-page">
         <section className="hero d-flex align-items-center ass-bannr ">
           <div className="overlay"></div>
 
@@ -116,9 +116,9 @@ function SampleResults() {
         </section>
 
         <section className="container-fluid px-3 px-lg-4 sample-page-section">
-          <div className="row g-4 align-items-start">
-            <div className="col-lg-6">
-              <div className="p-4 shadow-sm rounded-4 ass-first">
+          <div className="row g-4 align-items-stretch">
+            <div className="col-lg-6 d-flex">
+              <div className="p-4 shadow-sm rounded-4 ass-first w-100 h-100">
                 <div className="d-flex align-items-center mb-2">
                   <div>
                     <h5 className="fw-bold mb-1 rang-head">
@@ -157,8 +157,8 @@ function SampleResults() {
                 </div>
               </div>
             </div>
-            <div className="col-lg-6">
-              <div className="p-4 shadow-sm rounded-4 ass-first">
+            <div className="col-lg-6 d-flex">
+              <div className="p-4 shadow-sm rounded-4 ass-first w-100 h-100">
                 <div className="d-flex align-items-center mb-2">
                   <div>
                     <h5 className="fw-bold mb-1 rang-head">
@@ -258,8 +258,8 @@ function SampleResults() {
 
         <section className="container-fluid px-3 px-lg-4 sample-page-section">
           <div className="row g-4 align-items-stretch">
-            <div className="col-lg-6 d-flex mt-0">
-              <div className="p-4 shadow-sm rounded-4 ass-first mt-0 w-100 h-100">
+            <div className="col-lg-6 d-flex">
+              <div className="p-4 shadow-sm rounded-4 ass-first w-100 h-100">
                 <div className="d-flex align-items-center mb-4">
                   <div>
                     <h5 className="fw-bold mb-1 rang-head">Energy mix</h5>
@@ -320,8 +320,8 @@ function SampleResults() {
                 </div>
               </div>
             </div>
-            <div className="col-lg-6 d-flex mt-0">
-              <div className="p-4 shadow-sm rounded-4 ass-first  w-100 h-100 financial-summary-title">
+            <div className="col-lg-6 d-flex">
+              <div className="p-4 shadow-sm rounded-4 ass-first w-100 h-100">
                 <div className="d-flex align-items-center mb-2">
                   <div>
                     <h5 className="fw-bold mb-1 rang-head ">
