@@ -133,6 +133,15 @@ export const POWER_SETUP_TO_LABEL: Record<string, string> = {
   "No Reliable Grid": "No Reliable Grid",
 };
 
+const POWER_SETUPS_WITHOUT_DIESEL_OBJECTIVE = new Set([
+  "Grid Only",
+  "Solar + Grid",
+]);
+
+export function isReduceDieselObjectiveDisabled(powerSetup: string): boolean {
+  return POWER_SETUPS_WITHOUT_DIESEL_OBJECTIVE.has(powerSetup);
+}
+
 /** Home main objective value -> Excel label (User_Inputs!B14). */
 export const MAIN_OBJECTIVE_TO_LABEL: Record<string, string> = {
   "1": "Reduce Diesel Use",

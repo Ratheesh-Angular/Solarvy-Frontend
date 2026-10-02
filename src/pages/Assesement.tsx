@@ -30,6 +30,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import FeedbackToast from "../components/FeedbackToast";
 import SolarvyLoader from "../components/SolarvyLoader";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { useSyncedProgress } from "../hooks/useSyncedProgress";
 import { ApiError } from "../lib/api";
@@ -64,6 +65,7 @@ import {
   formatIntegerWithCommas,
   formatMetricDisplay,
   formatUsageFromSpend,
+  isReduceDieselObjectiveDisabled,
   parseFormattedNumber,
 } from "../lib/assessmentConstants";
 import {
@@ -339,12 +341,9 @@ function TablePagination({
     page,
   );
 
-  if (totalRows === 0) return null;
+  if (totalRows <= ROWS_PER_PAGE) return null;
 
-  const label =
-    totalRows <= ROWS_PER_PAGE
-      ? `all ${totalRows}`
-      : `${showFrom}–${showTo} of ${totalRows}`;
+  const label = `${showFrom}–${showTo} of ${totalRows}`;
 
   return (
     <div className="ass-table-pagination">
@@ -829,6 +828,8 @@ function Assesement() {
     country?: string;
     state?: string;
     powerSetup?: string;
+    gridUnavailable?: string;
+    monthlyGeneratorFuelSpend?: string;
     backupDuration?: string;
     mainObjective?: string;
   };
@@ -837,7 +838,30 @@ function Assesement() {
   );
   const [roofArea, setRoofArea] = useState("400");
   const [backupDuration, setBackupDuration] = useState("");
+  const [gridUnavailableBand, setGridUnavailableBand] = useState("");
+  const [monthlyGeneratorFuelSpend, setMonthlyGeneratorFuelSpend] =
+    useState("");
   const templatePromptHandledRef = useRef(false);
+
+  const GRID_UNAVAILABLE_BAND_FALLBACKS = [
+    "0-2 hours",
+    "3-6 hours",
+    "7-12 hours",
+    "13-18 hours",
+    "19-24 hours",
+  ];
+
+  const gridUnavailableOptions =
+    catalogs?.gridUnavailableBands?.length
+      ? catalogs.gridUnavailableBands
+      : GRID_UNAVAILABLE_BAND_FALLBACKS;
+
+  const gridUnavailableQuestion =
+    catalogs?.gridUnavailableQuestion ||
+    "On a typical day, how many hours is grid power unavailable?";
+
+  const monthlyGeneratorFuelLabel =
+    catalogs?.monthlyGeneratorFuelLabel || "Monthly Generator Fuel Spend";
   const handleToggle = () => {
     if (window.innerWidth < 768) {
       setOpen(!open);
@@ -1422,6 +1446,15 @@ function Assesement() {
     }
   }, [monthlySpend, gridTariff, isLoadingDraft, isExtractingBill]);
 
+  useEffect(() => {
+    if (
+      isReduceDieselObjectiveDisabled(selectedPower) &&
+      selectedObjective === "Reduce Diesel Use"
+    ) {
+      setSelectedObjective("");
+    }
+  }, [selectedPower, selectedObjective]);
+
   const getFormPayload = () =>
     buildAssessmentFormData({
       selectedProperty,
@@ -1441,6 +1474,8 @@ function Assesement() {
       customRows,
       roofArea,
       backupDuration,
+      gridUnavailableBand,
+      monthlyGeneratorFuelSpend,
     });
 
   const liveSummaryKey = useMemo(
@@ -1449,6 +1484,8 @@ function Assesement() {
         selectedProperty,
         selectedTemplate,
         selectedPower,
+        gridUnavailableBand,
+        monthlyGeneratorFuelSpend,
         inputMethod,
         selectedObjective,
         country: formData.country,
@@ -1464,11 +1501,15 @@ function Assesement() {
         customRows: equipmentLiveSummarySignature(customRows),
         roofArea,
         backupDuration,
+        gridUnavailableBand,
+        monthlyGeneratorFuelSpend,
       }),
     [
       selectedProperty,
       selectedTemplate,
       selectedPower,
+      gridUnavailableBand,
+      monthlyGeneratorFuelSpend,
       inputMethod,
       selectedObjective,
       formData.country,
@@ -1484,6 +1525,8 @@ function Assesement() {
       customRows,
       roofArea,
       backupDuration,
+      gridUnavailableBand,
+      monthlyGeneratorFuelSpend,
     ],
   );
 
@@ -1657,6 +1700,8 @@ function Assesement() {
           setCustomRows,
           setRoofArea,
           setBackupDuration,
+          setGridUnavailableBand,
+          setMonthlyGeneratorFuelSpend,
         });
         if (formData?.template) {
           templatePromptHandledRef.current = true;
@@ -1755,6 +1800,18 @@ function Assesement() {
     if (!selectedPower) {
       errors.powerSetup = "Please select your current power setup.";
     }
+    if (selectedPower && !gridUnavailableBand) {
+      errors.gridUnavailable =
+        "Please select how many hours grid power is unavailable.";
+    }
+    if (
+      selectedPower === "Grid + Generator" &&
+      (!monthlyGeneratorFuelSpend ||
+        parseFormattedNumber(monthlyGeneratorFuelSpend) <= 0)
+    ) {
+      errors.monthlyGeneratorFuelSpend =
+        "Please enter your monthly generator fuel spend.";
+    }
     if (!backupDuration) {
       errors.backupDuration = "Please select a backup duration.";
     }
@@ -1769,6 +1826,8 @@ function Assesement() {
           "country",
           "state",
           "powerSetup",
+          "gridUnavailable",
+          "monthlyGeneratorFuelSpend",
           "backupDuration",
           "mainObjective",
         ] as const
@@ -2056,6 +2115,7 @@ function Assesement() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          <Breadcrumbs />
           <div className="row g-4 align-items-start">
             <div className="col-lg-8">
               <div className="p-4 shadow-sm rounded-4 ass-first">
@@ -2282,49 +2342,149 @@ function Assesement() {
                   </div>
                 </div>
 
-                {powerOptions.map((item) => (
-                  <div className="parent-container onlt-this" key={item.title}>
-                    <div
-                      className={`property-card  ${selectedPower === item.title ? "active" : ""}`}
-                      onClick={() => {
-                        setSelectedPower(item.title);
-                        clearCalculateError("powerSetup");
-                      }}
-                    >
-                      <div className="d-flex align-items-center justify-content-between w-100">
-                        <div className="d-flex align-items-center gap-3">
-                          <div className="icon-boxs">
-                            {item.iconSrc ? (
-                              <img
-                                src={item.iconSrc}
-                                alt=""
-                                className="power-setup-icon mobile-iconssss"
-                                aria-hidden
-                              />
-                            ) : (
-                              <item.Icon size={20} strokeWidth={2} aria-hidden />
+                {powerOptions.map((item) => {
+                  const isActive = selectedPower === item.title;
+                  const showGeneratorFuel = isActive && item.title === "Grid + Generator";
+                  return (
+                    <div className="parent-container onlt-this" key={item.title}>
+                      <div
+                        className={`property-card power-setup-card${isActive ? " active power-setup-card--expanded" : ""}`}
+                        onClick={() => {
+                          setSelectedPower(item.title);
+                          clearCalculateError("powerSetup");
+                          clearCalculateError("gridUnavailable");
+                          clearCalculateError("monthlyGeneratorFuelSpend");
+                        }}
+                      >
+                        <div className="d-flex align-items-center justify-content-between w-100">
+                          <div className="d-flex align-items-center gap-3">
+                            <div className="icon-boxs">
+                              {item.iconSrc ? (
+                                <img
+                                  src={item.iconSrc}
+                                  alt=""
+                                  className="power-setup-icon mobile-iconssss"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <item.Icon
+                                  size={20}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                              )}
+                            </div>
+
+                            <div>
+                              <h6 className="mb-1 fw-semibold curr-ass">
+                                {item.title}
+                              </h6>
+                              <p className="mb-0 text-muted curr-ass-semi-hide power-descss">
+                                {item.desc}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="radio-circle ms-auto">
+                            {isActive && <div className="radio-dot"></div>}
+                          </div>
+                        </div>
+
+                        {isActive && (
+                          <div
+                            className="power-setup-expand"
+                            id="ass-field-gridUnavailable"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <p className="power-setup-expand-question para-ass mb-2">
+                              {gridUnavailableQuestion}
+                            </p>
+                            <div
+                              className="template-picker-grid"
+                              role="list"
+                              aria-label={gridUnavailableQuestion}
+                            >
+                              {gridUnavailableOptions.map((band) => {
+                                const isBandSelected =
+                                  gridUnavailableBand === band;
+                                return (
+                                  <button
+                                    key={band}
+                                    type="button"
+                                    role="listitem"
+                                    className={`template-picker-option${
+                                      isBandSelected
+                                        ? " template-picker-option--selected"
+                                        : ""
+                                    }`}
+                                    onClick={() => {
+                                      setGridUnavailableBand(band);
+                                      clearCalculateError("gridUnavailable");
+                                    }}
+                                  >
+                                    {band}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {calculateErrors.gridUnavailable && (
+                              <p
+                                className="ass-field-error mt-2 mb-0"
+                                role="alert"
+                              >
+                                {calculateErrors.gridUnavailable}
+                              </p>
+                            )}
+
+                            {showGeneratorFuel && (
+                              <div
+                                className="power-setup-fuel mt-3"
+                                id="ass-field-monthlyGeneratorFuelSpend"
+                              >
+                                <label
+                                  className="form-label ass-field-label mb-1"
+                                  htmlFor="ass-monthly-generator-fuel"
+                                >
+                                  {monthlyGeneratorFuelLabel} (₦)
+                                </label>
+                                <input
+                                  id="ass-monthly-generator-fuel"
+                                  type="text"
+                                  className={`form-control ass-field-control${
+                                    calculateErrors.monthlyGeneratorFuelSpend
+                                      ? " is-invalid"
+                                      : ""
+                                  }`}
+                                  placeholder="e.g. 120,000"
+                                  value={monthlyGeneratorFuelSpend}
+                                  aria-invalid={Boolean(
+                                    calculateErrors.monthlyGeneratorFuelSpend,
+                                  )}
+                                  onChange={(e) => {
+                                    setMonthlyGeneratorFuelSpend(
+                                      formatIntegerWithCommas(e.target.value),
+                                    );
+                                    clearCalculateError(
+                                      "monthlyGeneratorFuelSpend",
+                                    );
+                                  }}
+                                />
+                                {calculateErrors.monthlyGeneratorFuelSpend && (
+                                  <p
+                                    className="ass-field-error mt-1 mb-0"
+                                    role="alert"
+                                  >
+                                    {calculateErrors.monthlyGeneratorFuelSpend}
+                                  </p>
+                                )}
+                              </div>
                             )}
                           </div>
-
-                          <div>
-                            <h6 className="mb-1 fw-semibold curr-ass">
-                              {item.title}
-                            </h6>
-                            <p className="mb-0 text-muted  curr-ass-semi-hide power-descss">
-                              {item.desc}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="radio-circle ms-auto">
-                          {selectedPower === item.title && (
-                            <div className="radio-dot"></div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {calculateErrors.powerSetup && (
                   <p className="ass-field-error mt-2 mb-0" role="alert">
                     {calculateErrors.powerSetup}
@@ -2989,13 +3149,19 @@ function Assesement() {
                       Main Objective
                     </p>
 
-                    {Objectiveoptions.map((item) => (
+                    {Objectiveoptions.map((item) => {
+                      const dieselDisabled =
+                        item.title === "Reduce Diesel Use" &&
+                        isReduceDieselObjectiveDisabled(selectedPower);
+                      return (
                       <div className="col-md-4" key={item.title}>
                         <div
                           className={`option-card option-card-main-objective ${
                             selectedObjective === item.title ? "active" : ""
-                          }`}
+                          }${dieselDisabled ? " option-card--disabled" : ""}`}
+                          aria-disabled={dieselDisabled}
                           onClick={() => {
+                            if (dieselDisabled) return;
                             setSelectedObjective(item.title);
                             clearCalculateError("mainObjective");
                           }}
@@ -3033,7 +3199,8 @@ function Assesement() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     {calculateErrors.mainObjective && (
                       <div className="col-12">
                         <p className="ass-field-error mb-0" role="alert">

@@ -64,6 +64,15 @@ function Footer() {
               <div className="col-6 col-md-4 mb-3">
                 <ul className="footer-links">
                   <h6 className="newsletter-title mb-4">Company</h6>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-link-nav"
+                      onClick={() => navigate("/blog")}
+                    >
+                      Blog
+                    </button>
+                  </li>
                   <li>About Us</li>
                   <li>Contact Us</li>
                   <li>Terms Of Use</li>
@@ -97,7 +106,7 @@ function Footer() {
               {/* RIGHT SIDE */}
               <div className="col-md-6 text-md-end mt-4 mt-md-0">
                 <p className="email-label">Email Us</p>
-                <h6 className="email-text">support@solarvy.ng</h6>
+                <h6 className="email-text">info@solarvy.ng</h6>
               </div>
             </div>
 

@@ -436,10 +436,10 @@ function ExpertReview() {
 
             <div className="col-lg-4">
               <div className="p-4 rounded-4 shadow-sm right-panel assts-right  mt-3 mt-md-0">
-                <h5 className="fw-bold mb-3 heading-ass">
+                <h5 className="fw-bold mb-1 heading-ass">
                   What You'll Receive
                 </h5>
-                <p className="text-muted small mb-3 para-ass">
+                <p className="text-muted small mb-0 para-ass">
                   After review, our engineers will provide:
                 </p>
 

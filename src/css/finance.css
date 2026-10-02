@@ -1,0 +1,861 @@
+/* Explore Financing page (scoped; reuses shared form/card classes elsewhere) */
+
+/* ---------- Project card top line ---------- */
+.fin-card-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.fin-badge,
+.fin-id-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.fin-badge {
+  background: #e9f9f0;
+  color: #087d47;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fin-id-chip {
+  background: #f4f7fc;
+  border: 1px solid #e8edf5;
+  color: #5c6b8a;
+  font-weight: 500;
+}
+
+.fin-id-chip i {
+  color: #174c90;
+}
+
+/* ---------- Section headers ---------- */
+.fin-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.fin-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #eef4ff;
+  color: #174c90;
+  font-size: 18px;
+}
+
+.fin-section-head h5.heading-ass {
+  line-height: 1.3;
+}
+
+/* ---------- Project stat cards (qs-cards) ---------- */
+.fin-stats .qs-cards {
+  padding: 14px 16px;
+  column-gap: 12px;
+}
+
+.fin-stats .qs-cards .icon-box-right {
+  width: 34px;
+  height: 34px;
+}
+
+.fin-stats .qs-cards .value {
+  color: #1a2259;
+}
+
+/* ass-result.css offsets i.colo-sym-right.bi (top/margin) for other layouts. */
+.fin-stats .qs-cards i.colo-sym-right.bi {
+  top: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+/* ---------- Inputs with icons / prefixes ---------- */
+.fin-input-icon {
+  position: relative;
+}
+
+.fin-input-icon > i,
+.fin-input-icon > .fin-input-prefix {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 2;
+  transform: translateY(-50%);
+  color: #7a88a8;
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.fin-input-icon > .fin-input-prefix {
+  color: #1a2259;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fin-input-icon input.form-control.ass-field-control,
+.fin-input-icon select.form-select.ass-field-control {
+  padding-left: 40px;
+}
+
+.fin-input-icon:focus-within > i {
+  color: #174c90;
+}
+
+/* ---------- Funding panel + split bar ---------- */
+.fin-funding-panel {
+  background: #f8fafd;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.fin-split {
+  margin-top: 14px;
+}
+
+.fin-split-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8edf5;
+}
+
+.fin-split-finance {
+  background: #174c90;
+  transition: width 0.3s ease;
+}
+
+.fin-split-deposit {
+  background: linear-gradient(90deg, #fdbf69, #ce6300);
+  transition: width 0.3s ease;
+}
+
+.fin-split-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin-top: 8px;
+  color: #6f7196;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+}
+
+.fin-split-legend strong {
+  color: #1a2259;
+  font-weight: 600;
+}
+
+.fin-split-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.fin-split-dot--finance {
+  background: #174c90;
+}
+
+.fin-split-dot--deposit {
+  background: #f39a2e;
+}
+
+.fin-split-total {
+  margin-left: auto;
+}
+
+.fin-split-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  color: #6f7196;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.fin-split-hint i {
+  color: #ce6300;
+}
+
+/* ---------- Repayment pills ---------- */
+.fin-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button.fin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 18px;
+  border: 1px solid #dfe6f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #1a2259;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+button.fin-pill:hover {
+  border-color: #174c90;
+}
+
+button.fin-pill.active {
+  border-color: #174c90;
+  background: #eef4ff;
+  color: #174c90;
+  font-weight: 600;
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.08);
+}
+
+button.fin-pill:focus-visible {
+  outline: 2px solid #174c90;
+  outline-offset: 2px;
+}
+
+.fin-label-optional {
+  color: #94a3b8;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* ---------- Notes textarea ---------- */
+textarea.form-control.ass-field-control.fin-textarea {
+  min-height: 120px;
+  padding: 0.8rem 0.95rem;
+  line-height: 1.6;
+  background-color: #fbfcfe;
+}
+
+textarea.form-control.ass-field-control.fin-textarea:focus {
+  background-color: #fff;
+}
+
+.fin-textarea-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  color: #94a3b8;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+}
+
+.fin-textarea-count {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Consent ---------- */
+.fin-consent-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e8edf5;
+  border-radius: 12px;
+  background: #f8fafd;
+  color: #1a2259;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.55;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.fin-consent-box:hover {
+  border-color: #bfd0ea;
+}
+
+.fin-consent-box:has(input:checked) {
+  border-color: #174c90;
+  background: #f4f8ff;
+}
+
+/* ID selector: ass.css has a global input:not(...) rule (60px wide, background
+   shorthand) whose specificity outranks class selectors. */
+#fin-consent-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  padding: 0;
+  border: 1.5px solid #bfd0ea;
+  border-radius: 5px;
+  background-color: #fff;
+  background-image: var(--bs-form-check-bg-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  cursor: pointer;
+}
+
+#fin-consent-check:checked {
+  background-color: #174c90;
+  border-color: #174c90;
+}
+
+#fin-consent-check:focus {
+  border-color: #174c90;
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12);
+}
+
+.fin-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 0;
+  color: #6f7196;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+.fin-disclaimer i {
+  margin-top: 1px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* ---------- Action row ---------- */
+.fin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e8edf5;
+}
+
+.fin-actions button.btn-primary-customss-down,
+.fin-actions button.btn-outline-customsss2-req {
+  flex: 0 0 auto;
+  width: auto;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 22px;
+  font-family: "Poppins", sans-serif;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fin-actions button.btn-primary-customss-down {
+  box-shadow: 0 8px 18px rgba(35, 79, 142, 0.22);
+}
+
+.fin-actions button.btn-primary-customss-down:hover {
+  background-color: #1e3f73;
+}
+
+.fin-actions button.btn-outline-customsss2-req:hover {
+  background-color: #eef4ff;
+}
+
+.fin-actions button i {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ---------- Sidebar ---------- */
+.fin-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fin-step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+}
+
+.fin-step:last-child {
+  padding-bottom: 0;
+}
+
+.fin-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 34px;
+  bottom: 4px;
+  left: 14px;
+  width: 2px;
+  border-radius: 2px;
+  background: #f3dcc0;
+}
+
+.fin-step .step-box {
+  top: 0;
+}
+
+.fin-summary {
+  margin: 0;
+}
+
+.fin-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #edf0f5;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+}
+
+.fin-summary-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.fin-summary-row dt {
+  color: #6f7196;
+  font-weight: 400;
+}
+
+.fin-summary-row dd {
+  margin: 0;
+  color: #1a2259;
+  font-weight: 600;
+  text-align: right;
+}
+
+.fin-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f1f6ff;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.fin-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fff;
+  color: #174c90;
+  font-size: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.fin-info-title {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #1a2259;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.fin-info-copy {
+  margin: 0;
+  color: #425273;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/* ========== Financing Options page ========== */
+
+.fin-badge--blue {
+  background: #edf4ff;
+  color: #275c9d;
+}
+
+/* Status banner */
+.fin-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border: 1px solid #cdeedd;
+  border-radius: 16px;
+  background: #ebf9f2;
+}
+
+.fin-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #12a961;
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 4px 10px rgba(18, 169, 97, 0.25);
+}
+
+.fin-status-title {
+  display: block;
+  margin-bottom: 2px;
+  color: #0b5c37;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.fin-status-copy {
+  margin: 0;
+  color: #4f6f61;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* Route cards */
+.fin-route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fin-route {
+  position: relative;
+  padding: 18px;
+  border: 1px solid #e3e9f2;
+  border-radius: 16px;
+  background: #fff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fin-route:hover {
+  border-color: #bfd0ea;
+  box-shadow: 0 6px 18px rgba(26, 34, 89, 0.06);
+}
+
+.fin-route--featured {
+  margin-top: 10px;
+  padding-top: 28px;
+  border: 1.5px solid #174c90;
+  background: linear-gradient(180deg, #f7faff 0%, #fff 55%);
+  box-shadow: 0 10px 24px rgba(23, 76, 144, 0.1);
+}
+
+.fin-route--featured:hover {
+  border-color: #174c90;
+}
+
+.fin-route-ribbon {
+  position: absolute;
+  top: -12px;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: linear-gradient(-186deg, #ce6300, #fdbf69);
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: 0 4px 10px rgba(206, 99, 0, 0.25);
+}
+
+.fin-route-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fin-route-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: #1a2259;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.fin-route-desc {
+  margin: 12px 0 0;
+  color: #6f7196;
+  font-family: "Poppins", sans-serif;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.fin-route-head .fin-badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Bootstrap's row g-2 adds a negative top margin; offset it so tiles clear the description. */
+.fin-route .row.fin-route-facts {
+  margin-top: 6px;
+}
+
+.fin-route-facts .qs-cards {
+  padding: 12px 14px;
+  column-gap: 10px;
+}
+
+.fin-route-facts .qs-cards .value {
+  font-size: 14px;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.fin-route .fin-actions {
+  margin-top: 1rem;
+}
+
+/* Partner requirements checklist */
+.fin-req {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.fin-req-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #1a2259;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.fin-req-title i {
+  color: #174c90;
+  font-size: 15px;
+}
+
+.fin-req-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fin-req-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #515a78;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.fin-req-list li i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #e9f9f0;
+  color: #087d47;
+  font-size: 12px;
+}
+
+.fin-actions.fin-actions--plain {
+  padding-top: 0;
+  border-top: none;
+}
+
+.fin-actions.fin-actions--center {
+  justify-content: center;
+}
+
+/* What happens next (main column timeline) */
+.fin-steps--wide .fin-step {
+  padding-bottom: 1.15rem;
+}
+
+.fin-steps--wide .ri-benefit-heading {
+  font-size: 13px;
+}
+
+/* Sidebar request card */
+.fin-aside-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.75rem;
+}
+
+.fin-aside-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #eef4ff;
+  color: #174c90;
+  font-size: 15px;
+}
+
+.ri-aside-card .fin-actions {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+}
+
+/* Amber notice */
+.fin-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #f3df9e;
+  border-radius: 14px;
+  background: #fff8e8;
+}
+
+.fin-notice i {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #c7890a;
+  font-size: 16px;
+}
+
+.fin-notice p {
+  margin: 0;
+  color: #806126;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.fin-notice strong {
+  color: #5f4611;
+  font-weight: 600;
+}
+
+.ass-result-forward-back.fin-back-link {
+  align-self: flex-start;
+  margin-top: 0;
+  font-size: 13px;
+}
+
+/* Empty state */
+.fin-empty {
+  max-width: 620px;
+  margin: 1rem auto 2rem;
+  text-align: center;
+}
+
+.fin-section-icon.fin-empty-icon {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 0.9rem;
+  border-radius: 16px;
+  font-size: 24px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 767.98px) {
+  .fin-split-total {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .fin-route-head {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .fin-route-facts > [class*="col-"]:last-child:nth-child(odd) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .fin-req-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .fin-section-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .fin-funding-panel {
+    padding: 12px;
+  }
+
+  .fin-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .fin-actions button.btn-primary-customss-down,
+  .fin-actions button.btn-outline-customsss2-req {
+    width: 100%;
+    max-width: none;
+  }
+}

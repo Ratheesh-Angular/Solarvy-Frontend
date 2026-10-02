@@ -25,6 +25,7 @@ import FeedbackToast from "../components/FeedbackToast";
 import QuoteUploadModal from "../components/QuoteUploadModal";
 import SolarvyLoader from "../components/SolarvyLoader";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { apiGet } from "../lib/api";
 import { getAssessmentRecommendation, getQuickSnapshotRecommendation } from "../lib/assessmentApi";
@@ -550,6 +551,7 @@ function AssesementResult() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          <Breadcrumbs />
           <div className="ass-result-flow">
             <div className="ass-result-left">
               <div className="ass-result-metrics">
@@ -811,123 +813,7 @@ function AssesementResult() {
              
               </div>
 
-              <div className="ass-result-compare-wrap">
-                <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first ass-result-compare-card">
-                  <div className="d-flex align-items-start mb-4">
-                    <div className="icon-box-maony me-3">
-                      <img src={compare} alt="icon" />
-                    </div>
-                    <div>
-                      <h5 className="fw-bold mb-1 rang-head section-card-title">
-                        Compare Your Power Options
-                      </h5>
-                      <p className="text-muted small mb-0 para-ass">
-                        This helps you assess your options and see which one
-                        gives you the best results.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="custom-table">
-                    <div className="custom-table-scroll">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>POWER OPTION</th>
-                            <th>ANNUAL COST</th>
-                            <th>RELIABILITY</th>
-                            <th>DIESEL USE</th>
-                            <th>PAYBACK</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {strategyComparisonRows.map((row) => {
-                            const recommended = isRecommendedStrategy(
-                              row.recommended,
-                            );
-
-                            return (
-                              <tr
-                                key={row.strategy}
-                                className={
-                                  recommended ? "recommended-row" : undefined
-                                }
-                              >
-                                <td
-                                  className={
-                                    recommended
-                                      ? "text-color-b title-cell"
-                                      : undefined
-                                  }
-                                >
-                                  {recommended ? (
-                                    <>
-                                      <span className="title-text">
-                                        {row.strategy}
-                                      </span>
-                                      <span className="badge-recommended">
-                                        Recommended
-                                      </span>
-                                    </>
-                                  ) : (
-                                    row.strategy
-                                  )}
-                                </td>
-                                <td
-                                  className={
-                                    recommended ? "text-color-b" : undefined
-                                  }
-                                >
-                                  {formatNaira(row.annualCost)}
-                                </td>
-                                <td
-                                  className={
-                                    recommended
-                                      ? "strong text-color-b"
-                                      : undefined
-                                  }
-                                >
-                                  {formatText(row.reliability)}
-                                </td>
-                                <td
-                                  className={
-                                    recommended
-                                      ? "strong text-color-b"
-                                      : undefined
-                                  }
-                                >
-                                  {formatText(row.dieselUse)}
-                                </td>
-                                <td
-                                  className={
-                                    recommended
-                                      ? "strong text-color-b"
-                                      : undefined
-                                  }
-                                >
-                                  {formatStrategyPayback(row.payback)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="important-note d-flex d-lg-none align-items-start p-3 mt-4">
-                  <div className="me-2 mt-0">
-                    <img src={imp} alt="icon" />
-                  </div>
-
-                  <div>
-                    <span className="fw-bold">Important note:</span>{" "}
-                    {disclaimer}
-                  </div>
-                </div>
-              </div>
-              <div className="important-note d-none d-lg-flex align-items-start p-3 mt-1">
+              <div className="important-note d-none d-lg-flex align-items-start p-3">
                 <div className="me-2 mt-0">
                   <img src={imp} alt="icon" />
                 </div>
@@ -1002,7 +888,7 @@ function AssesementResult() {
                   </div>
 
                   <div className="ass-result-what-means mt-4">
-                    <h6 className="ass-result-what-means-title mb-2">
+                    <h6 className="fw-bold mb-2 rang-head section-card-title">
                       What this means
                     </h6>
                     {showQuickSnapshotRecommendationSkeleton ? (
@@ -1017,7 +903,7 @@ function AssesementResult() {
                         <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
                       </div>
                     ) : (
-                      <p className="ass-result-what-means-body mb-0">
+                      <p className="ai-recommendation-body mb-0">
                         {storedQuickSnapshotRecommendation ||
                           quickSnapshotRecommendationFallback}
                       </p>
@@ -1035,7 +921,7 @@ function AssesementResult() {
                     <div>
                       <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
                         <h6 className="fw-bold mb-0 rang-head section-card-title">
-                          Solarvy Recommendation
+                          SolarVy Recommendation
                         </h6>
                         {/* <span className="bill-ai-badge">AI</span> */}
                       </div>
@@ -1057,6 +943,123 @@ function AssesementResult() {
                       {storedRecommendation || recommendationFallback}
                     </p>
                   )}
+                </div>
+              </div>
+            </div>
+
+            <div className="ass-result-compare-wrap">
+              <div className="important-note d-flex d-lg-none align-items-start p-3 mb-4">
+                <div className="me-2 mt-0">
+                  <img src={imp} alt="icon" />
+                </div>
+
+                <div>
+                  <span className="fw-bold">Important note:</span>{" "}
+                  {disclaimer}
+                </div>
+              </div>
+
+              <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first ass-result-compare-card">
+                <div className="d-flex align-items-start mb-4">
+                  <div className="icon-box-maony me-3">
+                    <img src={compare} alt="icon" />
+                  </div>
+                  <div>
+                    <h5 className="fw-bold mb-1 rang-head section-card-title">
+                      Compare Your Power Options
+                    </h5>
+                    <p className="text-muted small mb-0 para-ass">
+                      This helps you assess your options and see which one
+                      gives you the best results.
+                    </p>
+                  </div>
+                </div>
+                <div className="custom-table">
+                  <div className="custom-table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>POWER OPTION</th>
+                          <th>ANNUAL COST</th>
+                          <th>RELIABILITY</th>
+                          <th>DIESEL USE</th>
+                          <th>PAYBACK</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {strategyComparisonRows.map((row) => {
+                          const recommended = isRecommendedStrategy(
+                            row.recommended,
+                          );
+
+                          return (
+                            <tr
+                              key={row.strategy}
+                              className={
+                                recommended ? "recommended-row" : undefined
+                              }
+                            >
+                              <td
+                                className={
+                                  recommended
+                                    ? "text-color-b title-cell"
+                                    : undefined
+                                }
+                              >
+                                {recommended ? (
+                                  <>
+                                    <span className="title-text">
+                                      {row.strategy}
+                                    </span>
+                                    <span className="badge-recommended">
+                                      Recommended
+                                    </span>
+                                  </>
+                                ) : (
+                                  row.strategy
+                                )}
+                              </td>
+                              <td
+                                className={
+                                  recommended ? "text-color-b" : undefined
+                                }
+                              >
+                                {formatNaira(row.annualCost)}
+                              </td>
+                              <td
+                                className={
+                                  recommended
+                                    ? "strong text-color-b"
+                                    : undefined
+                                }
+                              >
+                                {formatText(row.reliability)}
+                              </td>
+                              <td
+                                className={
+                                  recommended
+                                    ? "strong text-color-b"
+                                    : undefined
+                                }
+                              >
+                                {formatText(row.dieselUse)}
+                              </td>
+                              <td
+                                className={
+                                  recommended
+                                    ? "strong text-color-b"
+                                    : undefined
+                                }
+                              >
+                                {formatStrategyPayback(row.payback)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1095,14 +1098,18 @@ function AssesementResult() {
                     <button
                       type="button"
                       className="ass-result-forward-card-link"
-                      onClick={() => {
-                        document
-                          .getElementById("ass-result-financial")
-                          ?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                          });
-                      }}
+                      // onClick={() => {
+                      //   void trackCtaClick("explore_financing", {
+                      //     entityType: "assessment",
+                      //     entityId: assessmentId || undefined,
+                      //   });
+                      //   navigate(
+                      //     assessmentId
+                      //       ? `/explore-financing?assessment=${encodeURIComponent(assessmentId)}`
+                      //       : "/explore-financing",
+                      //     { state: { from: "assessment-result" } },
+                      //   );
+                      // }}
                     >
                       Explore financing
                       <i className="bi bi-arrow-right" aria-hidden />

@@ -93,6 +93,7 @@ const CTA_LABELS: Record<string, string> = {
   expert_review: "Clicked Expert Review",
   quote_upload: "Clicked Upload Quote",
   matched_installers: "Clicked View Installers",
+  explore_financing: "Clicked Explore Financing",
   download_pdf: "Clicked Download PDF",
   start_assessment: "Clicked Start Assessment",
 };

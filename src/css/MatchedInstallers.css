@@ -363,6 +363,33 @@
   }
 }
 
+/* Banner text: flush with the logo gutter and vertically centred below the fixed navbar */
+@media (max-width: 991.98px) {
+  section.hero.matched-installers-hero {
+    padding-top: 120px !important;
+    padding-bottom: 24px !important;
+  }
+
+  section.hero.matched-installers-hero .text-divs,
+  section.hero.matched-installers-hero .nav-bottom-section {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  section.hero.matched-installers-hero .nav-bottom-section,
+  section.hero.matched-installers-hero .nav-bottom-section > .col-12 {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 767.98px) {
+  section.hero.matched-installers-hero {
+    padding-top: 110px !important;
+  }
+}
+
 .matched-installers-list {
   padding-top: 1.25rem;
   padding-bottom: 2rem;

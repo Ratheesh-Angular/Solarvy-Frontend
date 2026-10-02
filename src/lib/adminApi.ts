@@ -1,3 +1,5 @@
+import type { BlogPost, BlogSummary } from "./blogApi";
+
 const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
 export const ADMIN_TOKEN_KEY = "solarvy_admin_token";
 
@@ -461,6 +463,151 @@ export async function adminListQuoteUploads(params: {
   const data = await adminFetch<
     ApiEnvelope<PagedResult<Record<string, unknown>>>
   >(`/admin/quote-uploads${toQuery(params)}`);
+  return data.data!;
+}
+
+export type AdminBlogPayload = {
+  title: string;
+  slug?: string;
+  excerpt?: string;
+  contentHtml?: string;
+  featuredImagePath?: string;
+  featuredImageAlt?: string;
+  category?: string;
+  tags?: string[];
+  authorName?: string;
+  status?: "draft" | "published";
+  metaTitle?: string;
+  metaDescription?: string;
+  ogImagePath?: string;
+};
+
+export type BlogDailyPoint = { day: string; views: number; uniqueVisitors: number };
+
+export type BlogAnalyticsOverview = {
+  from: string;
+  to: string;
+  kpis: {
+    totalViews: number;
+    uniqueVisitors: number;
+    postsViewed: number;
+    publishedPosts: number;
+    draftPosts: number;
+    avgViewsPerPost: number;
+    previousViews: number;
+    previousUniqueVisitors: number;
+  };
+  daily: BlogDailyPoint[];
+};
+
+export type PopularBlogRow = {
+  id: number;
+  slug: string;
+  title: string;
+  category: string;
+  status: string;
+  publishedAt: string | null;
+  views: number;
+  uniqueVisitors: number;
+  lastViewedAt: string | null;
+};
+
+export type BlogPostAnalytics = {
+  blog: { id: number; slug: string; title: string; status: string };
+  from: string;
+  to: string;
+  kpis: {
+    views: number;
+    uniqueVisitors: number;
+    allTimeViews: number;
+    allTimeUniqueVisitors: number;
+    firstViewedAt: string | null;
+    lastViewedAt: string | null;
+  };
+  daily: BlogDailyPoint[];
+  referrers: Array<{ source: string; views: number }>;
+};
+
+export async function adminListBlogs(params: {
+  q?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+} = {}) {
+  const data = await adminFetch<ApiEnvelope<PagedResult<BlogSummary>>>(
+    `/admin/blogs${toQuery(params)}`,
+  );
+  return data.data!;
+}
+
+export async function adminGetBlog(id: number) {
+  const data = await adminFetch<ApiEnvelope<BlogPost>>(`/admin/blogs/${id}`);
+  return data.data!;
+}
+
+export async function adminCreateBlog(payload: AdminBlogPayload) {
+  const data = await adminFetch<ApiEnvelope<BlogPost>>("/admin/blogs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return data.data!;
+}
+
+export async function adminUpdateBlog(id: number, payload: Partial<AdminBlogPayload>) {
+  const data = await adminFetch<ApiEnvelope<BlogPost>>(`/admin/blogs/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return data.data!;
+}
+
+export async function adminDeleteBlog(id: number) {
+  const data = await adminFetch<ApiEnvelope<{ id: number }>>(`/admin/blogs/${id}`, {
+    method: "DELETE",
+  });
+  return data.data!;
+}
+
+export async function adminUploadBlogImage(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const data = await adminFetch<ApiEnvelope<{ url: string; storagePath: string }>>(
+    "/admin/blogs/images",
+    { method: "POST", body: formData },
+  );
+  return data.data!;
+}
+
+export async function adminGetBlogAnalyticsOverview(params: {
+  from?: string;
+  to?: string;
+} = {}) {
+  const data = await adminFetch<ApiEnvelope<BlogAnalyticsOverview>>(
+    `/admin/blogs/analytics/overview${toQuery(params)}`,
+  );
+  return data.data!;
+}
+
+export async function adminGetPopularBlogs(params: {
+  from?: string;
+  to?: string;
+  limit?: number;
+} = {}) {
+  const data = await adminFetch<ApiEnvelope<{ items: PopularBlogRow[] }>>(
+    `/admin/blogs/analytics/popular${toQuery(params)}`,
+  );
+  return data.data!.items;
+}
+
+export async function adminGetBlogPostAnalytics(
+  id: number,
+  params: { from?: string; to?: string } = {},
+) {
+  const data = await adminFetch<ApiEnvelope<BlogPostAnalytics>>(
+    `/admin/blogs/${id}/analytics${toQuery(params)}`,
+  );
   return data.data!;
 }
 

@@ -15,6 +15,7 @@ import "./css/sample.css";
 import "./css/WhoItsFor.css";
 import "./css/MatchedInstallers.css";
 import "./css/solarvy-feedback.css";
+import "./css/finance.css";
 
 import Footer from "./components/Footer.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
@@ -27,6 +28,11 @@ import WhoItsFor from "./pages/WhoItsFor.tsx";
 import MatchedInstallers from "./pages/MatchedInstallers.tsx";
 import ExpertReview from "./pages/ExpertReview.tsx";
 import RequestIntro from "./pages/RequestIntro.tsx";
+import ExploreFinancing from "./pages/ExploreFinancing.tsx";
+import FinancingOptions from "./pages/FinancingOptions.tsx";
+import FinancingPartners from "./pages/FinancingPartners.tsx";
+import BlogList from "./pages/BlogList.tsx";
+import BlogDetail from "./pages/BlogDetail.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
@@ -40,6 +46,9 @@ import AdminBillInput from "./pages/AdminBillInput.tsx";
 import AdminRecommendations from "./pages/AdminRecommendations.tsx";
 import AdminChatbotPrompt from "./pages/AdminChatbotPrompt.tsx";
 import AdminFaqs from "./pages/AdminFaqs.tsx";
+import AdminBlogs from "./pages/AdminBlogs.tsx";
+import AdminBlogEditor from "./pages/AdminBlogEditor.tsx";
+import AdminBlogAnalytics from "./pages/AdminBlogAnalytics.tsx";
 import AdminRoute from "./components/AdminRoute.tsx";
 import AdminLayout from "./components/AdminLayout.tsx";
 import VisitorTracker from "./components/VisitorTracker.tsx";
@@ -100,6 +109,10 @@ function App() {
             <Route path="recommendations" element={<AdminRecommendations />} />
             <Route path="chatbot-prompt" element={<AdminChatbotPrompt />} />
             <Route path="faqs" element={<AdminFaqs />} />
+            <Route path="blogs" element={<AdminBlogs />} />
+            <Route path="blogs/new" element={<AdminBlogEditor />} />
+            <Route path="blogs/:id" element={<AdminBlogEditor />} />
+            <Route path="blog-analytics" element={<AdminBlogAnalytics />} />
           </Route>
         </Route>
 
@@ -121,6 +134,11 @@ function App() {
           <Route path="/matched-installers" element={<MatchedInstallers />} />
           <Route path="/expert-review" element={<ExpertReview />} />
           <Route path="/request-intro" element={<RequestIntro />} />
+          <Route path="/explore-financing" element={<ExploreFinancing />} />
+          <Route path="/financing-options" element={<FinancingOptions />} />
+          <Route path="/financing-partners" element={<FinancingPartners />} />
+          <Route path="/blog" element={<BlogList />} />
+          <Route path="/blog/:slug" element={<BlogDetail />} />
         </Route>
       </Routes>
     </Router>

@@ -1204,13 +1204,13 @@ export function AssessmentReportDocument({
         <View style={styles.archImageWrap}>
           <Image src={architectureDiagram} style={styles.archImage} />
         </View>
-        <View style={styles.archNoteWrap}>
+        {/* <View style={styles.archNoteWrap}>
           <Text style={styles.archNote}>
             Conceptual energy-flow illustration. Grid-to-battery indicates
             charging capability, actual charging occurs through appropriate
             inverter/charger circuitry and protection.
           </Text>
-        </View>
+        </View> */}
 
         <View style={[styles.bluePanel, { marginTop: 6 }]}>
           <Text style={styles.bluePanelTitle}>How the system works</Text>

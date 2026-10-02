@@ -519,20 +519,6 @@ hr.liness {
   padding-top: 4px;
 }
 
-.ass-result-what-means-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a2259;
-  font-family: "Poppins", sans-serif;
-}
-
-.ass-result-what-means-body {
-  font-size: 13px;
-  line-height: 1.55;
-  color: #4b5563;
-  font-family: "Poppins", sans-serif;
-}
-
 .qs-what-means-skeleton {
   margin-top: 4px;
 }
@@ -1206,6 +1192,7 @@ button.btn-outline-customsss2-req {
     order: initial;
   }
 
+  .ass-result-compare-wrap,
   .ass-result-next-wrap {
     grid-column: 1 / -1;
   }
@@ -1291,6 +1278,10 @@ button.btn-outline-customsss2-req {
   .ass-result-compare-card .custom-table tbody td {
     padding: 14px 16px;
     font-size: 12px;
+  }
+
+  .ass-result-compare-card .custom-table tbody td {
+    font-size: 11px;
   }
 
   .ass-result-compare-card .title-cell {

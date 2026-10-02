@@ -28,6 +28,10 @@ export type AssessmentFormData = {
   city: string;
   /** Excel label, e.g. "Grid + Generator" (User_Inputs!B13) */
   powerSetup: string;
+  /** Grid unavailability band label (User_Inputs!B61). */
+  gridUnavailableBand: string;
+  /** Monthly generator fuel spend NGN (User_Inputs!B62). */
+  monthlyGeneratorFuelSpend: string;
   inputMethod: "bill" | "appliance" | "custom";
   /** Excel label, e.g. "Reduce Diesel Use" (User_Inputs!B14) */
   mainObjective: string;
@@ -58,6 +62,8 @@ export const EMPTY_ASSESSMENT_FORM: AssessmentFormData = {
   country: "",
   city: "",
   powerSetup: "",
+  gridUnavailableBand: "",
+  monthlyGeneratorFuelSpend: "",
   inputMethod: "bill",
   mainObjective: "",
   monthlyElectricityBill: "",
@@ -104,6 +110,9 @@ export type ExcelCatalogs = {
   states: string[];
   cities: string[];
   backupDurations: string[];
+  gridUnavailableBands: string[];
+  gridUnavailableQuestion: string;
+  monthlyGeneratorFuelLabel?: string;
   equipmentCatalog: EquipmentCatalogItem[];
 };
 

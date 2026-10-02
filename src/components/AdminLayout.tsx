@@ -105,6 +105,23 @@ export default function AdminLayout() {
             >
               Excel Template
             </NavLink>
+            {/* <p className="admin-nav-label admin-nav-label-spaced">Content</p>
+            <NavLink
+              to="/admin/blogs"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Blogs
+            </NavLink>
+            <NavLink
+              to="/admin/blog-analytics"
+              className={({ isActive }) =>
+                `admin-nav-link${isActive ? " is-active" : ""}`
+              }
+            >
+              Blog Analytics
+            </NavLink> */}
             <p className="admin-nav-label admin-nav-label-spaced">AI Training</p>
             <NavLink
               to="/admin/bill-input"

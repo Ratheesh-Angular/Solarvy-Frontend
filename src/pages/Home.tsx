@@ -214,6 +214,16 @@ function Home() {
                   </li>
 
                   <li className="nav-item">
+                    <Link
+                      className="nav-link"
+                      to="/blog"
+                      onClick={() => setOpen(false)}
+                    >
+                      Blog
+                    </Link>
+                  </li>
+
+                  <li className="nav-item">
                     <button
                       className="solar-nav-btn"
                       onClick={() => navigate("/start-assessment")}

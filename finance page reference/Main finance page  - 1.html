@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SolarVy — Explore Financing</title>
+<style>
+:root{--navy:#13205d;--blue:#225aa5;--deep:#05365f;--orange:#ff9b12;--green:#12a961;--ink:#17204d;--muted:#737a99;--line:#e4eaf3;--bg:#f6f8fc;--pale:#f1f6ff}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{height:70px;background:var(--deep);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 max(20px,calc((100vw - 1160px)/2));font-weight:800;font-size:22px}.sun{color:var(--orange)}
+.hero{background:linear-gradient(110deg,#063a67,#02192f);color:#fff;padding:55px max(20px,calc((100vw - 1160px)/2))}.hero h1{font-size:43px;margin:0 0 15px;max-width:600px}.hero p{max-width:700px;line-height:1.6;color:#e0eaf5;margin:0}
+.wrap{max-width:1160px;margin:30px auto;padding:0 22px}.layout{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:start}
+.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:25px;box-shadow:0 3px 12px rgba(30,50,90,.05);margin-bottom:18px}
+h2{margin:0 0 7px;font-size:23px}.sub{color:var(--muted);line-height:1.5;margin:0 0 21px}
+.snapshot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#f8f9fd;border-radius:12px;padding:14px}.stat small{display:block;color:var(--muted);margin-bottom:6px}.stat b{font-size:16px}
+label{display:block;font-size:12px;font-weight:800;margin:18px 0 8px;letter-spacing:.03em}
+input,select{width:100%;padding:14px 15px;border:1px solid #dce3ee;border-radius:11px;background:#fff;color:var(--ink);font-size:15px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.range{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.choice{border:1px solid #dfe6f0;background:#fff;border-radius:11px;padding:13px;text-align:center;font-size:13px;font-weight:700}.choice.active{border:2px solid var(--blue);background:#f1f6ff;color:var(--blue)}
+.btn{width:100%;border:0;border-radius:999px;padding:15px;font-weight:800;font-size:15px;cursor:pointer}.primary{background:var(--blue);color:#fff}.outline{background:#fff;color:var(--blue);border:1.5px solid #91acd2;margin-top:10px}
+.info{background:#f1f6ff;border-radius:14px;padding:18px;line-height:1.55;color:#425273}.info b{color:var(--navy)}
+.steps{display:grid;gap:13px}.step{display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:start}.num{width:34px;height:34px;border-radius:10px;background:#fff1d5;color:#c76c00;display:grid;place-items:center;font-weight:800}.step h3{font-size:15px;margin:3px 0 4px}.step p{font-size:13px;color:var(--muted);margin:0;line-height:1.45}
+.disclaimer{font-size:12px;color:var(--muted);line-height:1.55;margin-top:15px}
+.badge{display:inline-block;background:#e9f9f0;color:#087d47;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800;margin-bottom:12px}
+footer{background:#285b9e;color:#fff;padding:35px max(20px,calc((100vw - 1160px)/2));margin-top:45px}
+@media(max-width:760px){
+ header{height:62px;padding:0 18px;font-size:19px}.hero{padding:35px 20px 40px}.hero h1{font-size:31px}.hero p{font-size:14px}
+ .wrap{padding:0 14px;margin:22px auto}.layout{grid-template-columns:1fr}.card{padding:19px}.snapshot{grid-template-columns:1fr 1fr}.snapshot .stat:first-child{grid-column:1/-1}
+ .two{grid-template-columns:1fr}.range{grid-template-columns:1fr}.choice{text-align:left}
+}
+</style></head>
+<body>
+<header><div><span class="sun">☀</span> SolarVy</div><div>☰</div></header>
+<section class="hero"><h1>Explore financing for your energy project</h1><p>Tell us how you would prefer to fund your recommended system. SolarVy can use your assessment to help identify potentially suitable financing routes.</p></section>
+
+<main class="wrap">
+ <div class="layout">
+  <div>
+   <section class="card">
+    <span class="badge">ASSESSMENT CONNECTED</span>
+    <h2>Your recommended project</h2><p class="sub">We have carried your assessment details forward, so you do not need to enter them again.</p>
+    <div class="snapshot">
+      <div class="stat"><small>Estimated system cost</small><b>₦5,282,000</b></div>
+      <div class="stat"><small>System</small><b>5 kWp + 20 kWh</b></div>
+      <div class="stat"><small>Est. annual savings</small><b>₦1,162,862</b></div>
+    </div>
+   </section>
+
+   <section class="card">
+    <h2>Financing preferences</h2><p class="sub">A few details help us understand the type of funding you are looking for.</p>
+    <label>APPLICANT TYPE</label>
+    <select><option>Individual / Homeowner</option><option>Business / SME</option><option>Organisation / Institution</option></select>
+
+    <div class="two">
+      <div><label>AMOUNT YOU WANT TO FINANCE</label><input value="₦4,000,000"></div>
+      <div><label>DEPOSIT AVAILABLE</label><input value="₦1,282,000"></div>
+    </div>
+
+    <label>PREFERRED REPAYMENT PERIOD</label>
+    <div class="range"><div class="choice">12–24 months</div><div class="choice active">24–36 months</div><div class="choice">36+ months</div></div>
+
+    <div class="two">
+      <div><label>MONTHLY INCOME / BUSINESS REVENUE RANGE</label><select><option>Select range</option><option>Below ₦500k</option><option>₦500k–₦1m</option><option>₦1m–₦5m</option><option>Above ₦5m</option></select></div>
+      <div><label>LOCATION</label><input value="Lagos"></div>
+    </div>
+
+    <label>ANYTHING ELSE WE SHOULD KNOW? <span style="font-weight:400;color:#8a91aa">(optional)</span></label>
+    <input placeholder="e.g. preferred monthly repayment, business requirements…">
+   </section>
+
+   <section class="card">
+    <h2>Consent to share</h2>
+    <p class="sub">Your financing enquiry should only be shared with relevant financing partners after you choose to submit it.</p>
+    <label style="font-weight:500;display:flex;gap:10px;align-items:flex-start"><input type="checkbox" style="width:auto;margin-top:2px"> I agree that SolarVy may share the information in this financing enquiry and relevant assessment details with suitable financing partners for consideration.</label>
+    <button class="btn primary" style="margin-top:20px">Check Financing Options</button>
+    <button class="btn outline">← Back to Results</button>
+    <p class="disclaimer">Submitting an enquiry does not guarantee financing or constitute a credit offer. Eligibility, pricing, repayment terms and approval are determined by the financing provider.</p>
+   </section>
+  </div>
+
+  <aside>
+   <section class="card">
+    <h2>How it works</h2><p class="sub">Keep the first financing step simple.</p>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div><h3>Tell us your preference</h3><p>Choose how much you want to finance and your preferred repayment period.</p></div></div>
+      <div class="step"><div class="num">2</div><div><h3>SolarVy checks potential routes</h3><p>Your project and financing request can be matched with relevant partner criteria.</p></div></div>
+      <div class="step"><div class="num">3</div><div><h3>Review available next steps</h3><p>If a route may be suitable, you can choose whether to continue with the provider.</p></div></div>
+    </div>
+   </section>
+   <section class="card">
+    <div class="info"><b>SolarVy remains your energy assessment layer.</b><br><br>Financing decisions, credit checks, interest rates and final terms come from the financing provider—not from the preliminary SolarVy assessment.</div>
+   </section>
+  </aside>
+ </div>
+</main>
+<footer><h2><span class="sun">☀</span> SolarVy</h2><p>Independent energy assessment for better-informed energy decisions.</p></footer>
+</body></html>

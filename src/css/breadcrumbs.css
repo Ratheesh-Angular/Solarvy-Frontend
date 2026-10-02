@@ -1,0 +1,55 @@
+.solar-breadcrumbs {
+  margin-bottom: 16px;
+  font-family: "Poppins", sans-serif;
+}
+
+.solar-breadcrumbs-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.solar-breadcrumbs-item,
+.solar-breadcrumbs-separator {
+  display: inline-flex;
+  align-items: center;
+}
+
+.solar-breadcrumbs-link {
+  color: #6f7196;
+  font-weight: 400;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.solar-breadcrumbs-link:hover,
+.solar-breadcrumbs-link:focus-visible {
+  color: #1a2259;
+  text-decoration: underline;
+}
+
+.solar-breadcrumbs-separator {
+  color: #6f7196;
+  font-size: 14px;
+}
+
+.solar-breadcrumbs-current {
+  color: #1a2259;
+  font-weight: 600;
+}
+
+@media (max-width: 575.98px) {
+  .solar-breadcrumbs {
+    margin-bottom: 12px;
+  }
+
+  .solar-breadcrumbs-list {
+    font-size: 12px;
+  }
+}

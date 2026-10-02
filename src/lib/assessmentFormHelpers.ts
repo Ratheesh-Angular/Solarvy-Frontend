@@ -76,6 +76,8 @@ type AssessmentStateSetters = {
   setCustomRows: React.Dispatch<React.SetStateAction<LoadTableRow[]>>;
   setRoofArea: (value: string) => void;
   setBackupDuration: (value: string) => void;
+  setGridUnavailableBand: (value: string) => void;
+  setMonthlyGeneratorFuelSpend: (value: string) => void;
 };
 
 export function buildAssessmentFormData(input: {
@@ -96,6 +98,8 @@ export function buildAssessmentFormData(input: {
   customRows: LoadTableRow[];
   roofArea: string;
   backupDuration: string;
+  gridUnavailableBand: string;
+  monthlyGeneratorFuelSpend: string;
 }): AssessmentFormData {
   return {
     propertyType: input.selectedProperty,
@@ -103,6 +107,8 @@ export function buildAssessmentFormData(input: {
     country: input.formData.country,
     city: input.formData.state,
     powerSetup: input.selectedPower,
+    gridUnavailableBand: input.gridUnavailableBand,
+    monthlyGeneratorFuelSpend: input.monthlyGeneratorFuelSpend,
     inputMethod: input.inputMethod,
     mainObjective: input.selectedObjective,
     monthlyElectricityBill: input.monthlyElectricityBill,
@@ -169,4 +175,20 @@ export function applyAssessmentFormData(
 
   if (merged.roofArea) setters.setRoofArea(merged.roofArea);
   if (merged.backupDuration) setters.setBackupDuration(merged.backupDuration);
+  if (merged.gridUnavailableBand) {
+    setters.setGridUnavailableBand(merged.gridUnavailableBand);
+  }
+  if (
+    merged.monthlyGeneratorFuelSpend !== undefined &&
+    merged.monthlyGeneratorFuelSpend !== null &&
+    String(merged.monthlyGeneratorFuelSpend).trim() !== ""
+  ) {
+    const raw = String(merged.monthlyGeneratorFuelSpend).replace(/,/g, "");
+    const n = Number(raw);
+    setters.setMonthlyGeneratorFuelSpend(
+      Number.isFinite(n) && n > 0
+        ? n.toLocaleString("en-US", { maximumFractionDigits: 0 })
+        : String(merged.monthlyGeneratorFuelSpend),
+    );
+  }
 }

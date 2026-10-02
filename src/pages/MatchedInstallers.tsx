@@ -723,7 +723,7 @@ function MatchedInstallers() {
 
                 <div className="review-card">
                   <p className="review-text">
-                    Independent Installer Review <br />
+                    Independent Installer Review. <br />
                     We check the quoted cost, the system size, the battery
                     option, and the savings claim against your results.
                   </p>

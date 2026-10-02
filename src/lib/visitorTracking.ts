@@ -21,6 +21,7 @@ export type CtaId =
   | "expert_review"
   | "quote_upload"
   | "matched_installers"
+  | "explore_financing"
   | "download_pdf"
   | "start_assessment";
 
