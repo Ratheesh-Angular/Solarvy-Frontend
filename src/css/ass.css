@@ -2797,11 +2797,110 @@ textarea:not(.form-control):not(.ass-field-control):not(
   max-width: 100%;
 }
 
+.template-picker-panel.power-setup-panel .power-setup-fuel {
+  padding-top: 0.6rem;
+  border-top: 1px solid #e8ecf4;
+}
+
+.power-setup-fuel-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.power-setup-fuel-row .ass-field-label {
+  flex-shrink: 0;
+}
+
+.power-setup-fuel-row .form-control {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.power-setup-panel .power-setup-fuel {
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 992px) {
+  .power-setup-panel--with-fuel {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .power-setup-panel--with-fuel:not(.template-picker-panel) {
+    align-items: flex-end;
+  }
+
+  .power-setup-panel--with-fuel .power-setup-panel-main {
+    flex: 0 0 calc(60% - 0.5rem);
+    min-width: 0;
+  }
+
+  .power-setup-panel--with-fuel .power-setup-fuel {
+    flex: 0 0 calc(40% - 0.5rem);
+    min-width: 0;
+    margin-top: 0;
+  }
+
+  .template-picker-panel.power-setup-panel--with-fuel .power-setup-fuel {
+    border-top: 0;
+    padding-top: 0;
+    padding-left: 1rem;
+    border-left: 1px solid #e8ecf4;
+  }
+
+  .power-setup-panel--with-fuel .power-setup-fuel-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .power-setup-panel--with-fuel .power-setup-fuel-row .form-control {
+    flex: none;
+  }
+
+  .power-setup-panel--with-fuel input.form-control.ass-field-control {
+    min-height: 34px;
+    height: 34px;
+    padding: 0.35rem 0.65rem;
+  }
+}
+
 @media (max-width: 575.98px) {
-  .power-setup-expand .template-picker-option {
-    flex: 1 1 calc(50% - 6px);
-    text-align: center;
-    justify-content: center;
+  .power-setup-panel .template-picker-grid {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .power-setup-panel .template-picker-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    font-size: 13px;
+    padding: 10px 12px;
+    min-height: 44px;
+    border-radius: 10px;
+  }
+
+  .power-setup-panel .template-picker-option::after {
+    content: "";
+    width: 18px;
+    height: 18px;
+    border: 2px solid #c7d0e0;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-left: 12px;
+    box-sizing: border-box;
+  }
+
+  .power-setup-panel .template-picker-option--selected::after {
+    border-color: #174c90;
+    background: radial-gradient(circle, #174c90 0 4px, transparent 4.5px);
   }
 }
 

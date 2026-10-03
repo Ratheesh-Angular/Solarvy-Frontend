@@ -1168,11 +1168,18 @@ button.btn-outline-customsss2-req {
   order: 5;
 }
 
+.ass-result-disclaimer-note {
+  order: 6;
+  font-size: 11px;
+  color: #6f7196;
+  line-height: 1.5;
+}
+
 @media (min-width: 992px) {
   .ass-result-flow {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    align-items: start;
+    align-items: stretch;
     column-gap: var(--ass-result-section-gap);
     row-gap: var(--ass-result-section-gap);
   }
@@ -1188,13 +1195,34 @@ button.btn-outline-customsss2-req {
   .ass-result-snapshot,
   .ass-result-compare-wrap,
   .ass-result-next-wrap,
-  .ass-result-ai-wrap {
+  .ass-result-ai-wrap,
+  .ass-result-disclaimer-note {
     order: initial;
   }
 
   .ass-result-compare-wrap,
-  .ass-result-next-wrap {
+  .ass-result-ai-wrap,
+  .ass-result-next-wrap,
+  .ass-result-disclaimer-note {
     grid-column: 1 / -1;
+  }
+
+  .ass-result-metrics {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ass-result-metrics #ass-result-financial {
+    flex: 1;
+  }
+
+  .ass-result-snapshot {
+    flex: 1;
+  }
+
+  .ass-result-snapshot .right-panel {
+    height: 100%;
   }
 }
 

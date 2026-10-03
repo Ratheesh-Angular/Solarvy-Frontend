@@ -11,10 +11,13 @@ import batt from "../assets/images/icon/batt.svg";
 import money from "../assets/images/icon/money-bag.svg";
 import compare from "../assets/images/icon/compare.svg";
 import thunder from "../assets/images/icon/thunder.svg";
-import imp from "../assets/images/icon/imporent.svg";
 import donw from "../assets/images/icon/d11.svg";
 import qut from "../assets/images/icon/qut.svg";
-import financeIcon from "../assets/result cards icons/finance.png";
+import nairaIcon from "../assets/quick-snapshot-icons/naira.png";
+import cashbackIcon from "../assets/quick-snapshot-icons/cashback.png";
+import fuelIcon from "../assets/quick-snapshot-icons/fuel.png";
+import operationalSystemIcon from "../assets/quick-snapshot-icons/operational-system.png";
+import financeIcon from "../assets/solarvy-icons/input_method/Monthly Bill.png";
 import installersIcon from "../assets/result cards icons/insallers.png";
 import quotationIcon from "../assets/result cards icons/quotation.png";
 import expertReviewIcon from "../assets/result cards icons/expert review.png";
@@ -812,16 +815,6 @@ function AssesementResult() {
 
              
               </div>
-
-              <div className="important-note d-none d-lg-flex align-items-start p-3">
-                <div className="me-2 mt-0">
-                  <img src={imp} alt="icon" />
-                </div>
-
-                <div>
-                  <span className="fw-bold">Important note:</span> {disclaimer}
-                </div>
-              </div>
             </div>
 
             <div className="ass-result-right">
@@ -833,7 +826,7 @@ function AssesementResult() {
                     </div>
                     <div className="ass-result-snapshot-heading">
                       <h6 className="qt-text fw-bold mb-0">Quick Snapshot</h6>
-                      <p className="ass-result-snapshot-subtitle mb-0">
+                      <p className="ass-result-snapshot-subtitle mb-0" style={{ fontSize: '12px' }}>
                         Your assessment at a glance.
                       </p>
                     </div>
@@ -843,46 +836,75 @@ function AssesementResult() {
 
                   <div className="row g-3 flex-wrap qs-metrics">
                     <div className="col-6">
-                      <div className="qs-cards h-100">
-                        <div className="icon-box-right">
-                          <i className="colo-sym-right bi bi-graph-up text-primary fs-5"></i>
+                      <div className="stat-card text-center">
+                        <div className="icon-box-build-right mb-2">
+                          <img src={nairaIcon} alt="icon" />
                         </div>
-                        <small className="label">ANNUAL SAVINGS</small>
-                        <h5 className="value">{netSavings}</h5>
+                        <h5 className="asst-h" title={netSavings}>
+                          {netSavings}
+                        </h5>
+                        <div className="usage-wrapper">
+                          <small>
+                            <b>ANNUAL SAVINGS</b>
+                          </small>
+                        </div>
                       </div>
                     </div>
 
                     <div className="col-6">
-                      <div className="qs-cards h-100">
-                        <div className="icon-box-right">
-                          <i className="colo-sym-right bi bi-clock-history text-primary fs-5"></i>
+                      <div className="stat-card text-center">
+                        <div className="icon-box-build-right mb-2">
+                          <img src={cashbackIcon} alt="icon" />
                         </div>
-                        <small className="label">PAYBACK</small>
-                        <h5 className="value">
+                        <h5
+                          className="asst-h"
+                          title={
+                            paybackYears === MISSING
+                              ? MISSING
+                              : `${paybackYears} yrs`
+                          }
+                        >
                           {paybackYears === MISSING
                             ? MISSING
                             : `${paybackYears} yrs`}
                         </h5>
+                        <div className="usage-wrapper">
+                          <small>
+                            <b>PAYBACK</b>
+                          </small>
+                        </div>
                       </div>
                     </div>
 
                     <div className="col-6">
-                      <div className="qs-cards h-100">
-                        <div className="icon-box-right">
-                          <i className="colo-sym-right bi bi-fire text-primary fs-5"></i>
+                      <div className="stat-card text-center">
+                        <div className="icon-box-build-right mb-2">
+                          <img src={fuelIcon} alt="icon" />
                         </div>
-                        <small className="label">DIESEL SAVED</small>
-                        <h5 className="value">{dieselSavedLitres}</h5>
+                        <h5 className="asst-h" title={dieselSavedLitres}>
+                          {dieselSavedLitres}
+                        </h5>
+                        <div className="usage-wrapper">
+                          <small>
+                            <b>DIESEL SAVED</b>
+                          </small>
+                        </div>
                       </div>
                     </div>
 
                     <div className="col-6">
-                      <div className="qs-cards h-100">
-                        <div className="icon-box-right">
-                          <i className="colo-sym-right bi bi-stack text-primary fs-5"></i>
+                      <div className="stat-card text-center">
+                        <div className="icon-box-build-right mb-2">
+                          <img src={operationalSystemIcon} alt="icon" />
                         </div>
-                        <small className="label">SYSTEM CLASS</small>
-                        <h5 className="value">{systemClass}</h5>
+                        <h5 className="asst-h" title={systemClass}>
+                          {systemClass}
+                        </h5>
+                        <div className="usage-wrapper">
+                          <small>
+                            <b>SYSTEM CLASS</b>
+                          </small>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -911,54 +933,9 @@ function AssesementResult() {
                   </div>
                 </div>
               </div>
-
-              <div className="ass-result-ai-wrap">
-                <div className="p-4 shadow-sm rounded-4 ass-resul-first ai-recommendation-card">
-                  <div className="d-flex align-items-center mb-2">
-                    <div className="icon-box-maony me-2" aria-hidden>
-                      <Sparkles size={12} strokeWidth={2} />
-                    </div>
-                    <div>
-                      <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
-                        <h6 className="fw-bold mb-0 rang-head section-card-title">
-                          SolarVy Recommendation
-                        </h6>
-                        {/* <span className="bill-ai-badge">AI</span> */}
-                      </div>
-                    </div>
-                  </div>
-                  {showRecommendationSkeleton ? (
-                    <div
-                      className="ai-recommendation-skeleton"
-                      aria-busy="true"
-                      aria-label="Loading recommendation"
-                    >
-                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
-                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
-                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
-                      <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
-                    </div>
-                  ) : (
-                    <p className="ai-recommendation-body mb-0">
-                      {storedRecommendation || recommendationFallback}
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
 
             <div className="ass-result-compare-wrap">
-              <div className="important-note d-flex d-lg-none align-items-start p-3 mb-4">
-                <div className="me-2 mt-0">
-                  <img src={imp} alt="icon" />
-                </div>
-
-                <div>
-                  <span className="fw-bold">Important note:</span>{" "}
-                  {disclaimer}
-                </div>
-              </div>
-
               <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first ass-result-compare-card">
                 <div className="d-flex align-items-start mb-4">
                   <div className="icon-box-maony me-3">
@@ -1061,6 +1038,40 @@ function AssesementResult() {
                     </table>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="ass-result-ai-wrap">
+              <div className="p-4 shadow-sm rounded-4 ass-resul-first ai-recommendation-card">
+                <div className="d-flex align-items-center mb-2">
+                  <div className="icon-box-maony me-2" aria-hidden>
+                    <Sparkles size={12} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
+                      <h6 className="fw-bold mb-0 rang-head section-card-title">
+                        SolarVy Recommendation
+                      </h6>
+                      {/* <span className="bill-ai-badge">AI</span> */}
+                    </div>
+                  </div>
+                </div>
+                {showRecommendationSkeleton ? (
+                  <div
+                    className="ai-recommendation-skeleton"
+                    aria-busy="true"
+                    aria-label="Loading recommendation"
+                  >
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
+                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
+                  </div>
+                ) : (
+                  <p className="ai-recommendation-body mb-0">
+                    {storedRecommendation || recommendationFallback}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1264,6 +1275,10 @@ function AssesementResult() {
                 </div>
               </div>
             </div>
+
+            <p className="ass-result-disclaimer-note mb-0">
+              <span className="fw-bold">Important note:</span> {disclaimer}
+            </p>
           </div>
         </section>
       </div>

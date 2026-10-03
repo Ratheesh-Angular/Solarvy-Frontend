@@ -8,6 +8,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 function SampleResults() {
   const [open, setOpen] = useState(false);
@@ -116,6 +117,7 @@ function SampleResults() {
         </section>
 
         <section className="container-fluid px-3 px-lg-4 sample-page-section">
+          <Breadcrumbs />
           <div className="row g-4 align-items-stretch">
             <div className="col-lg-6 d-flex">
               <div className="p-4 shadow-sm rounded-4 ass-first w-100 h-100">

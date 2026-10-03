@@ -8,6 +8,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 function WhoItsFor() {
   const [open, setOpen] = useState(false);
@@ -119,6 +120,7 @@ function WhoItsFor() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          <Breadcrumbs />
           <div className="row g-4 align-items-start">
             <div className="dashboard-container">
               <h2 className="dashboard-title">Who uses Solarvy</h2>

@@ -13,6 +13,7 @@ import money from "../assets/images/icon/money-bag.svg";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 function HowItWorks() {
   const [open, setOpen] = useState(false);
@@ -134,6 +135,7 @@ function HowItWorks() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          <Breadcrumbs />
           <div className="row align-items-start">
             <div className="col-lg-12">
               <div className="first-secion ">

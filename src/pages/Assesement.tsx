@@ -21,6 +21,7 @@ import {
   Wallet,
   Wrench,
   ChevronDown,
+  Clock,
   Plus,
   Zap,
 } from "lucide-react";
@@ -839,6 +840,8 @@ function Assesement() {
   const [roofArea, setRoofArea] = useState("400");
   const [backupDuration, setBackupDuration] = useState("");
   const [gridUnavailableBand, setGridUnavailableBand] = useState("");
+  const [showOutagePicker, setShowOutagePicker] = useState(false);
+  const isOutagePickerOpen = !gridUnavailableBand || showOutagePicker;
   const [monthlyGeneratorFuelSpend, setMonthlyGeneratorFuelSpend] =
     useState("");
   const templatePromptHandledRef = useRef(false);
@@ -1804,14 +1807,6 @@ function Assesement() {
       errors.gridUnavailable =
         "Please select how many hours grid power is unavailable.";
     }
-    if (
-      selectedPower === "Grid + Generator" &&
-      (!monthlyGeneratorFuelSpend ||
-        parseFormattedNumber(monthlyGeneratorFuelSpend) <= 0)
-    ) {
-      errors.monthlyGeneratorFuelSpend =
-        "Please enter your monthly generator fuel spend.";
-    }
     if (!backupDuration) {
       errors.backupDuration = "Please select a backup duration.";
     }
@@ -1851,6 +1846,9 @@ function Assesement() {
         : await completeAssessment(payload);
 
       await finishLoader();
+      navigate(`/start-assessment?assessment=${encodeURIComponent(result.id)}`, {
+        replace: true,
+      });
       navigate(`/assessment-result?assessment=${result.id}`);
     } catch (error) {
       abortLoader();
@@ -2344,12 +2342,16 @@ function Assesement() {
 
                 {powerOptions.map((item) => {
                   const isActive = selectedPower === item.title;
-                  const showGeneratorFuel = isActive && item.title === "Grid + Generator";
                   return (
                     <div className="parent-container onlt-this" key={item.title}>
                       <div
                         className={`property-card power-setup-card${isActive ? " active power-setup-card--expanded" : ""}`}
                         onClick={() => {
+                          if (item.title !== selectedPower) {
+                            setGridUnavailableBand("");
+                            setMonthlyGeneratorFuelSpend("");
+                            setShowOutagePicker(false);
+                          }
                           setSelectedPower(item.title);
                           clearCalculateError("powerSetup");
                           clearCalculateError("gridUnavailable");
@@ -2389,102 +2391,136 @@ function Assesement() {
                             {isActive && <div className="radio-dot"></div>}
                           </div>
                         </div>
-
-                        {isActive && (
-                          <div
-                            className="power-setup-expand"
-                            id="ass-field-gridUnavailable"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <p className="power-setup-expand-question para-ass mb-2">
-                              {gridUnavailableQuestion}
-                            </p>
-                            <div
-                              className="template-picker-grid"
-                              role="list"
-                              aria-label={gridUnavailableQuestion}
-                            >
-                              {gridUnavailableOptions.map((band) => {
-                                const isBandSelected =
-                                  gridUnavailableBand === band;
-                                return (
-                                  <button
-                                    key={band}
-                                    type="button"
-                                    role="listitem"
-                                    className={`template-picker-option${
-                                      isBandSelected
-                                        ? " template-picker-option--selected"
-                                        : ""
-                                    }`}
-                                    onClick={() => {
-                                      setGridUnavailableBand(band);
-                                      clearCalculateError("gridUnavailable");
-                                    }}
-                                  >
-                                    {band}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            {calculateErrors.gridUnavailable && (
-                              <p
-                                className="ass-field-error mt-2 mb-0"
-                                role="alert"
-                              >
-                                {calculateErrors.gridUnavailable}
-                              </p>
-                            )}
-
-                            {showGeneratorFuel && (
-                              <div
-                                className="power-setup-fuel mt-3"
-                                id="ass-field-monthlyGeneratorFuelSpend"
-                              >
-                                <label
-                                  className="form-label ass-field-label mb-1"
-                                  htmlFor="ass-monthly-generator-fuel"
-                                >
-                                  {monthlyGeneratorFuelLabel} (₦)
-                                </label>
-                                <input
-                                  id="ass-monthly-generator-fuel"
-                                  type="text"
-                                  className={`form-control ass-field-control${
-                                    calculateErrors.monthlyGeneratorFuelSpend
-                                      ? " is-invalid"
-                                      : ""
-                                  }`}
-                                  placeholder="e.g. 120,000"
-                                  value={monthlyGeneratorFuelSpend}
-                                  aria-invalid={Boolean(
-                                    calculateErrors.monthlyGeneratorFuelSpend,
-                                  )}
-                                  onChange={(e) => {
-                                    setMonthlyGeneratorFuelSpend(
-                                      formatIntegerWithCommas(e.target.value),
-                                    );
-                                    clearCalculateError(
-                                      "monthlyGeneratorFuelSpend",
-                                    );
-                                  }}
-                                />
-                                {calculateErrors.monthlyGeneratorFuelSpend && (
-                                  <p
-                                    className="ass-field-error mt-1 mb-0"
-                                    role="alert"
-                                  >
-                                    {calculateErrors.monthlyGeneratorFuelSpend}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
                 })}
+
+                {selectedPower && (
+                  <div
+                    className={`${
+                      isOutagePickerOpen ? "template-picker-panel " : ""
+                    }power-setup-panel${
+                      selectedPower === "Grid + Generator"
+                        ? " power-setup-panel--with-fuel"
+                        : ""
+                    } mt-3 mb-3`}
+                    id="ass-field-gridUnavailable"
+                  >
+                    <div className="power-setup-panel-main">
+                      {isOutagePickerOpen ? (
+                        <>
+                          <div className="template-picker-header">
+                            <div className="template-picker-header-main">
+                              <div className="template-picker-icon" aria-hidden>
+                                <Clock size={14} strokeWidth={2} />
+                              </div>
+                              <div>
+                                <h6 className="template-picker-title ass-semi mb-1">
+                                  {gridUnavailableQuestion}
+                                </h6>
+                                <p className="template-picker-subtitle para-ass mb-0">
+                                  For <strong>{selectedPower}</strong>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div
+                            className="template-picker-grid"
+                            role="list"
+                            aria-label={gridUnavailableQuestion}
+                          >
+                            {gridUnavailableOptions.map((band) => {
+                              const isBandSelected = gridUnavailableBand === band;
+                              return (
+                                <button
+                                  key={band}
+                                  type="button"
+                                  role="listitem"
+                                  className={`template-picker-option${
+                                    isBandSelected
+                                      ? " template-picker-option--selected"
+                                      : ""
+                                  }`}
+                                  onClick={() => {
+                                    setGridUnavailableBand(band);
+                                    clearCalculateError("gridUnavailable");
+                                    setShowOutagePicker(false);
+                                  }}
+                                >
+                                  {band}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {calculateErrors.gridUnavailable && (
+                            <p className="ass-field-error mt-2 mb-0" role="alert">
+                              {calculateErrors.gridUnavailable}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="template-picker-summary">
+                          <span className="template-picker-summary-label ass-field-label">
+                            Outage Hours
+                          </span>
+                          <span className="template-picker-summary-value ass-semi">
+                            {gridUnavailableBand}
+                          </span>
+                          <button
+                            type="button"
+                            className="template-picker-change-btn"
+                            onClick={() => setShowOutagePicker(true)}
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedPower === "Grid + Generator" && (
+                      <div
+                        className="power-setup-fuel"
+                        id="ass-field-monthlyGeneratorFuelSpend"
+                      >
+                        <div className="power-setup-fuel-row">
+                          <label
+                            className="form-label ass-field-label mb-0"
+                            htmlFor="ass-monthly-generator-fuel"
+                          >
+                            {monthlyGeneratorFuelLabel} (₦ - optional)
+                          </label>
+                          <input
+                            id="ass-monthly-generator-fuel"
+                            type="text"
+                            className={`form-control ass-field-control${
+                              calculateErrors.monthlyGeneratorFuelSpend
+                                ? " is-invalid"
+                                : ""
+                            }`}
+                            placeholder="e.g. 120,000"
+                            value={monthlyGeneratorFuelSpend}
+                            aria-invalid={Boolean(
+                              calculateErrors.monthlyGeneratorFuelSpend,
+                            )}
+                            onChange={(e) => {
+                              setMonthlyGeneratorFuelSpend(
+                                formatIntegerWithCommas(e.target.value),
+                              );
+                              clearCalculateError("monthlyGeneratorFuelSpend");
+                            }}
+                          />
+                        </div>
+                        {calculateErrors.monthlyGeneratorFuelSpend && (
+                          <p className="ass-field-error mt-1 mb-0" role="alert">
+                            {calculateErrors.monthlyGeneratorFuelSpend}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {calculateErrors.powerSetup && (
                   <p className="ass-field-error mt-2 mb-0" role="alert">
                     {calculateErrors.powerSetup}

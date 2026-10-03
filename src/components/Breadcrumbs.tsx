@@ -24,12 +24,33 @@ const ROUTE_LABELS: Record<string, string> = {
   "/blog": "Blog",
 };
 
+function withAssessment(path: string, assessmentId: string): string {
+  return assessmentId
+    ? `${path}?assessment=${encodeURIComponent(assessmentId)}`
+    : path;
+}
+
+function routeItem(path: string, assessmentId: string): BreadcrumbItem {
+  return { label: ROUTE_LABELS[path], to: withAssessment(path, assessmentId) };
+}
+
+function assessmentTrail(assessmentId: string): BreadcrumbItem[] {
+  if (!assessmentId) return [HOME];
+  return [
+    HOME,
+    { label: ROUTE_LABELS["/start-assessment"], to: "/start-assessment" },
+    routeItem("/assessment-result", assessmentId),
+  ];
+}
+
 function buildTrail(
   pathname: string,
   searchParams: URLSearchParams,
+  state: unknown,
 ): BreadcrumbItem[] {
+  const assessmentId = searchParams.get("assessment")?.trim() || "";
+
   if (pathname === "/start-assessment") {
-    const assessmentId = searchParams.get("assessment")?.trim();
     if (assessmentId) {
       return [
         HOME,
@@ -57,14 +78,56 @@ function buildTrail(
     ];
   }
 
+  const current: BreadcrumbItem = { label: ROUTE_LABELS[pathname] };
+
+  if (pathname === "/matched-installers" || pathname === "/explore-financing") {
+    return [...assessmentTrail(assessmentId), current];
+  }
+
+  if (pathname === "/request-intro") {
+    return [
+      ...assessmentTrail(assessmentId),
+      routeItem("/matched-installers", assessmentId),
+      current,
+    ];
+  }
+
+  if (pathname === "/expert-review") {
+    const from = (state as { from?: string } | null)?.from;
+    return from === "assessment-result"
+      ? [...assessmentTrail(assessmentId), current]
+      : [
+          ...assessmentTrail(assessmentId),
+          routeItem("/matched-installers", assessmentId),
+          current,
+        ];
+  }
+
+  if (pathname === "/financing-options") {
+    return [
+      ...assessmentTrail(assessmentId),
+      routeItem("/explore-financing", assessmentId),
+      current,
+    ];
+  }
+
+  if (pathname === "/financing-partners") {
+    return [
+      ...assessmentTrail(assessmentId),
+      routeItem("/explore-financing", assessmentId),
+      routeItem("/financing-options", assessmentId),
+      current,
+    ];
+  }
+
   const label = ROUTE_LABELS[pathname];
   return label ? [HOME, { label }] : [HOME];
 }
 
 export default function Breadcrumbs({ className = "" }: { className?: string }) {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
   const [searchParams] = useSearchParams();
-  const items = buildTrail(pathname, searchParams);
+  const items = buildTrail(pathname, searchParams, state);
 
   if (items.length < 2) return null;
 

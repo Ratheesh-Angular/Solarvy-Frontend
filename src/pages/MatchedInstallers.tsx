@@ -11,6 +11,7 @@ import bttnarrow from "../assets/images/btton-arrow.png";
 import donw from "../assets/images/icon/d11.svg";
 import "../css/MatchedInstallers.css";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
 import QuoteUploadModal from "../components/QuoteUploadModal";
 import SolarvyLoader from "../components/SolarvyLoader";
@@ -447,6 +448,7 @@ function MatchedInstallers() {
         </section>
 
         <section className="container-fluid px-lg-4 px-3 matched-installers-list">
+          <Breadcrumbs />
           <div className="row align-items-start">
             <div className="col-lg-8 ">
               <div className="matched-installers-list__header">

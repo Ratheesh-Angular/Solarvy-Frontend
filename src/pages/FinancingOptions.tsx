@@ -9,6 +9,7 @@ import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import { getAssessment } from "../lib/assessmentApi";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import {
@@ -316,6 +317,7 @@ function FinancingOptions() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          <Breadcrumbs />
           {!financing ? (
             <div className="p-4 shadow-sm rounded-4 ass-first fin-empty">
               <span className="fin-section-icon fin-empty-icon" aria-hidden>

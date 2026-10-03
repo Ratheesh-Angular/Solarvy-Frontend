@@ -4,10 +4,15 @@ import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
+import mapIcon from "../assets/map.png";
+import estimateIcon from "../assets/estimate.png";
+import budgetIcon from "../assets/solarvy-icons/input_method/Monthly Bill.png";
 import { CheckCircle2 } from "lucide-react";
 import { apiPost, ApiError } from "../lib/api";
 import { getAssessment } from "../lib/assessmentApi";
+import { getBuildingIconSrc } from "../lib/buildingIcons";
 import PageSeo from "../components/PageSeo";
+import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import type {
@@ -49,6 +54,37 @@ const EMPTY_PROJECT_SUMMARY: ProjectSummaryItem[] = [
   { label: "Estimated size", value: "—" },
   { label: "Budget range", value: "—" },
 ];
+
+const PROPERTY_TYPE_ALIASES: Record<string, string> = {
+  residential: "Home",
+  house: "Home",
+  industrial: "Factory",
+  "commercial building": "Commercial",
+  office: "Commercial",
+  healthcare: "Hospital",
+};
+
+function getPropertyTypeImage(value: string): string {
+  const key = value.trim().toLowerCase();
+  return (
+    getBuildingIconSrc(PROPERTY_TYPE_ALIASES[key] ?? key) ??
+    getBuildingIconSrc("Home") ??
+    ""
+  );
+}
+
+function getSummaryIcon(item: ProjectSummaryItem): string {
+  switch (item.label) {
+    case "Location":
+      return mapIcon;
+    case "Project type":
+      return getPropertyTypeImage(item.value);
+    case "Estimated size":
+      return estimateIcon;
+    default:
+      return budgetIcon;
+  }
+}
 
 function formatNairaShort(value: unknown): string | null {
   const n = Number(value);
@@ -338,6 +374,7 @@ function RequestIntro() {
         </section>
 
         <section className="container-fluid px-lg-4 py-4">
+          <Breadcrumbs />
           <div className="row g-4 align-items-start">
             <div className="col-lg-8">
               <form id="request-intro-form" onSubmit={handleSubmit}>
@@ -525,13 +562,26 @@ function RequestIntro() {
                     your Solarvy results.
                   </p>
 
-                  <div className="ri-summary-grid">
-                    {projectSummary.map((item) => (
-                      <div className="ri-summary-cell" key={item.label}>
-                        <span className="ri-summary-label">{item.label}</span>
-                        <span className="ri-summary-value">{item.value}</span>
-                      </div>
-                    ))}
+                  <div className="assts-right">
+                    <div className="row g-3 flex-wrap qs-metrics">
+                      {projectSummary.map((item) => (
+                        <div className="col-6" key={item.label}>
+                          <div className="stat-card text-center">
+                            <div className="icon-box-build-right mb-2">
+                              <img src={getSummaryIcon(item)} alt="" />
+                            </div>
+                            <h5 className="asst-h" title={item.value}>
+                              {item.value}
+                            </h5>
+                            <div className="usage-wrapper">
+                              <small>
+                                <b>{item.label.toUpperCase()}</b>
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
