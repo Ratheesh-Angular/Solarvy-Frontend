@@ -8,18 +8,22 @@ import {
   adminGetVisitorDetail,
   adminListAssessments,
   adminListExpertReviews,
+  adminListFinancingEnquiries,
   adminListQuoteUploads,
   adminListRequestIntros,
+  financingStatusLabel,
   type ActivityItem,
   type VisitorSummary,
 } from "../lib/adminApi";
+import { formatNaira } from "../lib/financing";
 
 type UserTab =
   | "activity"
   | "assessments"
   | "request-intros"
   | "expert-reviews"
-  | "quote-uploads";
+  | "quote-uploads"
+  | "financing";
 
 function formatLocation(visitor: VisitorSummary) {
   return [visitor.lastCity, visitor.lastRegion, visitor.lastCountry]
@@ -108,7 +112,9 @@ export default function AdminUserDetail() {
               ? adminListRequestIntros
               : tab === "expert-reviews"
                 ? adminListExpertReviews
-                : adminListQuoteUploads;
+                : tab === "financing"
+                  ? adminListFinancingEnquiries
+                  : adminListQuoteUploads;
         const data = await loader({ visitorId: id, page, limit });
         if (!cancelled) {
           setItems(data.items);
@@ -185,6 +191,7 @@ export default function AdminUserDetail() {
             ["request-intros", "Request Intro"],
             ["expert-reviews", "Expert Review"],
             ["quote-uploads", "Quote Upload"],
+            ["financing", "Financing"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -253,6 +260,62 @@ export default function AdminUserDetail() {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          ) : tab === "financing" ? (
+            <div className="admin-table-wrap">
+              <table className="admin-table admin-fin-table">
+                <thead>
+                  <tr>
+                    <th>Reference</th>
+                    <th>Submitted</th>
+                    <th>Partner / route</th>
+                    <th>Amount requested</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => (
+                    <tr key={String(row.id)}>
+                      <td>
+                        <strong>{valueOrDash(row.reference)}</strong>
+                        {row.assessmentRef ? (
+                          <span className="admin-fin-sub">
+                            {String(row.assessmentRef)}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>
+                        {row.createdAt
+                          ? new Date(String(row.createdAt)).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td>
+                        <strong>{valueOrDash(row.partnerName)}</strong>
+                        <span className="admin-fin-sub">
+                          {valueOrDash(row.routeLabel)}
+                        </span>
+                      </td>
+                      <td>{formatNaira(row.amountToFinance) || "—"}</td>
+                      <td>
+                        <span
+                          className={`admin-fin-status admin-fin-status--${String(row.status)}`}
+                        >
+                          {financingStatusLabel(row.status)}
+                        </span>
+                      </td>
+                      <td>
+                        <Link
+                          className="admin-btn admin-btn-secondary admin-btn-sm"
+                          to={`/admin/users/${id}/financing/${row.id}`}
+                        >
+                          Review
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

@@ -466,6 +466,119 @@ export async function adminListQuoteUploads(params: {
   return data.data!;
 }
 
+export type FinancingStatus = "new" | "in_review" | "sent_to_partner" | "closed";
+
+export const FINANCING_STATUS_LABELS: Record<FinancingStatus, string> = {
+  new: "New",
+  in_review: "In review",
+  sent_to_partner: "Sent to partner",
+  closed: "Closed",
+};
+
+export const FINANCING_STATUS_ORDER: FinancingStatus[] = [
+  "new",
+  "in_review",
+  "sent_to_partner",
+  "closed",
+];
+
+export function financingStatusLabel(status: string | null | undefined) {
+  return (
+    FINANCING_STATUS_LABELS[status as FinancingStatus] ?? status ?? "Unknown"
+  );
+}
+
+export type FinancingProjectSnapshot = {
+  assessmentRef?: string | null;
+  requestedAssessmentRef?: string | null;
+  estimatedSystemCost?: number | null;
+  recommendedSolarKwp?: number | null;
+  recommendedBatteryKwh?: number | null;
+  netAnnualSavings?: number | null;
+  propertyType?: string | null;
+  city?: string | null;
+  state?: string | null;
+};
+
+export type FinancingPartnerSnapshot = {
+  id?: string;
+  name?: string;
+  description?: string;
+  requirements?: string[];
+};
+
+export type AdminFinancingEnquiry = {
+  id: number;
+  reference: string;
+  visitorId: string | null;
+  sessionId: string | null;
+  assessmentId: number | null;
+  assessmentRef: string | null;
+  applicantType: string;
+  amountToFinance: number | null;
+  depositAvailable: number | null;
+  repaymentPeriod: string;
+  repaymentLabel: string;
+  incomeRange: string;
+  location: string;
+  notes: string;
+  routeId: string;
+  routeLabel: string;
+  partnerId: string;
+  partnerName: string;
+  partnerSnapshot: FinancingPartnerSnapshot;
+  sharedItems: string[];
+  projectSnapshot: FinancingProjectSnapshot;
+  consentShare: boolean;
+  confirmAccurate: boolean;
+  confirmTerms: boolean;
+  status: FinancingStatus;
+  adminNotes: string;
+  statusUpdatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function adminListFinancingEnquiries(params: {
+  q?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+  visitorId?: string;
+} = {}) {
+  const data = await adminFetch<
+    ApiEnvelope<PagedResult<AdminFinancingEnquiry>>
+  >(`/admin/financing-enquiries${toQuery(params)}`);
+  return data.data!;
+}
+
+export async function adminGetFinancingEnquiry(
+  id: string | number,
+  params: { visitorId?: string } = {},
+) {
+  const data = await adminFetch<ApiEnvelope<AdminFinancingEnquiry>>(
+    `/admin/financing-enquiries/${encodeURIComponent(String(id))}${toQuery(params)}`,
+  );
+  return data.data!;
+}
+
+export async function adminUpdateFinancingEnquiry(
+  id: string | number,
+  payload: { status?: FinancingStatus; adminNotes?: string },
+  params: { visitorId?: string } = {},
+) {
+  const data = await adminFetch<ApiEnvelope<AdminFinancingEnquiry>>(
+    `/admin/financing-enquiries/${encodeURIComponent(String(id))}${toQuery(params)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return data.data!;
+}
+
 export type AdminBlogPayload = {
   title: string;
   slug?: string;

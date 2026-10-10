@@ -1,3 +1,5 @@
+import { apiPost } from "./api";
+
 export type RepaymentPeriod = "12-24" | "24-36" | "36+";
 
 export type FinancingPreferences = {
@@ -207,6 +209,65 @@ export type FinancingEnquiry = {
 export function createFinancingReference(): string {
   const digits = Math.floor(10000 + Math.random() * 90000);
   return `SV-FIN-${digits}`;
+}
+
+export type SubmitFinancingEnquiryPayload = {
+  assessmentId: string;
+  financing: FinancingPreferences;
+  route: FinancingRouteId;
+  partner: FinancingPartner;
+  sharedItems: string[];
+  confirmAccurate: boolean;
+  confirmTerms: boolean;
+};
+
+export async function submitFinancingEnquiry({
+  assessmentId,
+  financing,
+  route,
+  partner,
+  sharedItems,
+  confirmAccurate,
+  confirmTerms,
+}: SubmitFinancingEnquiryPayload): Promise<{
+  id: number;
+  reference: string;
+  submittedAt: string;
+}> {
+  const response = await apiPost<{
+    success: boolean;
+    message?: string;
+    data?: { id: number; reference: string; submittedAt: string };
+  }>("/financing-enquiries", {
+    assessmentId: assessmentId || null,
+    applicantType: financing.applicantType,
+    amountToFinance: financing.amountToFinance,
+    depositAvailable: financing.depositAvailable,
+    repaymentPeriod: financing.repaymentPeriod,
+    repaymentLabel: repaymentLabel(financing.repaymentPeriod) ?? "",
+    incomeRange: financing.incomeRange,
+    location: financing.location,
+    notes: financing.notes,
+    routeId: route,
+    routeLabel: FINANCING_ROUTE_LABELS[route],
+    partnerId: partner.id,
+    partnerName: partner.name,
+    partner: {
+      id: partner.id,
+      name: partner.name,
+      description: partner.description,
+      requirements: partner.requirements,
+    },
+    sharedItems,
+    consentShare: financing.consent,
+    confirmAccurate,
+    confirmTerms,
+  });
+
+  if (!response.data?.reference) {
+    throw new Error(response.message || "Could not submit financing enquiry");
+  }
+  return response.data;
 }
 
 const enquiryStorageKey = (assessmentId: string) =>

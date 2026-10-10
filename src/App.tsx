@@ -41,6 +41,7 @@ import AdminUsers from "./pages/AdminUsers.tsx";
 import AdminUserDetail from "./pages/AdminUserDetail.tsx";
 import AdminAssessmentDetail from "./pages/AdminAssessmentDetail.tsx";
 import AdminAssessmentResults from "./pages/AdminAssessmentResults.tsx";
+import AdminFinancingDetail from "./pages/AdminFinancingDetail.tsx";
 import AdminAssessments from "./pages/AdminAssessments.tsx";
 import AdminLeads from "./pages/AdminLeads.tsx";
 import AdminExcelTemplate from "./pages/AdminExcelTemplate.tsx";
@@ -98,6 +99,10 @@ function App() {
             <Route
               path="users/:id/assessments/:assessmentId/results"
               element={<AdminAssessmentResults />}
+            />
+            <Route
+              path="users/:id/financing/:financingId"
+              element={<AdminFinancingDetail />}
             />
             <Route
               path="visitors"

@@ -18,12 +18,12 @@ import {
   FINANCING_PARTNERS,
   FINANCING_ROUTE_ICONS,
   FINANCING_ROUTE_LABELS,
-  createFinancingReference,
   formatNaira,
   isFinancingRouteId,
   loadFinancingRequest,
   repaymentLabel,
   saveFinancingEnquiry,
+  submitFinancingEnquiry,
   toNumber,
   type FinancingEnquiry as FinancingEnquiryRecord,
   type FinancingPartner,
@@ -83,6 +83,7 @@ function FinancingEnquiry() {
   const [confirmAccurate, setConfirmAccurate] = useState(false);
   const [confirmTerms, setConfirmTerms] = useState(false);
   const [errors, setErrors] = useState<ConfirmErrors>({});
+  const [sending, setSending] = useState(false);
   const { toast, showError, clearToast } = useFeedbackToast();
 
   const projectCost = toNumber(results?.estimatedSystemCost);
@@ -145,8 +146,8 @@ function FinancingEnquiry() {
     });
   };
 
-  const handleSend = () => {
-    if (!financing || !partner) return;
+  const handleSend = async () => {
+    if (!financing || !partner || sending) return;
 
     const nextErrors: ConfirmErrors = {};
     if (!confirmAccurate) {
@@ -170,13 +171,35 @@ function FinancingEnquiry() {
     }
 
     clearToast();
+    setSending(true);
+
+    let submitted: Awaited<ReturnType<typeof submitFinancingEnquiry>>;
+    try {
+      submitted = await submitFinancingEnquiry({
+        assessmentId,
+        financing,
+        route: routeId,
+        partner,
+        sharedItems,
+        confirmAccurate,
+        confirmTerms,
+      });
+    } catch (err) {
+      setSending(false);
+      showError(
+        err instanceof Error && err.message
+          ? err.message
+          : "We couldn't send your financing enquiry. Please try again.",
+      );
+      return;
+    }
 
     const enquiry: FinancingEnquiryRecord = {
       route: routeId,
       partnerId: partner.id,
       partnerName: partner.name,
-      submittedAt: new Date().toISOString(),
-      reference: createFinancingReference(),
+      submittedAt: submitted.submittedAt || new Date().toISOString(),
+      reference: submitted.reference,
     };
     saveFinancingEnquiry(assessmentId, enquiry);
     navigate(
@@ -548,10 +571,12 @@ function FinancingEnquiry() {
                     <button
                       type="button"
                       className="btn-primary-customss-down"
-                      onClick={handleSend}
+                      onClick={() => void handleSend()}
+                      disabled={sending}
+                      aria-busy={sending}
                     >
                       <i className="bi bi-send" aria-hidden />
-                      <span>Send Financing Enquiry</span>
+                      <span>{sending ? "Sending…" : "Send Financing Enquiry"}</span>
                       <i className="bi bi-arrow-right" aria-hidden />
                     </button>
                   </div>
