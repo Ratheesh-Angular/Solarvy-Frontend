@@ -382,7 +382,7 @@ function RequestIntro() {
                   <div className="d-flex align-items-start gap-3 mb-4  rounded-3 installer-highlight-box">
                     {/* <div className="installer-avatar-placeholder"></div> */}
                     <div className="flex-grow-1">
-                      <h5 className="fw-bold mb-2 heading-ass">
+                      <h5 className="fw-bold mb-2 heading-ass mb-3">
                         {installerName}
                       </h5>
                       <div className="d-flex flex-wrap gap-2">
@@ -643,8 +643,7 @@ function RequestIntro() {
                   <div className="ri-aside-back">
                     <button
                       type="button"
-                      className="btn-outline-customss2"
-                      style={{ height: "45px" }}
+                      className="ass-result-forward-back"
                       onClick={() =>
                         navigate(
                           assessmentId
@@ -654,9 +653,7 @@ function RequestIntro() {
                         )
                       }
                     >
-                      <span className="icon-get">
-                        <i className="bi bi-arrow-left"></i>
-                      </span>
+                      <i className="bi bi-arrow-left" aria-hidden />
                       <span>Back to installers</span>
                     </button>
                   </div>

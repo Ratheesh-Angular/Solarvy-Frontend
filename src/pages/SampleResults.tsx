@@ -265,18 +265,18 @@ function SampleResults() {
                 <div className="d-flex align-items-center mb-4">
                   <div>
                     <h5 className="fw-bold mb-1 rang-head">Energy mix</h5>
-                    <small className="text-muted">
+                    <p className="text-muted small mb-0 para-ass">
                       This shows how solar, grid, and generator power work
                       together to supply your energy.
-                    </small>
+                    </p>
                   </div>
                 </div>
 
                 <div className="row">
                   <div className="col-md-12  mt-0 mt-md-0">
-                    <h6 className="left-rang fw-bold mb-3">
+                    {/* <h6 className="left-rang fw-bold mb-3">
                       % Your Energy Mix
-                    </h6>
+                    </h6> */}
 
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
@@ -329,10 +329,12 @@ function SampleResults() {
                     <h5 className="fw-bold mb-1 rang-head ">
                       Financial summary
                     </h5>
-                    <small className="text-muted">
-                      See how your energy costs change with the recommended
-                      setup.
-                    </small>
+
+                    <p className="text-muted small mb-0 para-ass">
+                    See how your energy costs change with the recommended
+                    setup.
+                      </p>
+                    
                   </div>
                 </div>
 

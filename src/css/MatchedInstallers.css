@@ -285,14 +285,14 @@
 
 .best-match-card__score {
   flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: "Poppins", sans-serif;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
   color: #fff;
@@ -1548,6 +1548,18 @@ span.badge-custom-blue {
   filter: #1e3a8a !important;
   filter: brightness(0) saturate(100%) invert(18%) sepia(98%) saturate(1800%)
     hue-rotate(220deg) brightness(85%) contrast(95%);
+}
+
+.upload-icon-png {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-icon-png img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .quote-subtext {

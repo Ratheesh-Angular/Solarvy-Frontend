@@ -649,23 +649,22 @@ function AssesementResult() {
                 id="ass-result-financial"
                 className="p-4 shadow-sm rounded-4 ass-resul-first mt-4"
               >
-                <div className="d-flex align-items-center mb-4">
-                  <div className="icon-box-maony me-3">
-                    <img src={money} alt="icon" />
-                  </div>
-                  <div>
-                    <h5 className="fw-bold mb-1 rang-head section-card-title">
-                      Financial Summary
-                    </h5>
-                    <p className="text-muted small mb-0 para-ass">
-                      Understand the commercial side quickly, without technical
-                      jargon.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="row">
+                <div className="row ass-result-finance-energy-row">
                   <div className="col-md-6 border-md-end">
+                    <div className="d-flex align-items-start mb-4 ass-result-split-header">
+                      <div className="icon-box-maony me-3">
+                        <img src={money} className="icon-box-maony-img" alt="icon" />
+                      </div>
+                      <div>
+                        <h5 className="fw-bold mb-1 rang-head section-card-title">
+                          Financial Summary
+                        </h5>
+                        <p className="text-muted small mb-0 para-ass">
+                          Understand the commercial side quickly, without technical
+                          jargon.
+                        </p>
+                      </div>
+                    </div>
                     <div className="summary-row d-flex justify-content-between">
                       <span className="rang-name">Estimated system cost</span>
                       <strong className="rang-head">{systemCost}</strong>
@@ -697,7 +696,20 @@ function AssesementResult() {
                   </div>
 
                   <div className="col-md-6 ps-md-4 mt-4 mt-md-0 d-none d-md-block">
-                    <h6 className="left-rang fw-bold mb-3">Your Energy Mix</h6>
+                    <div className="d-flex align-items-start mb-4 ass-result-split-header">
+                      <div className="icon-box-maony me-3">
+                        <img src={thunder} className="icon-box-maony-img" alt="" />
+                      </div>
+                      <div>
+                        <h5 className="fw-bold mb-1 rang-head section-card-title">
+                          Your Energy Mix
+                        </h5>
+                        <p className="text-muted small mb-0 para-ass">
+                          This shows how solar, grid, and generator power work
+                          together to supply your energy.
+                        </p>
+                      </div>
+                    </div>
 
                     <div className="mb-3">
                       <div className="d-flex justify-content-between">
@@ -752,16 +764,16 @@ function AssesementResult() {
               <div className="p-4 shadow-sm rounded-4 ass-resul-first mt-4 d-md-none">
                 <div className="d-flex align-items-start mb-4">
                   <div className="icon-box-maony me-3">
-                    <img src={thunder} alt="" />
+                    <img src={thunder} className="icon-box-maony-img" alt="" />
                   </div>
                   <div>
                     <h5 className="fw-bold mb-1 rang-head section-card-title">
                       Your Energy Mix
                     </h5>
-                    <small className="text-muted">
+                    <p className="text-muted small mb-0 para-ass">
                       This shows how solar, grid, and generator power work
                       together to supply your energy.
-                    </small>
+                    </p>
                   </div>
                 </div>
 
@@ -821,9 +833,9 @@ function AssesementResult() {
               <div className="ass-result-snapshot">
                 <div className="p-4 rounded-4 shadow-sm right-panel assts-right">
                   <div className="ass-result-snapshot-header mb-3">
-                    <div className="qs-icon" aria-hidden>
-                      <img src={qut} alt="" />
-                    </div>
+                  <div className="icon-box-maony">
+                    <img src={thunder} className="icon-box-maony-img" alt="" />
+                  </div>
                     <div className="ass-result-snapshot-heading">
                       <h6 className="qt-text fw-bold mb-0">Quick Snapshot</h6>
                       <p className="ass-result-snapshot-subtitle mb-0" style={{ fontSize: '12px' }}>
@@ -939,7 +951,7 @@ function AssesementResult() {
               <div className="p-3 p-md-4 shadow-sm rounded-4 ass-resul-first ass-result-compare-card">
                 <div className="d-flex align-items-start mb-4">
                   <div className="icon-box-maony me-3">
-                    <img src={compare} alt="icon" />
+                    <img src={compare} className="icon-box-maony-img" alt="icon" />
                   </div>
                   <div>
                     <h5 className="fw-bold mb-1 rang-head section-card-title">
@@ -1045,7 +1057,7 @@ function AssesementResult() {
               <div className="p-4 shadow-sm rounded-4 ass-resul-first ai-recommendation-card">
                 <div className="d-flex align-items-center mb-2">
                   <div className="icon-box-maony me-2" aria-hidden>
-                    <Sparkles size={12} strokeWidth={2} />
+                    <Sparkles size={16} strokeWidth={2} />
                   </div>
                   <div>
                     <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
@@ -1091,7 +1103,7 @@ function AssesementResult() {
                   <div className="ass-result-forward-card">
                     <div className="ass-result-forward-card-top">
                       <span
-                        className="ass-result-forward-card-icon"
+                        className="ass-result-forward-card-icon icon-box-build-right mb-2"
                         aria-hidden
                       >
                         <img src={financeIcon} alt="" />
@@ -1109,18 +1121,18 @@ function AssesementResult() {
                     <button
                       type="button"
                       className="ass-result-forward-card-link"
-                      // onClick={() => {
-                      //   void trackCtaClick("explore_financing", {
-                      //     entityType: "assessment",
-                      //     entityId: assessmentId || undefined,
-                      //   });
-                      //   navigate(
-                      //     assessmentId
-                      //       ? `/explore-financing?assessment=${encodeURIComponent(assessmentId)}`
-                      //       : "/explore-financing",
-                      //     { state: { from: "assessment-result" } },
-                      //   );
-                      // }}
+                      onClick={() => {
+                        void trackCtaClick("explore_financing", {
+                          entityType: "assessment",
+                          entityId: assessmentId || undefined,
+                        });
+                        navigate(
+                          assessmentId
+                            ? `/explore-financing?assessment=${encodeURIComponent(assessmentId)}`
+                            : "/explore-financing",
+                          { state: { from: "assessment-result" } },
+                        );
+                      }}
                     >
                       Explore financing
                       <i className="bi bi-arrow-right" aria-hidden />
@@ -1130,7 +1142,7 @@ function AssesementResult() {
                   <div className="ass-result-forward-card">
                     <div className="ass-result-forward-card-top">
                       <span
-                        className="ass-result-forward-card-icon"
+                        className="ass-result-forward-card-icon icon-box-build-right mb-2"
                         aria-hidden
                       >
                         <img src={installersIcon} alt="" />
@@ -1169,7 +1181,7 @@ function AssesementResult() {
                   <div className="ass-result-forward-card">
                     <div className="ass-result-forward-card-top">
                       <span
-                        className="ass-result-forward-card-icon"
+                        className="ass-result-forward-card-icon icon-box-build-right mb-2"
                         aria-hidden
                       >
                         <img src={quotationIcon} alt="" />
@@ -1203,7 +1215,7 @@ function AssesementResult() {
                   <div className="ass-result-forward-card">
                     <div className="ass-result-forward-card-top">
                       <span
-                        className="ass-result-forward-card-icon"
+                        className="ass-result-forward-card-icon icon-box-build-right mb-2"
                         aria-hidden
                       >
                         <img src={expertReviewIcon} alt="" />

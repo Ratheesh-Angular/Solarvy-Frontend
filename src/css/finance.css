@@ -88,38 +88,13 @@
   line-height: 1;
 }
 
-/* ---------- Inputs with icons / prefixes ---------- */
-.fin-input-icon {
-  position: relative;
-}
-
-.fin-input-icon > i,
-.fin-input-icon > .fin-input-prefix {
-  position: absolute;
-  top: 50%;
-  left: 14px;
-  z-index: 2;
-  transform: translateY(-50%);
-  color: #7a88a8;
-  font-size: 15px;
-  line-height: 1;
-  pointer-events: none;
-}
-
-.fin-input-icon > .fin-input-prefix {
-  color: #1a2259;
-  font-family: "Poppins", sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.fin-input-icon input.form-control.ass-field-control,
-.fin-input-icon select.form-select.ass-field-control {
-  padding-left: 40px;
-}
-
-.fin-input-icon:focus-within > i {
-  color: #174c90;
+.fin-stats .qs-cards .icon-box-right img.colo-sym-right {
+  top: 0;
+  margin: 0;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
 }
 
 /* ---------- Funding panel + split bar ---------- */

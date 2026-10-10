@@ -8,7 +8,8 @@ import {
 import "../assets/images/logo.png";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
-import donw from "../assets/images/icon/d11.svg";
+import helpDeskIcon from "../assets/help-desk.png";
+import uploadIcon from "../assets/upload.png";
 import "../css/MatchedInstallers.css";
 import PageSeo from "../components/PageSeo";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -719,9 +720,14 @@ function MatchedInstallers() {
               )}
 
               <div className="side-card need-help">
-                <h6 className="company-name-m">
-                  <i className="bi bi-shield"></i> Need help choosing?
-                </h6>
+                <div className="ass-result-snapshot-header mb-3">
+                  <div className="icon-box-maony">
+                    <img src={helpDeskIcon} className="icon-box-maony-img" alt="" />
+                  </div>
+                  <div className="ass-result-snapshot-heading">
+                    <h6 className="qt-text fw-bold mb-0">Need help choosing?</h6>
+                  </div>
+                </div>
 
                 <div className="review-card">
                   <p className="review-text">
@@ -748,11 +754,13 @@ function MatchedInstallers() {
               </div>
 
               <div className="quote-card-match mb-4">
-                <div className="quote-header">
-                  <span className="upload-icon">
-                    <img src={donw} alt="logo" />
-                  </span>
-                  <h6>Already have a quote?</h6>
+                <div className="ass-result-snapshot-header mb-3">
+                  <div className="icon-box-maony">
+                    <img src={uploadIcon} className="icon-box-maony-img" alt="" />
+                  </div>
+                  <div className="ass-result-snapshot-heading">
+                    <h6 className="qt-text fw-bold mb-0">Already have a quote?</h6>
+                  </div>
                 </div>
 
                 <p className="quote-subtext">
@@ -762,8 +770,8 @@ function MatchedInstallers() {
 
                 <div className="upload-box">
                   <div className="upload-inner">
-                    <span className="upload-icon">
-                      <img src={donw} alt="logo" />
+                    <span className="upload-icon-png">
+                      <img src={uploadIcon} alt="" />
                     </span>
                     <p className="upload-title">Upload quote</p>
                     <p className="upload-desc">PDF, image, or summary</p>
@@ -781,14 +789,10 @@ function MatchedInstallers() {
                   Upload file
                 </button>
 
-                <button
-                  type="button"
-                  className="upload-btn mt-2"
-                  onClick={() => navigate(backPath)}
-                >
-                  <i className="bi bi-arrow-left" aria-hidden />
-                  <span>{backLabel}</span>
-                </button>
+                <button type="button" className="ass-result-forward-back" onClick={() => navigate(backPath)}>
+                  <i className="bi bi-arrow-left" aria-hidden="true"></i><span>{backLabel}</span></button>
+
+                
 
                 {quoteError ? (
                   <p className="text-danger small mt-2 mb-0">{quoteError}</p>

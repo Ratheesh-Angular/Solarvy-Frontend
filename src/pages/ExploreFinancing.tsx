@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
+import estimatedCostIcon from "../assets/solarvy-icons/input_method/Monthly Bill.png";
+import systemIcon from "../assets/solarvy-icons/input_method/Custom Equipment.png";
+import annualSavingsIcon from "../assets/solarvy-icons/live summary/statistics.png";
 import { getAssessment } from "../lib/assessmentApi";
+import { matchNigeriaState } from "../lib/geolocation";
+import { NIGERIA_STATE_LABELS } from "../lib/nigeriaStates";
 import PageSeo from "../components/PageSeo";
 import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
@@ -51,10 +56,10 @@ const APPLICANT_TYPES = [
 ];
 
 const INCOME_RANGES = [
-  "Below ₦500k",
-  "₦500k–₦1m",
-  "₦1m–₦5m",
-  "Above ₦5m",
+  "Below 500k",
+  "500k–1m",
+  "1m–5m",
+  "Above 5m",
 ];
 
 const HOW_IT_WORKS = [
@@ -97,13 +102,13 @@ function buildProjectStats(
     {
       label: "ESTIMATED SYSTEM COST",
       value: formatNaira(results?.estimatedSystemCost) || MISSING,
-      icon: "bi-cash-stack",
+      icon: estimatedCostIcon,
     },
-    { label: "SYSTEM", value: system || MISSING, icon: "bi-sun" },
+    { label: "SYSTEM", value: system || MISSING, icon: systemIcon },
     {
       label: "EST. ANNUAL SAVINGS",
       value: formatNaira(results?.netAnnualSavings) || MISSING,
-      icon: "bi-graph-up-arrow",
+      icon: annualSavingsIcon,
     },
   ];
 }
@@ -123,8 +128,10 @@ function ExploreFinancing() {
   );
   const [systemCost, setSystemCost] = useState<number | null>(null);
   const [savedRequest] = useState(() => loadFinancingRequest(assessmentId));
+  const savedLocation =
+    matchNigeriaState(savedRequest?.location ?? "", NIGERIA_STATE_LABELS) ?? "";
   const depositTouched = useRef(savedRequest?.depositAvailable != null);
-  const locationTouched = useRef(Boolean(savedRequest?.location));
+  const locationTouched = useRef(Boolean(savedLocation));
 
   const [formData, setFormData] = useState(() => ({
     applicantType: savedRequest?.applicantType || APPLICANT_TYPES[0],
@@ -138,7 +145,7 @@ function ExploreFinancing() {
     repaymentPeriod: (savedRequest?.repaymentPeriod ??
       "24-36") as RepaymentPeriod,
     incomeRange: savedRequest?.incomeRange ?? "",
-    location: savedRequest?.location ?? "",
+    location: savedLocation,
     notes: savedRequest?.notes ?? "",
   }));
   const [consent, setConsent] = useState(savedRequest?.consent ?? false);
@@ -262,9 +269,9 @@ function ExploreFinancing() {
     }
 
     if (!location) {
-      nextErrors.location = "Please enter your location.";
-    } else if (location.length < 2 || !/[a-z]/i.test(location)) {
-      nextErrors.location = "Please enter a valid city or state.";
+      nextErrors.location = "Please select your location.";
+    } else if (!NIGERIA_STATE_LABELS.includes(location)) {
+      nextErrors.location = "Please select your location.";
     }
 
     if (!consent) {
@@ -318,12 +325,22 @@ function ExploreFinancing() {
         setProjectStats(buildProjectStats(results));
         setSystemCost(toNumber(results?.estimatedSystemCost));
 
-        const location =
-          results?.city?.trim() ||
-          data.formData?.city?.trim() ||
-          results?.country?.trim() ||
-          data.formData?.country?.trim() ||
-          "";
+        const form = data.formData as
+          | { state?: string; city?: string }
+          | null
+          | undefined;
+        const candidates = [form?.state, form?.city, results?.city];
+        let location = "";
+        for (const candidate of candidates) {
+          const matched = matchNigeriaState(
+            candidate ?? "",
+            NIGERIA_STATE_LABELS,
+          );
+          if (matched) {
+            location = matched;
+            break;
+          }
+        }
         if (location && !locationTouched.current) {
           setFormData((prev) =>
             prev.location ? prev : { ...prev, location },
@@ -477,9 +494,7 @@ function ExploreFinancing() {
                   </div>
 
                   <div className="fin-section-head">
-                    <span className="fin-section-icon" aria-hidden>
-                      <i className="bi bi-clipboard-check"></i>
-                    </span>
+                   
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">
                         Your recommended project
@@ -496,9 +511,12 @@ function ExploreFinancing() {
                       <div className="col-12 col-md-4" key={item.label}>
                         <div className="qs-cards h-100">
                           <div className="icon-box-right">
-                            <i
-                              className={`colo-sym-right bi ${item.icon} text-primary fs-5`}
-                            ></i>
+                            <img
+                              className="colo-sym-right"
+                              src={item.icon}
+                              alt=""
+                              aria-hidden
+                            />
                           </div>
                           <small className="label">{item.label}</small>
                           <h5 className="value">{item.value}</h5>
@@ -510,9 +528,7 @@ function ExploreFinancing() {
 
                 <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
                   <div className="fin-section-head">
-                    <span className="fin-section-icon" aria-hidden>
-                      <i className="bi bi-sliders"></i>
-                    </span>
+                   
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">
                         Financing preferences
@@ -529,21 +545,18 @@ function ExploreFinancing() {
                       <label className="form-label ass-field-label">
                         APPLICANT TYPE
                       </label>
-                      <div className="fin-input-icon">
-                        <i className="bi bi-person" aria-hidden />
-                        <select
-                          name="applicantType"
-                          value={formData.applicantType}
-                          onChange={handleChange}
-                          className="form-select ass-field-control"
-                        >
-                          {APPLICANT_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <select
+                        name="applicantType"
+                        value={formData.applicantType}
+                        onChange={handleChange}
+                        className="form-select ass-field-control"
+                      >
+                        {APPLICANT_TYPES.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="col-12">
@@ -554,27 +567,22 @@ function ExploreFinancing() {
                             id="fin-field-amountToFinance"
                           >
                             <label className="form-label ass-field-label">
-                              AMOUNT YOU WANT TO FINANCE
+                              AMOUNT YOU WANT TO FINANCE (₦)
                             </label>
-                            <div className="fin-input-icon">
-                              <span className="fin-input-prefix" aria-hidden>
-                                ₦
-                              </span>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                name="amountToFinance"
-                                value={formData.amountToFinance}
-                                onChange={handleChange}
-                                className={`form-control ass-field-control${
-                                  errors.amountToFinance ? " is-invalid" : ""
-                                }`}
-                                placeholder="4,000,000"
-                                aria-label="Amount you want to finance in naira"
-                                aria-invalid={Boolean(errors.amountToFinance)}
-                                required
-                              />
-                            </div>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              name="amountToFinance"
+                              value={formData.amountToFinance}
+                              onChange={handleChange}
+                              className={`form-control ass-field-control${
+                                errors.amountToFinance ? " is-invalid" : ""
+                              }`}
+                              placeholder="4,000,000"
+                              aria-label="Amount you want to finance in naira"
+                              aria-invalid={Boolean(errors.amountToFinance)}
+                              required
+                            />
                             {errors.amountToFinance && (
                               <p className="ass-field-error" role="alert">
                                 {errors.amountToFinance}
@@ -587,26 +595,21 @@ function ExploreFinancing() {
                             id="fin-field-depositAvailable"
                           >
                             <label className="form-label ass-field-label">
-                              DEPOSIT AVAILABLE
+                              DEPOSIT AVAILABLE (₦)
                             </label>
-                            <div className="fin-input-icon">
-                              <span className="fin-input-prefix" aria-hidden>
-                                ₦
-                              </span>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                name="depositAvailable"
-                                value={formData.depositAvailable}
-                                onChange={handleChange}
-                                className={`form-control ass-field-control${
-                                  errors.depositAvailable ? " is-invalid" : ""
-                                }`}
-                                placeholder="1,282,000"
-                                aria-label="Deposit available in naira"
-                                aria-invalid={Boolean(errors.depositAvailable)}
-                              />
-                            </div>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              name="depositAvailable"
+                              value={formData.depositAvailable}
+                              onChange={handleChange}
+                              className={`form-control ass-field-control${
+                                errors.depositAvailable ? " is-invalid" : ""
+                              }`}
+                              placeholder="1,282,000"
+                              aria-label="Deposit available in naira"
+                              aria-invalid={Boolean(errors.depositAvailable)}
+                            />
                             {errors.depositAvailable && (
                               <p className="ass-field-error" role="alert">
                                 {errors.depositAvailable}
@@ -647,7 +650,7 @@ function ExploreFinancing() {
                           </div>
                         ) : (
                           <p className="fin-split-hint">
-                            <i className="bi bi-lightbulb" aria-hidden />
+                            {/* <i className="bi bi-lightbulb" aria-hidden /> */}
                             {systemCost !== null
                               ? `Your estimated system cost is ${formatNaira(systemCost)}. Enter an amount and we'll suggest the deposit.`
                               : "Enter the amount you would like to finance and any deposit you can contribute."}
@@ -689,28 +692,25 @@ function ExploreFinancing() {
 
                     <div className="col-md-6" id="fin-field-incomeRange">
                       <label className="form-label ass-field-label">
-                        MONTHLY INCOME / BUSINESS REVENUE RANGE
+                        MONTHLY INCOME / BUSINESS REVENUE RANGE (₦)
                       </label>
-                      <div className="fin-input-icon">
-                        <i className="bi bi-wallet2" aria-hidden />
-                        <select
-                          name="incomeRange"
-                          value={formData.incomeRange}
-                          onChange={handleChange}
-                          className={`form-select ass-field-control${
-                            errors.incomeRange ? " is-invalid" : ""
-                          }`}
-                          aria-invalid={Boolean(errors.incomeRange)}
-                          required
-                        >
-                          <option value="">Select range</option>
-                          {INCOME_RANGES.map((range) => (
-                            <option key={range} value={range}>
-                              {range}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <select
+                        name="incomeRange"
+                        value={formData.incomeRange}
+                        onChange={handleChange}
+                        className={`form-select ass-field-control${
+                          errors.incomeRange ? " is-invalid" : ""
+                        }`}
+                        aria-invalid={Boolean(errors.incomeRange)}
+                        required
+                      >
+                        <option value="">Select range</option>
+                        {INCOME_RANGES.map((range) => (
+                          <option key={range} value={range}>
+                            {range}
+                          </option>
+                        ))}
+                      </select>
                       {errors.incomeRange && (
                         <p className="ass-field-error" role="alert">
                           {errors.incomeRange}
@@ -722,22 +722,23 @@ function ExploreFinancing() {
                       <label className="form-label ass-field-label">
                         LOCATION
                       </label>
-                      <div className="fin-input-icon">
-                        <i className="bi bi-geo-alt" aria-hidden />
-                        <input
-                          type="text"
-                          name="location"
-                          value={formData.location}
-                          onChange={handleChange}
-                          className={`form-control ass-field-control${
-                            errors.location ? " is-invalid" : ""
-                          }`}
-                          placeholder="City / State"
-                          aria-invalid={Boolean(errors.location)}
-                          maxLength={100}
-                          required
-                        />
-                      </div>
+                      <select
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        className={`form-select ass-field-control${
+                          errors.location ? " is-invalid" : ""
+                        }`}
+                        aria-invalid={Boolean(errors.location)}
+                        required
+                      >
+                        <option value="">Select State</option>
+                        {NIGERIA_STATE_LABELS.map((label) => (
+                          <option key={label} value={label}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
                       {errors.location && (
                         <p className="ass-field-error" role="alert">
                           {errors.location}
@@ -777,9 +778,7 @@ function ExploreFinancing() {
 
                 <div className="p-4 shadow-sm rounded-4 ass-first mt-3 mb-4">
                   <div className="fin-section-head">
-                    <span className="fin-section-icon" aria-hidden>
-                      <i className="bi bi-shield-check"></i>
-                    </span>
+                  
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">
                         Consent to share
@@ -821,7 +820,7 @@ function ExploreFinancing() {
                     )}
                   </div>
 
-                  <p className="fin-disclaimer">
+                  <p className="fin-disclaimer align-items-center">
                     <i className="bi bi-info-circle" aria-hidden />
                     <span>
                       Submitting an enquiry does not guarantee financing or

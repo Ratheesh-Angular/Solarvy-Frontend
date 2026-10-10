@@ -373,9 +373,7 @@ function FinancingOptions() {
               <div className="col-lg-8">
                 <div className="p-4 shadow-sm rounded-4 ass-first">
                   <div className="fin-section-head">
-                    <span className="fin-section-icon" aria-hidden>
-                      <i className="bi bi-signpost-split"></i>
-                    </span>
+                    
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">
                         Potential financing routes

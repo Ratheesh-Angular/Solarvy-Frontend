@@ -255,7 +255,7 @@ function HowItWorks() {
                     <div className="col-12 col-md-6">
                       <div className="shadow-sm rounded-4 ass-first mt-4 how-behind-scenes-card">
                         <div className="icon-box-maony me-3 mb-3">
-                          <img src={money} alt="icon" />
+                          <img src={money} className="icon-box-maony-img" alt="icon" />
                         </div>
                         <div>
                           <h5 className="fw-bold mb-2 rang-head">
@@ -295,7 +295,7 @@ function HowItWorks() {
                     <div className="col-12 col-md-6">
                       <div className="shadow-sm rounded-4 ass-first mt-4 how-behind-scenes-card">
                         <div className="icon-box-maony me-3 mb-3">
-                          <img src={money} alt="icon" />
+                          <img src={money} className="icon-box-maony-img" alt="icon" />
                         </div>
                         <div>
                           <h5 className="fw-bold mb-2 rang-head">

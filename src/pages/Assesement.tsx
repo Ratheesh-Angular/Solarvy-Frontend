@@ -44,6 +44,7 @@ import {
 } from "../lib/liveSummaryIcons";
 import { getObjectiveIconSrc } from "../lib/objectiveIcons";
 import { getPowerSetupIconSrc } from "../lib/powerSetupIcons";
+import { NIGERIA_STATE_LABELS } from "../lib/nigeriaStates";
 import {
   detectUserLocation,
   matchNigeriaState,
@@ -721,51 +722,6 @@ function ApplianceKindSelect({
   );
 }
 
-/** Stable slug → official state name (36 states + FCT). */
-const NIGERIA_STATES: Record<string, string> = {
-  abia: "Abia",
-  adamawa: "Adamawa",
-  akwa_ibom: "Akwa Ibom",
-  anambra: "Anambra",
-  bauchi: "Bauchi",
-  bayelsa: "Bayelsa",
-  benue: "Benue",
-  borno: "Borno",
-  cross_river: "Cross River",
-  delta: "Delta",
-  ebonyi: "Ebonyi",
-  edo: "Edo",
-  ekiti: "Ekiti",
-  enugu: "Enugu",
-  fct: "Federal Capital Territory",
-  gombe: "Gombe",
-  imo: "Imo",
-  jigawa: "Jigawa",
-  kaduna: "Kaduna",
-  kano: "Kano",
-  katsina: "Katsina",
-  kebbi: "Kebbi",
-  kogi: "Kogi",
-  kwara: "Kwara",
-  lagos: "Lagos",
-  nasarawa: "Nasarawa",
-  niger: "Niger",
-  ogun: "Ogun",
-  ondo: "Ondo",
-  osun: "Osun",
-  oyo: "Oyo",
-  plateau: "Plateau",
-  rivers: "Rivers",
-  sokoto: "Sokoto",
-  taraba: "Taraba",
-  yobe: "Yobe",
-  zamfara: "Zamfara",
-};
-
-const NIGERIA_STATES_SORTED = Object.entries(NIGERIA_STATES).sort((a, b) =>
-  a[1].localeCompare(b[1]),
-);
-
 function Assesement() {
   const [open, setOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState("");
@@ -965,7 +921,7 @@ function Assesement() {
       if (isNigeria) {
         const stateOptions = catalogs?.states?.length
           ? catalogs.states
-          : NIGERIA_STATES_SORTED.map(([, label]) => label);
+          : NIGERIA_STATE_LABELS;
         const matchedState = matchNigeriaState(location.state, stateOptions);
 
         setFormData((prev) => {
@@ -2307,7 +2263,7 @@ function Assesement() {
                       <option value="">Select State</option>
                       {(catalogs?.states?.length
                         ? catalogs.states
-                        : NIGERIA_STATES_SORTED.map(([, label]) => label)
+                        : NIGERIA_STATE_LABELS
                       ).map((label) => (
                         <option key={label} value={label}>
                           {label}
@@ -2340,8 +2296,9 @@ function Assesement() {
                   </div>
                 </div>
 
-                {powerOptions.map((item) => {
+                {powerOptions.map((item, index) => {
                   const isActive = selectedPower === item.title;
+                  const isThirdPowerIcon = index === 2;
                   return (
                     <div className="parent-container onlt-this" key={item.title}>
                       <div
@@ -2365,12 +2322,16 @@ function Assesement() {
                                 <img
                                   src={item.iconSrc}
                                   alt=""
-                                  className="power-setup-icon mobile-iconssss"
+                                  className={`power-setup-icon mobile-iconssss${
+                                    isThirdPowerIcon
+                                      ? " power-setup-icon--third"
+                                      : ""
+                                  }`}
                                   aria-hidden
                                 />
                               ) : (
                                 <item.Icon
-                                  size={20}
+                                  size={isThirdPowerIcon ? 39 : 36}
                                   strokeWidth={2}
                                   aria-hidden
                                 />
@@ -2489,7 +2450,7 @@ function Assesement() {
                             className="form-label ass-field-label mb-0"
                             htmlFor="ass-monthly-generator-fuel"
                           >
-                            {monthlyGeneratorFuelLabel} (₦ - optional)
+                            {monthlyGeneratorFuelLabel} (optional)
                           </label>
                           <input
                             id="ass-monthly-generator-fuel"
@@ -2499,7 +2460,7 @@ function Assesement() {
                                 ? " is-invalid"
                                 : ""
                             }`}
-                            placeholder="e.g. 120,000"
+                            placeholder="₦"
                             value={monthlyGeneratorFuelSpend}
                             aria-invalid={Boolean(
                               calculateErrors.monthlyGeneratorFuelSpend,
@@ -2689,7 +2650,7 @@ function Assesement() {
                   </div>
 
                   <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
-                    <div className="d-flex align-items-center mb-3">
+                    <div className="d-flex align-items-start mb-3">
                       <div
                         className="step-box me-3"
                         style={{ position: "relative", top: "0px" }}

@@ -503,8 +503,7 @@ function ExpertReview() {
                 <div className="ri-aside-back mt-3">
                   <button
                     type="button"
-                    className="btn-outline-customss2"
-                    style={{ height: "45px" }}
+                    className="ass-result-forward-back"
                     onClick={() =>
                       navigate(
                         backPath,
@@ -514,9 +513,7 @@ function ExpertReview() {
                       )
                     }
                   >
-                    <span className="icon-get">
-                      <i className="bi bi-arrow-left"></i>
-                    </span>
+                    <i className="bi bi-arrow-left" aria-hidden />
                     <span>{backLabel}</span>
                   </button>
                 </div>
