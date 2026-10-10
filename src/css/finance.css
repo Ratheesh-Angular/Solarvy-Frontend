@@ -237,7 +237,7 @@ textarea.form-control.ass-field-control.fin-textarea {
   min-height: 120px;
   padding: 0.8rem 0.95rem;
   line-height: 1.6;
-  background-color: #fbfcfe;
+  /* background-color: #fbfcfe; */
 }
 
 textarea.form-control.ass-field-control.fin-textarea:focus {
@@ -290,7 +290,9 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
 
 /* ID selector: ass.css has a global input:not(...) rule (60px wide, background
    shorthand) whose specificity outranks class selectors. */
-#fin-consent-check {
+#fin-consent-check,
+#fin-confirm-accurate,
+#fin-confirm-terms {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -306,12 +308,16 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
   cursor: pointer;
 }
 
-#fin-consent-check:checked {
+#fin-consent-check:checked,
+#fin-confirm-accurate:checked,
+#fin-confirm-terms:checked {
   background-color: #174c90;
   border-color: #174c90;
 }
 
-#fin-consent-check:focus {
+#fin-consent-check:focus,
+#fin-confirm-accurate:focus,
+#fin-confirm-terms:focus {
   border-color: #174c90;
   box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12);
 }
@@ -357,6 +363,11 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.fin-actions .ass-result-forward-back {
+  order: 0;
+  margin-top: 0;
 }
 
 .fin-actions button.btn-primary-customss-down {
@@ -469,7 +480,7 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
   margin-bottom: 0.4rem;
   color: #1a2259;
   font-family: "Poppins", sans-serif;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -598,16 +609,16 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
   margin: 0;
   color: #1a2259;
   font-family: "Poppins", sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.35;
 }
 
 .fin-route-desc {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   color: #6f7196;
   font-family: "Poppins", sans-serif;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -699,6 +710,30 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
   border-top: none;
 }
 
+/* Review & Send: shared-information checklist */
+.fin-req.fin-req--share {
+  margin-top: 0;
+  border-color: #e8edf5;
+  background: #f8fafd;
+}
+
+.fin-req--share .fin-req-list {
+  grid-template-columns: 1fr;
+}
+
+/* Review & Send: full-width stacked sidebar buttons */
+.fin-actions.fin-actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.fin-actions.fin-actions--stack button.btn-outline-customsss2-req {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
 .fin-actions.fin-actions--center {
   justify-content: center;
 }
@@ -710,6 +745,36 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
 
 .fin-steps--wide .ri-benefit-heading {
   font-size: 13px;
+}
+
+/* Financing Status: enquiry progress timeline */
+.fin-steps.fin-status-steps {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e8edf5;
+}
+
+.fin-step--done .step-box {
+  background: #12a961;
+  font-size: 16px;
+}
+
+.fin-step--done:not(:last-child)::before {
+  background: #bfe8d3;
+}
+
+.fin-step--active .step-box {
+  background: #174c90;
+  box-shadow: 0 0 0 4px rgba(23, 76, 144, 0.12);
+}
+
+.fin-step--pending .step-box {
+  background: #e8edf5;
+  color: #77809a;
+}
+
+.fin-step--pending:not(:last-child)::before {
+  background: #e8edf5;
 }
 
 /* Sidebar request card */
@@ -725,12 +790,19 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   background: #eef4ff;
   color: #174c90;
   font-size: 15px;
+}
+
+.fin-aside-icon img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
 }
 
 .ri-aside-card .fin-actions {
@@ -766,6 +838,37 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
 
 .fin-notice strong {
   color: #5f4611;
+  font-weight: 600;
+}
+
+/* Compact inline note */
+.fin-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px dashed #d3dff0;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.fin-note i {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #174c90;
+  font-size: 13px;
+}
+
+.fin-note p {
+  margin: 0;
+  color: #5b6785;
+  font-family: "Poppins", sans-serif;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.fin-note strong {
+  color: #1a2259;
   font-weight: 600;
 }
 

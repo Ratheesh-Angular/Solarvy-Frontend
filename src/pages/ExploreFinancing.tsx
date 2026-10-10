@@ -130,7 +130,6 @@ function ExploreFinancing() {
   const [savedRequest] = useState(() => loadFinancingRequest(assessmentId));
   const savedLocation =
     matchNigeriaState(savedRequest?.location ?? "", NIGERIA_STATE_LABELS) ?? "";
-  const depositTouched = useRef(savedRequest?.depositAvailable != null);
   const locationTouched = useRef(Boolean(savedLocation));
 
   const [formData, setFormData] = useState(() => ({
@@ -163,17 +162,6 @@ function ExploreFinancing() {
 
   const amountValue = toNumber(formData.amountToFinance);
   const depositValue = toNumber(formData.depositAvailable);
-  const financePct =
-    systemCost && systemCost > 0 && amountValue
-      ? Math.min(Math.round((amountValue / systemCost) * 100), 100)
-      : null;
-  const depositPct =
-    financePct !== null && systemCost && depositValue
-      ? Math.min(
-          Math.round((depositValue / systemCost) * 100),
-          100 - financePct,
-        )
-      : 0;
   const repaymentText = repaymentLabel(formData.repaymentPeriod) || MISSING;
   const requestSummary = [
     { label: "Applicant", value: formData.applicantType || MISSING },
@@ -204,31 +192,15 @@ function ExploreFinancing() {
 
     if (name === "amountToFinance" || name === "depositAvailable") {
       clearError("amountToFinance", "depositAvailable");
-    } else if (name === "incomeRange" || name === "location") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: formatAmountInput(value),
+      }));
+      return;
+    }
+
+    if (name === "incomeRange" || name === "location") {
       clearError(name);
-    }
-
-    if (name === "amountToFinance") {
-      const formatted = formatAmountInput(value);
-      const amount = toNumber(formatted);
-      setFormData((prev) => ({
-        ...prev,
-        amountToFinance: formatted,
-        depositAvailable:
-          !depositTouched.current && systemCost !== null && amount !== null
-            ? formatAmountInput(String(Math.max(systemCost - amount, 0)))
-            : prev.depositAvailable,
-      }));
-      return;
-    }
-
-    if (name === "depositAvailable") {
-      depositTouched.current = true;
-      setFormData((prev) => ({
-        ...prev,
-        depositAvailable: formatAmountInput(value),
-      }));
-      return;
     }
 
     if (name === "location") {
@@ -485,12 +457,12 @@ function ExploreFinancing() {
                       <i className="bi bi-check-circle-fill" aria-hidden />
                       Assessment connected
                     </span>
-                    {assessmentId && (
+                    {/* {assessmentId && (
                       <span className="fin-id-chip">
                         <i className="bi bi-file-earmark-text" aria-hidden />
                         Assessment {assessmentId}
                       </span>
-                    )}
+                    )} */}
                   </div>
 
                   <div className="fin-section-head">
@@ -578,7 +550,7 @@ function ExploreFinancing() {
                               className={`form-control ass-field-control${
                                 errors.amountToFinance ? " is-invalid" : ""
                               }`}
-                              placeholder="4,000,000"
+                              placeholder="1000"
                               aria-label="Amount you want to finance in naira"
                               aria-invalid={Boolean(errors.amountToFinance)}
                               required
@@ -606,7 +578,7 @@ function ExploreFinancing() {
                               className={`form-control ass-field-control${
                                 errors.depositAvailable ? " is-invalid" : ""
                               }`}
-                              placeholder="1,282,000"
+                              placeholder="1000"
                               aria-label="Deposit available in naira"
                               aria-invalid={Boolean(errors.depositAvailable)}
                             />
@@ -618,44 +590,11 @@ function ExploreFinancing() {
                           </div>
                         </div>
 
-                        {financePct !== null && systemCost !== null ? (
-                          <div className="fin-split">
-                            <div
-                              className="fin-split-bar"
-                              role="img"
-                              aria-label={`Financing ${financePct}%, deposit ${depositPct}% of estimated system cost`}
-                            >
-                              <span
-                                className="fin-split-finance"
-                                style={{ width: `${financePct}%` }}
-                              />
-                              <span
-                                className="fin-split-deposit"
-                                style={{ width: `${depositPct}%` }}
-                              />
-                            </div>
-                            <div className="fin-split-legend">
-                              <span>
-                                <span className="fin-split-dot fin-split-dot--finance" />
-                                Financing <strong>{financePct}%</strong>
-                              </span>
-                              <span>
-                                <span className="fin-split-dot fin-split-dot--deposit" />
-                                Deposit <strong>{depositPct}%</strong>
-                              </span>
-                              <span className="fin-split-total">
-                                of {formatNaira(systemCost)} estimated cost
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
+                        {systemCost !== null ? (
                           <p className="fin-split-hint">
-                            {/* <i className="bi bi-lightbulb" aria-hidden /> */}
-                            {systemCost !== null
-                              ? `Your estimated system cost is ${formatNaira(systemCost)}. Enter an amount and we'll suggest the deposit.`
-                              : "Enter the amount you would like to finance and any deposit you can contribute."}
+                            Your estimated system cost is {formatNaira(systemCost)}.
                           </p>
-                        )}
+                        ) : null}
                       </div>
                     </div>
 
@@ -833,7 +772,7 @@ function ExploreFinancing() {
                   <div className="fin-actions">
                     <button
                       type="button"
-                      className="btn-outline-customsss2-req"
+                      className="ass-result-forward-back"
                       onClick={() => navigate(backPath)}
                     >
                       <i className="bi bi-arrow-left" aria-hidden />

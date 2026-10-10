@@ -195,3 +195,60 @@ export function loadFinancingRequest(
     return null;
   }
 }
+
+export type FinancingEnquiry = {
+  route: FinancingRouteId;
+  partnerId: string;
+  partnerName: string;
+  submittedAt: string;
+  reference: string;
+};
+
+export function createFinancingReference(): string {
+  const digits = Math.floor(10000 + Math.random() * 90000);
+  return `SV-FIN-${digits}`;
+}
+
+const enquiryStorageKey = (assessmentId: string) =>
+  `solarvy:financing-enquiry:${assessmentId || "none"}`;
+
+export function saveFinancingEnquiry(
+  assessmentId: string,
+  enquiry: FinancingEnquiry,
+) {
+  try {
+    sessionStorage.setItem(
+      enquiryStorageKey(assessmentId),
+      JSON.stringify(enquiry),
+    );
+  } catch {
+    /* storage unavailable (private mode / quota) */
+  }
+}
+
+export function loadFinancingEnquiry(
+  assessmentId: string,
+): FinancingEnquiry | null {
+  try {
+    const raw = sessionStorage.getItem(enquiryStorageKey(assessmentId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FinancingEnquiry>;
+    if (
+      !isFinancingRouteId(parsed?.route) ||
+      typeof parsed.partnerId !== "string" ||
+      typeof parsed.partnerName !== "string"
+    ) {
+      return null;
+    }
+    return {
+      route: parsed.route,
+      partnerId: parsed.partnerId,
+      partnerName: parsed.partnerName,
+      submittedAt:
+        typeof parsed.submittedAt === "string" ? parsed.submittedAt : "",
+      reference: typeof parsed.reference === "string" ? parsed.reference : "",
+    };
+  } catch {
+    return null;
+  }
+}

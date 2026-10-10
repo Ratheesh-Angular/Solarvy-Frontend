@@ -7,6 +7,9 @@ import {
 } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
+import monthlyBillIcon from "../assets/solarvy-icons/input_method/Monthly Bill.png";
+import scheduleIcon from "../assets/finance-icons/schedule.png";
+import percentageIcon from "../assets/finance-icons/percentage.png";
 import { getAssessment } from "../lib/assessmentApi";
 import PageSeo from "../components/PageSeo";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -26,7 +29,7 @@ import {
   type FinancingPreferences,
   type FinancingRouteId,
 } from "../lib/financing";
-
+import estimateIcon from "../assets/estimate.png";
 type FinancingPartnersLocationState = {
   financing?: FinancingPreferences;
 };
@@ -67,17 +70,17 @@ function FinancingPartners() {
         {
           label: "FINANCE REQUEST",
           value: formatNairaShort(financing.amountToFinance) || MISSING,
-          icon: "bi-cash-coin",
+          icon: monthlyBillIcon,
         },
         {
           label: "TENOR RANGE",
           value: "Provider confirms",
-          icon: "bi-calendar3",
+          icon: scheduleIcon,
         },
         {
           label: "RATE / PAYMENT",
           value: "After assessment",
-          icon: "bi-percent",
+          icon: percentageIcon,
         },
       ]
     : [];
@@ -282,7 +285,7 @@ function FinancingPartners() {
             <div className="row g-4 align-items-start">
               <div className="col-lg-8">
                 <div className="p-4 shadow-sm rounded-4 ass-first">
-                  <div className="fin-card-topline">
+                  {/* <div className="fin-card-topline">
                     <span className="fin-badge fin-badge--blue">
                       <i className={`bi ${FINANCING_ROUTE_ICONS[routeId]}`} aria-hidden />
                       {routeLabel}
@@ -293,12 +296,12 @@ function FinancingPartners() {
                         Assessment {assessmentId}
                       </span>
                     )}
-                  </div>
+                  </div> */}
 
                   <div className="fin-section-head">
-                    <span className="fin-section-icon" aria-hidden>
+                    {/* <span className="fin-section-icon" aria-hidden>
                       <i className="bi bi-bank"></i>
-                    </span>
+                    </span> */}
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">
                         Potential partner matches
@@ -327,9 +330,9 @@ function FinancingPartners() {
                           )}
 
                           <div className="fin-route-head">
-                            <span className="fin-section-icon" aria-hidden>
+                            {/* <span className="fin-section-icon" aria-hidden>
                               <i className="bi bi-building"></i>
-                            </span>
+                            </span> */}
                             <h6 className="fin-route-name">{partner.name}</h6>
                             <span className="fin-badge">Potential match</span>
                           </div>
@@ -342,9 +345,12 @@ function FinancingPartners() {
                               <div className="col-6 col-md-4" key={fact.label}>
                                 <div className="qs-cards h-100">
                                   <div className="icon-box-right">
-                                    <i
-                                      className={`colo-sym-right bi ${fact.icon} text-primary fs-5`}
-                                    ></i>
+                                    <img
+                                      className="colo-sym-right"
+                                      src={fact.icon}
+                                      alt=""
+                                      aria-hidden
+                                    />
                                   </div>
                                   <small className="label">{fact.label}</small>
                                   <h5 className="value">{fact.value}</h5>
@@ -355,7 +361,7 @@ function FinancingPartners() {
 
                           <div className="fin-req">
                             <span className="fin-req-title">
-                              <i className="bi bi-card-checklist" aria-hidden />
+                              {/* <i className="bi bi-card-checklist" aria-hidden /> */}
                               Indicative requirements
                             </span>
                             <ul className="fin-req-list">
@@ -389,38 +395,14 @@ function FinancingPartners() {
                   </div>
                 </div>
 
-                <div className="p-4 shadow-sm rounded-4 ass-first mt-3 mb-4">
-                  <div className="fin-section-head">
-                    <span className="fin-section-icon" aria-hidden>
-                      <i className="bi bi-send-check"></i>
-                    </span>
-                    <div>
-                      <h5 className="fw-bold mb-1 heading-ass">
-                        What happens after you select?
-                      </h5>
-                      <p className="text-muted small mb-0 para-ass">
-                        You will see exactly what will be shared before
-                        anything is sent.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="fin-info">
-                    <span className="fin-info-icon" aria-hidden>
-                      <i className="bi bi-eye"></i>
-                    </span>
-                    <div>
-                      <strong className="fin-info-title">
-                        Next: Review &amp; send enquiry
-                      </strong>
-                      <p className="fin-info-copy">
-                        You will review your contact details, financing
-                        request, project summary and the assessment information
-                        being shared. Nothing is sent to the selected partner
-                        until you confirm.
-                      </p>
-                    </div>
-                  </div>
+                <div className="fin-note mt-3 mb-4" role="note">
+                  <i className="bi bi-info-circle" aria-hidden />
+                  <p>
+                    <strong>Next: Review &amp; send enquiry.</strong> You will
+                    review your contact details, financing request, project
+                    summary and the assessment information being shared.
+                    Nothing is sent to the selected partner until you confirm.
+                  </p>
                 </div>
               </div>
 
@@ -429,7 +411,7 @@ function FinancingPartners() {
                   <div className="ri-aside-card">
                     <div className="fin-aside-head">
                       <span className="fin-aside-icon" aria-hidden>
-                        <i className="bi bi-receipt"></i>
+                        <img src={estimateIcon} alt="" aria-hidden />
                       </span>
                       <h5 className="ri-aside-title mb-0">
                         Your financing request

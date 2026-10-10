@@ -7,6 +7,11 @@ import {
 } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
+import monthlyBillIcon from "../assets/solarvy-icons/input_method/Monthly Bill.png";
+import scheduleIcon from "../assets/finance-icons/schedule.png";
+import hierarchicalIcon from "../assets/finance-icons/hierarchical.png";
+import depositIcon from "../assets/finance-icons/deposit.png";
+import estimateIcon from "../assets/estimate.png";
 import { getAssessment } from "../lib/assessmentApi";
 import PageSeo from "../components/PageSeo";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -83,13 +88,13 @@ function buildRoutes(
         {
           label: "FINANCE REQUEST",
           value: formatNairaShort(financing.amountToFinance) || MISSING,
-          icon: "bi-cash-coin",
+          icon: monthlyBillIcon,
         },
-        { label: "PREFERRED TENOR", value: tenor, icon: "bi-calendar3" },
+        { label: "PREFERRED TENOR", value: tenor, icon: scheduleIcon },
         {
           label: "STRUCTURE",
           value: "Equipment finance",
-          icon: "bi-diagram-3",
+          icon: hierarchicalIcon,
         },
       ],
       cta: "View Financing Partners",
@@ -106,14 +111,14 @@ function buildRoutes(
         {
           label: "PROJECT COST",
           value: formatNairaShort(projectCost) || MISSING,
-          icon: "bi-cash-stack",
+          icon: monthlyBillIcon,
         },
         {
           label: "YOUR DEPOSIT",
           value: formatNairaShort(financing.depositAvailable) || MISSING,
-          icon: "bi-piggy-bank",
+          icon: depositIcon,
         },
-        { label: "STRUCTURE", value: "Instalments", icon: "bi-diagram-3" },
+        { label: "STRUCTURE", value: "Instalments", icon: hierarchicalIcon },
       ],
       cta: "View Financing Partners",
       featured: false,
@@ -399,9 +404,9 @@ function FinancingOptions() {
                         )}
 
                         <div className="fin-route-head">
-                          <span className="fin-section-icon" aria-hidden>
+                          {/* <span className="fin-section-icon" aria-hidden>
                             <i className={`bi ${route.icon}`}></i>
-                          </span>
+                          </span> */}
                           <h6 className="fin-route-name">
                             {FINANCING_ROUTE_LABELS[route.id]}
                           </h6>
@@ -419,9 +424,12 @@ function FinancingOptions() {
                               <div className="col-6 col-md-4" key={fact.label}>
                                 <div className="qs-cards h-100">
                                   <div className="icon-box-right">
-                                    <i
-                                      className={`colo-sym-right bi ${fact.icon} text-primary fs-5`}
-                                    ></i>
+                                    <img
+                                      className="colo-sym-right"
+                                      src={fact.icon}
+                                      alt=""
+                                      aria-hidden
+                                    />
                                   </div>
                                   <small className="label">{fact.label}</small>
                                   <h5 className="value">{fact.value}</h5>
@@ -491,7 +499,7 @@ function FinancingOptions() {
                   <div className="ri-aside-card">
                     <div className="fin-aside-head">
                       <span className="fin-aside-icon" aria-hidden>
-                        <i className="bi bi-receipt"></i>
+                        <img src={estimateIcon} alt="" aria-hidden />
                       </span>
                       <h5 className="ri-aside-title mb-0">Your request</h5>
                     </div>

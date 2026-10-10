@@ -21,6 +21,8 @@ const ROUTE_LABELS: Record<string, string> = {
   "/explore-financing": "Explore Financing",
   "/financing-options": "Financing Options",
   "/financing-partners": "Financing Partners",
+  "/financing-enquiry": "Review & Send",
+  "/financing-status": "Financing Status",
   "/blog": "Blog",
 };
 
@@ -103,7 +105,7 @@ function buildTrail(
         ];
   }
 
-  if (pathname === "/financing-options") {
+  if (pathname === "/financing-options" || pathname === "/financing-status") {
     return [
       ...assessmentTrail(assessmentId),
       routeItem("/explore-financing", assessmentId),
@@ -116,6 +118,25 @@ function buildTrail(
       ...assessmentTrail(assessmentId),
       routeItem("/explore-financing", assessmentId),
       routeItem("/financing-options", assessmentId),
+      current,
+    ];
+  }
+
+  if (pathname === "/financing-enquiry") {
+    const route = searchParams.get("route")?.trim() || "";
+    const partnersPath = route
+      ? `/financing-partners?route=${encodeURIComponent(route)}`
+      : "/financing-partners";
+    return [
+      ...assessmentTrail(assessmentId),
+      routeItem("/explore-financing", assessmentId),
+      routeItem("/financing-options", assessmentId),
+      {
+        label: ROUTE_LABELS["/financing-partners"],
+        to: assessmentId
+          ? `${partnersPath}${route ? "&" : "?"}assessment=${encodeURIComponent(assessmentId)}`
+          : partnersPath,
+      },
       current,
     ];
   }

@@ -31,6 +31,8 @@ import RequestIntro from "./pages/RequestIntro.tsx";
 import ExploreFinancing from "./pages/ExploreFinancing.tsx";
 import FinancingOptions from "./pages/FinancingOptions.tsx";
 import FinancingPartners from "./pages/FinancingPartners.tsx";
+import FinancingEnquiry from "./pages/FinancingEnquiry.tsx";
+import FinancingStatus from "./pages/FinancingStatus.tsx";
 import BlogList from "./pages/BlogList.tsx";
 import BlogDetail from "./pages/BlogDetail.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
@@ -137,6 +139,8 @@ function App() {
           <Route path="/explore-financing" element={<ExploreFinancing />} />
           <Route path="/financing-options" element={<FinancingOptions />} />
           <Route path="/financing-partners" element={<FinancingPartners />} />
+          <Route path="/financing-enquiry" element={<FinancingEnquiry />} />
+          <Route path="/financing-status" element={<FinancingStatus />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:slug" element={<BlogDetail />} />
         </Route>
