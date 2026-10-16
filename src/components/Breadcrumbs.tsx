@@ -24,6 +24,10 @@ const ROUTE_LABELS: Record<string, string> = {
   "/financing-enquiry": "Review & Send",
   "/financing-status": "Financing Status",
   "/blog": "Blog",
+  "/about": "About Us",
+  "/contact": "Contact Us",
+  "/terms-of-use": "Terms of Use",
+  "/privacy-policy": "Privacy Policy",
 };
 
 function withAssessment(path: string, assessmentId: string): string {

@@ -438,6 +438,20 @@ export async function adminListRequestIntros(params: {
   return data.data!;
 }
 
+export async function adminListContactMessages(params: {
+  q?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+  visitorId?: string;
+} = {}) {
+  const data = await adminFetch<
+    ApiEnvelope<PagedResult<Record<string, unknown>>>
+  >(`/admin/contact-messages${toQuery(params)}`);
+  return data.data!;
+}
+
 export async function adminListExpertReviews(params: {
   q?: string;
   from?: string;

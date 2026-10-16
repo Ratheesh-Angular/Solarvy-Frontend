@@ -122,6 +122,18 @@
   box-shadow: 0 10px 28px rgba(23, 76, 144, 0.08);
 }
 
+.admin-lead-card--contact {
+  border-left: 3px solid #b45309;
+  background: linear-gradient(180deg, #fff8f1 0%, #fafbfd 48%);
+}
+
+.admin-lead-card--contact.is-open {
+  border-color: color-mix(in srgb, #b45309 35%, var(--admin-border));
+  border-left-color: #b45309;
+  background: linear-gradient(180deg, #fff4e8 0%, var(--admin-surface) 36%);
+  box-shadow: 0 10px 28px rgba(180, 83, 9, 0.08);
+}
+
 .admin-lead-card-toggle {
   width: 100%;
   display: flex;
@@ -163,6 +175,10 @@
 
 .admin-lead-card--review .admin-lead-avatar {
   background: linear-gradient(160deg, #2a6bb8, var(--admin-navy));
+}
+
+.admin-lead-card--contact .admin-lead-avatar {
+  background: linear-gradient(160deg, #d97706, #b45309);
 }
 
 .admin-lead-card-copy {
@@ -213,6 +229,12 @@
   color: var(--admin-navy);
 }
 
+.admin-lead-card--contact .admin-lead-type-badge {
+  border-color: color-mix(in srgb, #b45309 35%, var(--admin-border));
+  background: #fff7ed;
+  color: #9a3412;
+}
+
 .admin-lead-card-toggle .admin-muted {
   font-size: 13px;
 }
@@ -240,6 +262,12 @@
   background: #eef4fb;
 }
 
+.admin-lead-card--contact .admin-lead-chevron {
+  color: #9a3412;
+  border-color: color-mix(in srgb, #b45309 30%, var(--admin-border));
+  background: #fff7ed;
+}
+
 .admin-lead-detail {
   margin: 0;
   padding: 0 16px 16px;
@@ -255,6 +283,10 @@
 
 .admin-lead-card--review .admin-lead-detail {
   border-top-color: color-mix(in srgb, var(--admin-blue) 22%, var(--admin-border));
+}
+
+.admin-lead-card--contact .admin-lead-detail {
+  border-top-color: color-mix(in srgb, #b45309 18%, var(--admin-border));
 }
 
 .admin-lead-fields {
@@ -285,6 +317,13 @@
 .admin-lead-card--review .admin-lead-notes,
 .admin-lead-card--review .admin-lead-attachment {
   border-color: color-mix(in srgb, var(--admin-blue) 18%, var(--admin-border));
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.admin-lead-card--contact .admin-lead-field,
+.admin-lead-card--contact .admin-lead-notes,
+.admin-lead-card--contact .admin-lead-attachment {
+  border-color: color-mix(in srgb, #b45309 16%, var(--admin-border));
   background: rgba(255, 255, 255, 0.9);
 }
 

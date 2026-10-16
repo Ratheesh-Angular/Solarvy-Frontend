@@ -7,6 +7,7 @@ import {
   adminDownloadLeadFile,
   adminGetVisitorDetail,
   adminListAssessments,
+  adminListContactMessages,
   adminListExpertReviews,
   adminListFinancingEnquiries,
   adminListQuoteUploads,
@@ -23,7 +24,16 @@ type UserTab =
   | "request-intros"
   | "expert-reviews"
   | "quote-uploads"
-  | "financing";
+  | "financing"
+  | "contact";
+
+const PROJECT_TIMELINE_LABELS: Record<string, string> = {
+  asap: "As soon as possible",
+  "1-month": "Within 1 month",
+  "1-3-months": "1–3 months",
+  "3-6-months": "3–6 months",
+  exploring: "Just exploring",
+};
 
 function formatLocation(visitor: VisitorSummary) {
   return [visitor.lastCity, visitor.lastRegion, visitor.lastCountry]
@@ -34,6 +44,12 @@ function formatLocation(visitor: VisitorSummary) {
 function valueOrDash(value: unknown) {
   if (value == null || String(value).trim() === "") return "—";
   return String(value);
+}
+
+function formatProjectTimeline(value: unknown) {
+  const raw = valueOrDash(value);
+  if (raw === "—") return raw;
+  return PROJECT_TIMELINE_LABELS[raw] || raw;
 }
 
 function asActivityItems(value: unknown): ActivityItem[] {
@@ -114,7 +130,9 @@ export default function AdminUserDetail() {
                 ? adminListExpertReviews
                 : tab === "financing"
                   ? adminListFinancingEnquiries
-                  : adminListQuoteUploads;
+                  : tab === "contact"
+                    ? adminListContactMessages
+                    : adminListQuoteUploads;
         const data = await loader({ visitorId: id, page, limit });
         if (!cancelled) {
           setItems(data.items);
@@ -192,6 +210,7 @@ export default function AdminUserDetail() {
             ["expert-reviews", "Expert Review"],
             ["quote-uploads", "Quote Upload"],
             ["financing", "Financing"],
+            ["contact", "Contacted Values"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -473,6 +492,88 @@ export default function AdminUserDetail() {
                             </button>
                           </div>
                         ) : null}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : tab === "contact" ? (
+            <div className="admin-lead-list">
+              {items.map((row) => {
+                const open = expandedId === row.id;
+                const name = valueOrDash(row.full_name);
+                const initial =
+                  name !== "—" ? name.trim().charAt(0).toUpperCase() : "?";
+                return (
+                  <article
+                    key={row.id}
+                    className={`admin-lead-card admin-lead-card--contact${open ? " is-open" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      className="admin-lead-card-toggle"
+                      onClick={() => setExpandedId(open ? null : row.id)}
+                    >
+                      <div className="admin-lead-card-identity">
+                        <span className="admin-lead-avatar" aria-hidden="true">
+                          {initial}
+                        </span>
+                        <div className="admin-lead-card-copy">
+                          <div className="admin-lead-card-title-row">
+                            <strong>{name}</strong>
+                            <span className="admin-lead-type-badge">
+                              Contact
+                            </span>
+                          </div>
+                          <span className="admin-muted">
+                            {valueOrDash(row.email)} ·{" "}
+                            {new Date(row.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="admin-lead-chevron">
+                        {open ? "Hide" : "View"}
+                      </span>
+                    </button>
+                    {open ? (
+                      <div className="admin-lead-detail">
+                        <div className="admin-lead-fields">
+                          <div className="admin-lead-field">
+                            <span className="admin-lead-field-label">
+                              Full name
+                            </span>
+                            <span className="admin-lead-field-value">
+                              {name}
+                            </span>
+                          </div>
+                          <div className="admin-lead-field">
+                            <span className="admin-lead-field-label">Email</span>
+                            <span className="admin-lead-field-value">
+                              {valueOrDash(row.email)}
+                            </span>
+                          </div>
+                          <div className="admin-lead-field">
+                            <span className="admin-lead-field-label">Phone</span>
+                            <span className="admin-lead-field-value">
+                              {valueOrDash(row.phone_number)}
+                            </span>
+                          </div>
+                          <div className="admin-lead-field">
+                            <span className="admin-lead-field-label">
+                              Project timeline
+                            </span>
+                            <span className="admin-lead-field-value">
+                              {formatProjectTimeline(row.project_timeline)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="admin-lead-notes">
+                          <span className="admin-lead-field-label">
+                            Additional notes
+                          </span>
+                          <p>{valueOrDash(row.additional_notes)}</p>
+                        </div>
                       </div>
                     ) : null}
                   </article>

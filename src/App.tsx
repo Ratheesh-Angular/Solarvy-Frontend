@@ -16,6 +16,7 @@ import "./css/WhoItsFor.css";
 import "./css/MatchedInstallers.css";
 import "./css/solarvy-feedback.css";
 import "./css/finance.css";
+import "./css/static-pages.css";
 
 import Footer from "./components/Footer.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
@@ -35,6 +36,10 @@ import FinancingEnquiry from "./pages/FinancingEnquiry.tsx";
 import FinancingStatus from "./pages/FinancingStatus.tsx";
 import BlogList from "./pages/BlogList.tsx";
 import BlogDetail from "./pages/BlogDetail.tsx";
+import About from "./pages/About.tsx";
+import Contact from "./pages/Contact.tsx";
+import TermsOfUse from "./pages/TermsOfUse.tsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
@@ -148,6 +153,10 @@ function App() {
           <Route path="/financing-status" element={<FinancingStatus />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:slug" element={<BlogDetail />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/terms-of-use" element={<TermsOfUse />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         </Route>
       </Routes>
     </Router>

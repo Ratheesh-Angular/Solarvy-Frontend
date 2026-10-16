@@ -17,13 +17,13 @@ const PAGE_SIZE = 9;
 
 function BlogCard({ post }: { post: BlogSummary }) {
   return (
-    <article className="blog-card">
-      <Link
-        to={`/blog/${post.slug}`}
-        state={{ from: "/blog" }}
-        className="blog-card-media"
-        aria-label={post.title}
-      >
+    <Link
+      to={`/blog/${post.slug}`}
+      state={{ from: "/blog" }}
+      className="blog-card"
+      aria-label={`Read article: ${post.title}`}
+    >
+      <div className="blog-card-media">
         {post.featuredImagePath ? (
           <img
             src={post.featuredImagePath}
@@ -35,22 +35,23 @@ function BlogCard({ post }: { post: BlogSummary }) {
             <i className="bi bi-sun"></i>
           </div>
         )}
-      </Link>
+      </div>
       <div className="blog-card-body">
         {post.category ? <span className="blog-chip">{post.category}</span> : null}
-        <h2 className="blog-card-title">
-          <Link to={`/blog/${post.slug}`} state={{ from: "/blog" }}>
-            {post.title}
-          </Link>
-        </h2>
+        <h2 className="blog-card-title">{post.title}</h2>
         {post.excerpt ? <p className="blog-card-excerpt">{post.excerpt}</p> : null}
-        <div className="blog-meta">
-          <span>{formatBlogDate(post.publishedAt)}</span>
-          <span aria-hidden="true">•</span>
-          <span>{post.readingTimeMinutes} min read</span>
+        <div className="blog-card-footer">
+          <div className="blog-meta">
+            <span>{formatBlogDate(post.publishedAt)}</span>
+            <span aria-hidden="true">•</span>
+            <span>{post.readingTimeMinutes} min read</span>
+          </div>
+          <span className="blog-card-read">
+            Read article <i className="bi bi-arrow-right" aria-hidden="true"></i>
+          </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 

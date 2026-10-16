@@ -74,6 +74,11 @@ const MILESTONES: MilestoneDef[] = [
     match: (events) =>
       events.find((e) => e.eventType === "quote_upload_submitted"),
   },
+  {
+    id: "contact",
+    label: "Contacted",
+    match: (events) => events.find((e) => e.eventType === "contact_submitted"),
+  },
 ];
 
 const PAGE_LABELS: Array<{ test: RegExp | string; label: string }> = [
@@ -145,7 +150,8 @@ function eventCategory(
   if (
     eventType === "request_intro_submitted" ||
     eventType === "expert_review_submitted" ||
-    eventType === "quote_upload_submitted"
+    eventType === "quote_upload_submitted" ||
+    eventType === "contact_submitted"
   ) {
     return "forms";
   }
@@ -185,6 +191,8 @@ function eventTitle(event: ActivityItem): string {
       return "Submitted expert review";
     case "quote_upload_submitted":
       return "Uploaded a quote";
+    case "contact_submitted":
+      return "Submitted contact form";
     case "cta_click": {
       const cta = String(meta.cta || "");
       return CTA_LABELS[cta] || `Clicked ${cta.replace(/_/g, " ") || "CTA"}`;

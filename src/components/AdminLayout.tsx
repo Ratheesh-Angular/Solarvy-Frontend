@@ -105,7 +105,7 @@ export default function AdminLayout() {
             >
               Excel Template
             </NavLink>
-            {/* <p className="admin-nav-label admin-nav-label-spaced">Content</p>
+            <p className="admin-nav-label admin-nav-label-spaced">Content</p>
             <NavLink
               to="/admin/blogs"
               className={({ isActive }) =>
@@ -121,7 +121,7 @@ export default function AdminLayout() {
               }
             >
               Blog Analytics
-            </NavLink> */}
+            </NavLink>
             <p className="admin-nav-label admin-nav-label-spaced">AI Training</p>
             <NavLink
               to="/admin/bill-input"

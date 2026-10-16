@@ -278,6 +278,33 @@ export default function BlogDetail() {
               </figure>
             ) : null}
 
+            <header className="blog-article-header">
+              {blog.category ? (
+                <Link
+                  to={`/blog?category=${encodeURIComponent(blog.category)}`}
+                  className="blog-chip"
+                >
+                  {blog.category}
+                </Link>
+              ) : null}
+              <h1 className="blog-article-title">{blog.title}</h1>
+              <div className="blog-article-meta">
+                <span>
+                  <i className="bi bi-person" aria-hidden="true"></i> {blog.authorName}
+                </span>
+                <span>
+                  <i className="bi bi-calendar3" aria-hidden="true"></i>{" "}
+                  <time dateTime={blog.publishedAt ?? undefined}>
+                    {formatBlogDate(blog.publishedAt)}
+                  </time>
+                </span>
+                <span>
+                  <i className="bi bi-clock" aria-hidden="true"></i>{" "}
+                  {blog.readingTimeMinutes} min read
+                </span>
+              </div>
+            </header>
+
             {blog.excerpt ? <p className="blog-lead">{blog.excerpt}</p> : null}
 
             <div
@@ -345,13 +372,14 @@ export default function BlogDetail() {
               </h2>
               <div className="blog-grid blog-grid-3">
                 {related.map((post) => (
-                  <article key={post.id} className="blog-card">
-                    <Link
-                      to={`/blog/${post.slug}`}
-                      state={{ from: `/blog/${blog.slug}` }}
-                      className="blog-card-media"
-                      aria-label={post.title}
-                    >
+                  <Link
+                    key={post.id}
+                    to={`/blog/${post.slug}`}
+                    state={{ from: `/blog/${blog.slug}` }}
+                    className="blog-card"
+                    aria-label={`Read article: ${post.title}`}
+                  >
+                    <div className="blog-card-media">
                       {post.featuredImagePath ? (
                         <img
                           src={post.featuredImagePath}
@@ -363,21 +391,22 @@ export default function BlogDetail() {
                           <i className="bi bi-sun"></i>
                         </div>
                       )}
-                    </Link>
+                    </div>
                     <div className="blog-card-body">
                       {post.category ? <span className="blog-chip">{post.category}</span> : null}
-                      <h3 className="blog-card-title">
-                        <Link to={`/blog/${post.slug}`} state={{ from: `/blog/${blog.slug}` }}>
-                          {post.title}
-                        </Link>
-                      </h3>
-                      <div className="blog-meta">
-                        <span>{formatBlogDate(post.publishedAt)}</span>
-                        <span aria-hidden="true">•</span>
-                        <span>{post.readingTimeMinutes} min read</span>
+                      <h3 className="blog-card-title">{post.title}</h3>
+                      <div className="blog-card-footer">
+                        <div className="blog-meta">
+                          <span>{formatBlogDate(post.publishedAt)}</span>
+                          <span aria-hidden="true">•</span>
+                          <span>{post.readingTimeMinutes} min read</span>
+                        </div>
+                        <span className="blog-card-read">
+                          Read article <i className="bi bi-arrow-right" aria-hidden="true"></i>
+                        </span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </section>

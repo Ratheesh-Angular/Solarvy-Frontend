@@ -73,10 +73,42 @@ function Footer() {
                       Blog
                     </button>
                   </li>
-                  <li>About Us</li>
-                  <li>Contact Us</li>
-                  <li>Terms Of Use</li>
-                  <li>Privacy Policy</li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-link-nav"
+                      onClick={() => navigate("/about")}
+                    >
+                      About Us
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-link-nav"
+                      onClick={() => navigate("/contact")}
+                    >
+                      Contact Us
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-link-nav"
+                      onClick={() => navigate("/terms-of-use")}
+                    >
+                      Terms Of Use
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-link-nav"
+                      onClick={() => navigate("/privacy-policy")}
+                    >
+                      Privacy Policy
+                    </button>
+                  </li>
                 </ul>
               </div>
             </div>
