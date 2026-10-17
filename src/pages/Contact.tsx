@@ -178,30 +178,9 @@ function Contact() {
             <div className="col-lg-8">
               <form id="static-contact-form" onSubmit={handleSubmit}>
                 <div className="p-4 shadow-sm rounded-4 ass-first">
-                  <div className="d-flex align-items-start gap-3 mb-4 rounded-3 installer-highlight-box">
-                    <div className="flex-grow-1">
-                      <h5 className="fw-bold mb-2 heading-ass mb-3">
-                        {INSTALLER_NAME}
-                      </h5>
-                      <div className="d-flex flex-wrap gap-2">
-                        <span className="badge bg-success ri-match-badge">
-                          Match score: 82/100
-                        </span>
-                        <span className="badge bg-secondary ri-match-badge">
-                          Lagos
-                        </span>
-                        <span className="badge bg-secondary ri-match-badge">
-                          Home projects
-                        </span>
-                        <span className="badge bg-secondary ri-match-badge">
-                          Good Match
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                 
 
                   <div className="d-flex align-items-center mb-3">
-                    <div className="step-box me-3 request-intro-step-box">1</div>
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">
                         Your Contact Information
@@ -289,11 +268,7 @@ function Contact() {
                     </div>
                   </div>
 
-                  <div className="static-contact-privacy" role="note">
-                    <strong>Privacy notice:</strong> Your contact details will be
-                    shared only with {INSTALLER_NAME} for the purpose of
-                    responding to this project enquiry.
-                  </div>
+                
 
                   {submitError ? (
                     <div className="alert alert-danger mt-3 mb-0" role="alert">
@@ -303,7 +278,7 @@ function Contact() {
 
                     <button
                       type="submit"
-                      className="btn-primary-custom static-contact-submit"
+                      className="btn-primary-custom static-contact-submit mt-3"
                       disabled={isSubmitting}
                     >
                       <span className="icon-sun">
