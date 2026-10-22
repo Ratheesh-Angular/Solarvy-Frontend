@@ -185,9 +185,7 @@ function Contact() {
                       <h5 className="fw-bold mb-1 heading-ass">
                         Your Contact Information
                       </h5>
-                      <p className="text-muted small mb-0 para-ass">
-                        How should the installer reach you?
-                      </p>
+                    
                     </div>
                   </div>
 
@@ -236,14 +234,13 @@ function Contact() {
                     </div>
                     <div className="col-12">
                       <label className="form-label ass-field-label">
-                        PROJECT TIMELINE
+                        PROJECT TIMELINE (OPTIONAL) 
                       </label>
                       <select
                         name="projectTimeline"
                         value={formData.projectTimeline}
                         onChange={handleChange}
                         className="form-select ass-field-control"
-                        required
                       >
                         <option value="">Select timeline</option>
                         <option value="asap">As soon as possible</option>
@@ -255,7 +252,7 @@ function Contact() {
                     </div>
                     <div className="col-12">
                       <label className="form-label ass-field-label">
-                        ANYTHING YOU WANT THE INSTALLER TO KNOW? (OPTIONAL)
+                        NOTES? (OPTIONAL)
                       </label>
                       <textarea
                         name="additionalNotes"
@@ -263,7 +260,7 @@ function Contact() {
                         onChange={handleChange}
                         className="form-control ass-field-control"
                         rows={4}
-                        placeholder="For example: I want battery backup included, I already use a generator, I prefer weekend contact, or I already received another quote."
+                        placeholder="Notes"
                       />
                     </div>
                   </div>

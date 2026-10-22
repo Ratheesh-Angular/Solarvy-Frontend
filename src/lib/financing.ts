@@ -1,6 +1,13 @@
-import { apiPost } from "./api";
+import { apiGet, apiPost } from "./api";
+import {
+  postFinanceMatches,
+  type FinanceExcelPayload,
+  type FinanceMatchRow,
+  type FinanceMatchesResponse,
+} from "./excelApi";
 
-export type RepaymentPeriod = "12-24" | "24-36" | "36+";
+/** Excel Finance_Request!B12 label (e.g. "24-36 months"). */
+export type RepaymentPeriod = string;
 
 export type FinancingPreferences = {
   applicantType: string;
@@ -21,6 +28,8 @@ export const FINANCING_ROUTE_LABELS: Record<FinancingRouteId, string> = {
   eaas: "Energy-as-a-Service / lease",
 };
 
+export const DEFAULT_FINANCE_ROUTE_LABEL = "Asset financing";
+
 export const FINANCING_ROUTE_ICONS: Record<FinancingRouteId, string> = {
   "asset-financing": "bi-box-seam",
   instalment: "bi-calendar-check",
@@ -34,6 +43,14 @@ export function isFinancingRouteId(value: unknown): value is FinancingRouteId {
   );
 }
 
+export function routeIdFromLabel(label: string | null | undefined): FinancingRouteId | null {
+  const trimmed = String(label || "").trim();
+  for (const [id, routeLabel] of Object.entries(FINANCING_ROUTE_LABELS)) {
+    if (routeLabel === trimmed) return id as FinancingRouteId;
+  }
+  return null;
+}
+
 export type FinancingPartner = {
   id: string;
   name: string;
@@ -41,7 +58,7 @@ export type FinancingPartner = {
   requirements: string[];
 };
 
-/** Placeholder partners until live partner data is available. */
+/** Placeholder partners until Excel Finance_Matches are loaded (Phase 4). */
 export const FINANCING_PARTNERS: Record<FinancingRouteId, FinancingPartner[]> =
   {
     "asset-financing": [
@@ -124,15 +141,46 @@ export const FINANCING_PARTNERS: Record<FinancingRouteId, FinancingPartner[]> =
     ],
   };
 
+/** Fallback repayment options when Excel catalogs are unavailable. */
 export const REPAYMENT_OPTIONS: Array<{ id: RepaymentPeriod; label: string }> =
   [
-    { id: "12-24", label: "12–24 months" },
-    { id: "24-36", label: "24–36 months" },
-    { id: "36+", label: "36+ months" },
+    { id: "12-24 months", label: "12–24 months" },
+    { id: "24-36 months", label: "24–36 months" },
+    { id: "36+ months", label: "36+ months" },
   ];
 
+export const FINANCE_APPLICANT_FALLBACKS = [
+  "Individual / Homeowner",
+  "SME",
+  "Corporate",
+];
+
+export const FINANCE_INCOME_FALLBACKS = [
+  "Below 500k",
+  "500k-1m",
+  "1m-5m",
+  "Above 5m",
+];
+
+const LEGACY_REPAYMENT: Record<string, string> = {
+  "12-24": "12-24 months",
+  "24-36": "24-36 months",
+  "36+": "36+ months",
+};
+
+export function normalizeRepaymentPeriod(value: unknown): RepaymentPeriod {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "24-36 months";
+  if (LEGACY_REPAYMENT[raw]) return LEGACY_REPAYMENT[raw];
+  return raw;
+}
+
 export function repaymentLabel(id: RepaymentPeriod | null | undefined) {
-  return REPAYMENT_OPTIONS.find((o) => o.id === id)?.label ?? null;
+  if (!id) return null;
+  const normalized = normalizeRepaymentPeriod(id);
+  return (
+    REPAYMENT_OPTIONS.find((o) => o.id === normalized)?.label ?? normalized
+  );
 }
 
 export function toNumber(value: unknown): number | null {
@@ -185,9 +233,7 @@ export function loadFinancingRequest(
         typeof parsed.depositAvailable === "number"
           ? parsed.depositAvailable
           : null,
-      repaymentPeriod: repaymentLabel(parsed.repaymentPeriod)
-        ? (parsed.repaymentPeriod as RepaymentPeriod)
-        : "24-36",
+      repaymentPeriod: normalizeRepaymentPeriod(parsed.repaymentPeriod),
       incomeRange: parsed.incomeRange ?? "",
       location: parsed.location ?? "",
       notes: parsed.notes ?? "",
@@ -198,12 +244,125 @@ export function loadFinancingRequest(
   }
 }
 
+export function buildFinanceExcelPayload(
+  prefs: FinancingPreferences,
+  preferredRoute: string = DEFAULT_FINANCE_ROUTE_LABEL,
+): FinanceExcelPayload {
+  return {
+    depositAvailable: prefs.depositAvailable,
+    preferredRoute,
+    repaymentTerm: normalizeRepaymentPeriod(prefs.repaymentPeriod),
+    applicantType: prefs.applicantType,
+    location: prefs.location,
+    incomeRange: prefs.incomeRange,
+    consent: prefs.consent ? "Yes" : "No",
+  };
+}
+
+export async function syncFinanceMatches(
+  assessmentId: string,
+  prefs: FinancingPreferences,
+  preferredRoute: string = DEFAULT_FINANCE_ROUTE_LABEL,
+): Promise<FinanceMatchesResponse> {
+  const data = await postFinanceMatches(
+    assessmentId,
+    buildFinanceExcelPayload(prefs, preferredRoute),
+  );
+  saveFinanceMatchesCache(assessmentId, preferredRoute, data);
+  return data;
+}
+
+const matchesStorageKey = (assessmentId: string) =>
+  `solarvy:finance-matches:${assessmentId || "none"}`;
+
+export type FinanceMatchesCache = {
+  preferredRoute: string;
+  amountRequested: number | null;
+  requestValid: string | null;
+  matches: FinanceMatchRow[];
+  savedAt: string;
+};
+
+export function saveFinanceMatchesCache(
+  assessmentId: string,
+  preferredRoute: string,
+  data: FinanceMatchesResponse,
+) {
+  try {
+    const payload: FinanceMatchesCache = {
+      preferredRoute,
+      amountRequested: data.amountRequested,
+      requestValid: data.requestValid,
+      matches: data.matches ?? [],
+      savedAt: new Date().toISOString(),
+    };
+    sessionStorage.setItem(
+      matchesStorageKey(assessmentId),
+      JSON.stringify(payload),
+    );
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function loadFinanceMatchesCache(
+  assessmentId: string,
+): FinanceMatchesCache | null {
+  try {
+    const raw = sessionStorage.getItem(matchesStorageKey(assessmentId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FinanceMatchesCache>;
+    if (!Array.isArray(parsed.matches)) return null;
+    return {
+      preferredRoute: String(parsed.preferredRoute || ""),
+      amountRequested:
+        typeof parsed.amountRequested === "number"
+          ? parsed.amountRequested
+          : null,
+      requestValid:
+        typeof parsed.requestValid === "string" ? parsed.requestValid : null,
+      matches: parsed.matches,
+      savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Map Excel match row to UI partner card shape. */
+export function partnerFromMatch(
+  row: FinanceMatchRow,
+  routeId: FinancingRouteId,
+): FinancingPartner {
+  const id = String(row.productId || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "partner";
+  const name = String(row.provider || "Financing partner").trim();
+  const routeLabel = FINANCING_ROUTE_LABELS[routeId];
+  return {
+    id,
+    name,
+    description: `${routeLabel} for eligible residential and SME energy equipment.`,
+    requirements:
+      row.requirements?.length > 0
+        ? row.requirements
+        : String(row.conditions || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+  };
+}
+
 export type FinancingEnquiry = {
+  id?: number;
   route: FinancingRouteId;
   partnerId: string;
   partnerName: string;
   submittedAt: string;
   reference: string;
+  status?: string;
 };
 
 export function createFinancingReference(): string {
@@ -233,11 +392,17 @@ export async function submitFinancingEnquiry({
   id: number;
   reference: string;
   submittedAt: string;
+  status?: string;
 }> {
   const response = await apiPost<{
     success: boolean;
     message?: string;
-    data?: { id: number; reference: string; submittedAt: string };
+    data?: {
+      id: number;
+      reference: string;
+      submittedAt: string;
+      status?: string;
+    };
   }>("/financing-enquiries", {
     assessmentId: assessmentId || null,
     applicantType: financing.applicantType,
@@ -268,6 +433,52 @@ export async function submitFinancingEnquiry({
     throw new Error(response.message || "Could not submit financing enquiry");
   }
   return response.data;
+}
+
+const selectedPartnerKey = (assessmentId: string, routeId: string) =>
+  `solarvy:finance-partner:${assessmentId || "none"}:${routeId}`;
+
+export function saveSelectedPartner(
+  assessmentId: string,
+  routeId: FinancingRouteId,
+  partner: FinancingPartner,
+) {
+  try {
+    sessionStorage.setItem(
+      selectedPartnerKey(assessmentId, routeId),
+      JSON.stringify(partner),
+    );
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function loadSelectedPartner(
+  assessmentId: string,
+  routeId: FinancingRouteId,
+  partnerId?: string | null,
+): FinancingPartner | null {
+  try {
+    const raw = sessionStorage.getItem(selectedPartnerKey(assessmentId, routeId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FinancingPartner>;
+    if (
+      typeof parsed.id !== "string" ||
+      typeof parsed.name !== "string" ||
+      !Array.isArray(parsed.requirements)
+    ) {
+      return null;
+    }
+    if (partnerId && parsed.id !== partnerId) return null;
+    return {
+      id: parsed.id,
+      name: parsed.name,
+      description: typeof parsed.description === "string" ? parsed.description : "",
+      requirements: parsed.requirements.map(String),
+    };
+  } catch {
+    return null;
+  }
 }
 
 const enquiryStorageKey = (assessmentId: string) =>
@@ -302,14 +513,40 @@ export function loadFinancingEnquiry(
       return null;
     }
     return {
+      id: typeof parsed.id === "number" ? parsed.id : undefined,
       route: parsed.route,
       partnerId: parsed.partnerId,
       partnerName: parsed.partnerName,
       submittedAt:
         typeof parsed.submittedAt === "string" ? parsed.submittedAt : "",
       reference: typeof parsed.reference === "string" ? parsed.reference : "",
+      status: typeof parsed.status === "string" ? parsed.status : undefined,
     };
   } catch {
     return null;
   }
+}
+
+export type PublicFinancingEnquiryStatus = {
+  id: number;
+  reference: string;
+  status: string;
+  partnerName: string;
+  partnerId: string;
+  routeId: string;
+  routeLabel: string;
+  submittedAt: string;
+  statusUpdatedAt: string | null;
+};
+
+export async function getFinancingEnquiryByReference(reference: string) {
+  const response = await apiGet<{
+    success: boolean;
+    data?: PublicFinancingEnquiryStatus;
+    message?: string;
+  }>(`/financing-enquiries/by-reference/${encodeURIComponent(reference)}`);
+  if (!response.data) {
+    throw new Error(response.message || "Could not load financing status");
+  }
+  return response.data;
 }

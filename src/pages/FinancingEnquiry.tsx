@@ -15,12 +15,14 @@ import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import type { AssessmentResults } from "../types/assessment";
 import {
-  FINANCING_PARTNERS,
   FINANCING_ROUTE_ICONS,
   FINANCING_ROUTE_LABELS,
   formatNaira,
   isFinancingRouteId,
   loadFinancingRequest,
+  loadSelectedPartner,
+  partnerFromMatch,
+  loadFinanceMatchesCache,
   repaymentLabel,
   saveFinancingEnquiry,
   submitFinancingEnquiry,
@@ -74,9 +76,19 @@ function FinancingEnquiry() {
     if (fromState && (!partnerParam || fromState.id === partnerParam)) {
       return fromState;
     }
-    return (
-      FINANCING_PARTNERS[routeId].find((p) => p.id === partnerParam) ?? null
+    const fromStorage = loadSelectedPartner(
+      assessmentId,
+      routeId,
+      partnerParam || null,
     );
+    if (fromStorage) return fromStorage;
+    const cache = loadFinanceMatchesCache(assessmentId);
+    if (!cache) return null;
+    const match = cache.matches.find((row) => {
+      const mapped = partnerFromMatch(row, routeId);
+      return mapped.id === partnerParam;
+    });
+    return match ? partnerFromMatch(match, routeId) : null;
   });
   const [results, setResults] = useState<AssessmentResults | null>(null);
   const [propertyType, setPropertyType] = useState<string | null>(null);
@@ -195,11 +207,13 @@ function FinancingEnquiry() {
     }
 
     const enquiry: FinancingEnquiryRecord = {
+      id: submitted.id,
       route: routeId,
       partnerId: partner.id,
       partnerName: partner.name,
       submittedAt: submitted.submittedAt || new Date().toISOString(),
       reference: submitted.reference,
+      status: submitted.status || "enquiry_submitted",
     };
     saveFinancingEnquiry(assessmentId, enquiry);
     navigate(

@@ -6,6 +6,7 @@ import estimatedCostIcon from "../assets/solarvy-icons/input_method/Monthly Bill
 import systemIcon from "../assets/solarvy-icons/input_method/Custom Equipment.png";
 import annualSavingsIcon from "../assets/solarvy-icons/live summary/statistics.png";
 import { getAssessment } from "../lib/assessmentApi";
+import { getExcelCatalogs } from "../lib/excelApi";
 import { matchNigeriaState } from "../lib/geolocation";
 import { NIGERIA_STATE_LABELS } from "../lib/nigeriaStates";
 import PageSeo from "../components/PageSeo";
@@ -14,11 +15,16 @@ import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import type { AssessmentResults } from "../types/assessment";
 import {
+  DEFAULT_FINANCE_ROUTE_LABEL,
+  FINANCE_APPLICANT_FALLBACKS,
+  FINANCE_INCOME_FALLBACKS,
   REPAYMENT_OPTIONS,
   formatNaira,
   loadFinancingRequest,
+  normalizeRepaymentPeriod,
   repaymentLabel,
   saveFinancingRequest,
+  syncFinanceMatches,
   toNumber,
   type FinancingPreferences,
   type RepaymentPeriod,
@@ -38,8 +44,8 @@ type FieldErrors = Partial<
 >;
 
 const FIELD_ORDER: (keyof FieldErrors)[] = [
-  "amountToFinance",
   "depositAvailable",
+  "amountToFinance",
   "incomeRange",
   "location",
   "consent",
@@ -48,19 +54,6 @@ const FIELD_ORDER: (keyof FieldErrors)[] = [
 const MISSING = "—";
 const NOTES_MAX_LENGTH = 500;
 const AMOUNT_MAX_DIGITS = 13;
-
-const APPLICANT_TYPES = [
-  "Individual / Homeowner",
-  "Business / SME",
-  "Organisation / Institution",
-];
-
-const INCOME_RANGES = [
-  "Below 500k",
-  "500k–1m",
-  "1m–5m",
-  "Above 5m",
-];
 
 const HOW_IT_WORKS = [
   {
@@ -127,13 +120,21 @@ function ExploreFinancing() {
     buildProjectStats(null),
   );
   const [systemCost, setSystemCost] = useState<number | null>(null);
+  const [applicantTypes, setApplicantTypes] = useState<string[]>(
+    FINANCE_APPLICANT_FALLBACKS,
+  );
+  const [incomeRanges, setIncomeRanges] = useState<string[]>(
+    FINANCE_INCOME_FALLBACKS,
+  );
+  const [repaymentOptions, setRepaymentOptions] = useState(REPAYMENT_OPTIONS);
   const [savedRequest] = useState(() => loadFinancingRequest(assessmentId));
   const savedLocation =
     matchNigeriaState(savedRequest?.location ?? "", NIGERIA_STATE_LABELS) ?? "";
   const locationTouched = useRef(Boolean(savedLocation));
 
   const [formData, setFormData] = useState(() => ({
-    applicantType: savedRequest?.applicantType || APPLICANT_TYPES[0],
+    applicantType:
+      savedRequest?.applicantType || FINANCE_APPLICANT_FALLBACKS[0],
     amountToFinance: savedRequest
       ? formatAmountInput(String(savedRequest.amountToFinance))
       : "",
@@ -141,13 +142,15 @@ function ExploreFinancing() {
       savedRequest?.depositAvailable != null
         ? formatAmountInput(String(savedRequest.depositAvailable))
         : "",
-    repaymentPeriod: (savedRequest?.repaymentPeriod ??
-      "24-36") as RepaymentPeriod,
+    repaymentPeriod: normalizeRepaymentPeriod(
+      savedRequest?.repaymentPeriod ?? "24-36 months",
+    ),
     incomeRange: savedRequest?.incomeRange ?? "",
     location: savedLocation,
     notes: savedRequest?.notes ?? "",
   }));
   const [consent, setConsent] = useState(savedRequest?.consent ?? false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const { toast, showError, clearToast } = useFeedbackToast();
 
@@ -160,8 +163,15 @@ function ExploreFinancing() {
     });
   };
 
-  const amountValue = toNumber(formData.amountToFinance);
   const depositValue = toNumber(formData.depositAvailable);
+  const amountValue =
+    systemCost !== null && depositValue !== null && depositValue > 0
+      ? Math.max(0, systemCost - depositValue)
+      : toNumber(formData.amountToFinance);
+  const amountDisplay =
+    amountValue !== null && amountValue > 0
+      ? formatAmountInput(String(Math.round(amountValue)))
+      : "";
   const repaymentText = repaymentLabel(formData.repaymentPeriod) || MISSING;
   const requestSummary = [
     { label: "Applicant", value: formData.applicantType || MISSING },
@@ -180,7 +190,10 @@ function ExploreFinancing() {
   };
 
   const selectRepayment = (id: RepaymentPeriod) => {
-    setFormData((prev) => ({ ...prev, repaymentPeriod: id }));
+    setFormData((prev) => ({
+      ...prev,
+      repaymentPeriod: normalizeRepaymentPeriod(id),
+    }));
   };
 
   const handleChange = (
@@ -190,11 +203,21 @@ function ExploreFinancing() {
   ) => {
     const { name, value } = e.target;
 
-    if (name === "amountToFinance" || name === "depositAvailable") {
-      clearError("amountToFinance", "depositAvailable");
+    if (name === "depositAvailable") {
+      clearError("depositAvailable", "amountToFinance");
+      const formatted = formatAmountInput(value);
+      const deposit = toNumber(formatted);
+      const nextAmount =
+        systemCost !== null && deposit !== null && deposit > 0
+          ? Math.max(0, systemCost - deposit)
+          : null;
       setFormData((prev) => ({
         ...prev,
-        [name]: formatAmountInput(value),
+        depositAvailable: formatted,
+        amountToFinance:
+          nextAmount !== null
+            ? formatAmountInput(String(Math.round(nextAmount)))
+            : "",
       }));
       return;
     }
@@ -213,26 +236,26 @@ function ExploreFinancing() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nextErrors: FieldErrors = {};
     const location = formData.location.trim();
 
-    if (!amountValue || amountValue <= 0) {
-      nextErrors.amountToFinance = "Please enter the amount you want to finance.";
-    } else if (systemCost !== null && amountValue > systemCost) {
-      nextErrors.amountToFinance = `Amount can't be more than your estimated system cost of ${formatNaira(systemCost)}.`;
+    if (depositValue === null) {
+      nextErrors.depositAvailable = "Please enter the deposit you can provide.";
+    } else if (depositValue <= 0) {
+      nextErrors.depositAvailable = "Deposit must be greater than zero.";
+    } else if (systemCost !== null && depositValue >= systemCost) {
+      nextErrors.depositAvailable = `Deposit must be less than your estimated system cost of ${formatNaira(systemCost)}.`;
     }
 
     if (
-      !nextErrors.amountToFinance &&
-      systemCost !== null &&
-      depositValue !== null &&
-      amountValue !== null &&
-      amountValue + depositValue > systemCost
+      !nextErrors.depositAvailable &&
+      (amountValue === null || amountValue <= 0)
     ) {
-      nextErrors.depositAvailable = `Amount and deposit together can't be more than ${formatNaira(systemCost)}.`;
+      nextErrors.amountToFinance =
+        "Amount to finance must be greater than zero. Reduce your deposit.";
     }
 
     if (!formData.incomeRange) {
@@ -260,7 +283,12 @@ function ExploreFinancing() {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    if (amountValue === null) return;
+    if (amountValue === null || depositValue === null) return;
+
+    if (!assessmentId) {
+      showError("Open this page from an assessment result to continue.");
+      return;
+    }
 
     clearToast();
 
@@ -268,21 +296,72 @@ function ExploreFinancing() {
       applicantType: formData.applicantType,
       amountToFinance: amountValue,
       depositAvailable: depositValue,
-      repaymentPeriod: formData.repaymentPeriod,
+      repaymentPeriod: normalizeRepaymentPeriod(formData.repaymentPeriod),
       incomeRange: formData.incomeRange,
       location,
       notes: formData.notes.trim(),
       consent,
     };
 
-    saveFinancingRequest(assessmentId, financing);
-    navigate(
-      assessmentId
-        ? `/financing-options?assessment=${encodeURIComponent(assessmentId)}`
-        : "/financing-options",
-      { state: { financing } },
-    );
+    setSubmitting(true);
+    try {
+      await syncFinanceMatches(
+        assessmentId,
+        financing,
+        DEFAULT_FINANCE_ROUTE_LABEL,
+      );
+      saveFinancingRequest(assessmentId, financing);
+      navigate(
+        `/financing-options?assessment=${encodeURIComponent(assessmentId)}`,
+        { state: { financing } },
+      );
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Could not update financing options. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const catalogs = await getExcelCatalogs();
+        if (cancelled) return;
+        if (catalogs.financeApplicantTypes?.length) {
+          setApplicantTypes(catalogs.financeApplicantTypes);
+          setFormData((prev) =>
+            catalogs.financeApplicantTypes!.includes(prev.applicantType)
+              ? prev
+              : {
+                  ...prev,
+                  applicantType: catalogs.financeApplicantTypes![0],
+                },
+          );
+        }
+        if (catalogs.financeIncomeRanges?.length) {
+          setIncomeRanges(catalogs.financeIncomeRanges);
+        }
+        if (catalogs.financeRepaymentTerms?.length) {
+          setRepaymentOptions(
+            catalogs.financeRepaymentTerms.map((term) => ({
+              id: term,
+              label: term.replace(/-/g, "–"),
+            })),
+          );
+        }
+      } catch {
+        /* keep fallbacks */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!assessmentId) return;
@@ -295,7 +374,8 @@ function ExploreFinancing() {
         if (cancelled) return;
         const results = data.results ?? null;
         setProjectStats(buildProjectStats(results));
-        setSystemCost(toNumber(results?.estimatedSystemCost));
+        const cost = toNumber(results?.estimatedSystemCost);
+        setSystemCost(cost);
 
         const form = data.formData as
           | { state?: string; city?: string }
@@ -318,6 +398,16 @@ function ExploreFinancing() {
             prev.location ? prev : { ...prev, location },
           );
         }
+
+        setFormData((prev) => {
+          const deposit = toNumber(prev.depositAvailable);
+          if (cost === null || deposit === null || deposit <= 0) return prev;
+          const nextAmount = Math.max(0, cost - deposit);
+          return {
+            ...prev,
+            amountToFinance: formatAmountInput(String(Math.round(nextAmount))),
+          };
+        });
       } catch {
         if (cancelled) return;
         setProjectStats(buildProjectStats(null));
@@ -523,7 +613,7 @@ function ExploreFinancing() {
                         onChange={handleChange}
                         className="form-select ass-field-control"
                       >
-                        {APPLICANT_TYPES.map((type) => (
+                        {applicantTypes.map((type) => (
                           <option key={type} value={type}>
                             {type}
                           </option>
@@ -536,55 +626,68 @@ function ExploreFinancing() {
                         <div className="row g-3">
                           <div
                             className="col-md-6"
-                            id="fin-field-amountToFinance"
-                          >
-                            <label className="form-label ass-field-label">
-                              AMOUNT YOU WANT TO FINANCE (₦)
-                            </label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              name="amountToFinance"
-                              value={formData.amountToFinance}
-                              onChange={handleChange}
-                              className={`form-control ass-field-control${
-                                errors.amountToFinance ? " is-invalid" : ""
-                              }`}
-                              placeholder="1000"
-                              aria-label="Amount you want to finance in naira"
-                              aria-invalid={Boolean(errors.amountToFinance)}
-                              required
-                            />
-                            {errors.amountToFinance && (
-                              <p className="ass-field-error" role="alert">
-                                {errors.amountToFinance}
-                              </p>
-                            )}
-                          </div>
-
-                          <div
-                            className="col-md-6"
                             id="fin-field-depositAvailable"
                           >
                             <label className="form-label ass-field-label">
-                              DEPOSIT AVAILABLE (₦)
+                              DEPOSIT AVAILABLE
                             </label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              name="depositAvailable"
-                              value={formData.depositAvailable}
-                              onChange={handleChange}
-                              className={`form-control ass-field-control${
+                            <div
+                              className={`fin-naira-input${
                                 errors.depositAvailable ? " is-invalid" : ""
                               }`}
-                              placeholder="1000"
-                              aria-label="Deposit available in naira"
-                              aria-invalid={Boolean(errors.depositAvailable)}
-                            />
+                            >
+                              <span className="fin-naira-prefix" aria-hidden>
+                                ₦
+                              </span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                name="depositAvailable"
+                                value={formData.depositAvailable}
+                                onChange={handleChange}
+                                className="form-control ass-field-control"
+                                placeholder="0"
+                                aria-label="Deposit available in naira"
+                                aria-invalid={Boolean(errors.depositAvailable)}
+                              />
+                            </div>
                             {errors.depositAvailable && (
                               <p className="ass-field-error" role="alert">
                                 {errors.depositAvailable}
+                              </p>
+                            )}
+                          </div>
+                          <div
+                            className="col-md-6"
+                            id="fin-field-amountToFinance"
+                          >
+                            <label className="form-label ass-field-label">
+                              AMOUNT YOU WANT TO FINANCE
+                            </label>
+                            <div
+                              className={`fin-naira-input fin-naira-input--readonly${
+                                errors.amountToFinance ? " is-invalid" : ""
+                              }`}
+                            >
+                              <span className="fin-naira-prefix" aria-hidden>
+                                ₦
+                              </span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                name="amountToFinance"
+                                value={amountDisplay}
+                                className="form-control ass-field-control"
+                                placeholder="0"
+                                aria-label="Amount you want to finance in naira"
+                                aria-invalid={Boolean(errors.amountToFinance)}
+                                disabled
+                                readOnly
+                              />
+                            </div>
+                            {errors.amountToFinance && (
+                              <p className="ass-field-error" role="alert">
+                                {errors.amountToFinance}
                               </p>
                             )}
                           </div>
@@ -592,7 +695,9 @@ function ExploreFinancing() {
 
                         {systemCost !== null ? (
                           <p className="fin-split-hint">
-                            Your estimated system cost is {formatNaira(systemCost)}.
+                            Your estimated system cost is{" "}
+                            {formatNaira(systemCost)}. Amount to finance is
+                            system cost minus deposit.
                           </p>
                         ) : null}
                       </div>
@@ -607,7 +712,7 @@ function ExploreFinancing() {
                         role="radiogroup"
                         aria-label="Preferred repayment period"
                       >
-                        {REPAYMENT_OPTIONS.map((option) => {
+                        {repaymentOptions.map((option) => {
                           const active =
                             formData.repaymentPeriod === option.id;
                           return (
@@ -644,7 +749,7 @@ function ExploreFinancing() {
                         required
                       >
                         <option value="">Select range</option>
-                        {INCOME_RANGES.map((range) => (
+                        {incomeRanges.map((range) => (
                           <option key={range} value={range}>
                             {range}
                           </option>
@@ -779,9 +884,18 @@ function ExploreFinancing() {
                       <span>Back to Results</span>
                     </button>
 
-                    <button type="submit" className="btn-primary-customss-down">
+                    <button
+                      type="submit"
+                      className="btn-primary-customss-down"
+                      disabled={submitting}
+                      aria-busy={submitting}
+                    >
                       <i className="bi bi-bank" aria-hidden />
-                      <span>Check Financing Options</span>
+                      <span>
+                        {submitting
+                          ? "Checking options…"
+                          : "Check Financing Options"}
+                      </span>
                       <i className="bi bi-arrow-right" aria-hidden />
                     </button>
                   </div>

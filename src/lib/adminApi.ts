@@ -480,26 +480,50 @@ export async function adminListQuoteUploads(params: {
   return data.data!;
 }
 
-export type FinancingStatus = "new" | "in_review" | "sent_to_partner" | "closed";
+export type FinancingStatus =
+  | "enquiry_submitted"
+  | "provider_review"
+  | "additional_information"
+  | "offer_decision"
+  | "customer_decision"
+  | "closed";
 
 export const FINANCING_STATUS_LABELS: Record<FinancingStatus, string> = {
-  new: "New",
-  in_review: "In review",
-  sent_to_partner: "Sent to partner",
+  enquiry_submitted: "Enquiry submitted",
+  provider_review: "Provider review",
+  additional_information: "Additional information",
+  offer_decision: "Offer / decision",
+  customer_decision: "Your decision",
   closed: "Closed",
 };
 
 export const FINANCING_STATUS_ORDER: FinancingStatus[] = [
-  "new",
-  "in_review",
-  "sent_to_partner",
+  "enquiry_submitted",
+  "provider_review",
+  "additional_information",
+  "offer_decision",
+  "customer_decision",
   "closed",
 ];
 
+const LEGACY_FINANCING_STATUS: Record<string, FinancingStatus> = {
+  new: "enquiry_submitted",
+  in_review: "provider_review",
+  sent_to_partner: "offer_decision",
+};
+
+export function normalizeFinancingStatus(
+  status: string | null | undefined,
+): FinancingStatus {
+  const raw = String(status || "").trim();
+  if (LEGACY_FINANCING_STATUS[raw]) return LEGACY_FINANCING_STATUS[raw];
+  if (raw in FINANCING_STATUS_LABELS) return raw as FinancingStatus;
+  return "enquiry_submitted";
+}
+
 export function financingStatusLabel(status: string | null | undefined) {
-  return (
-    FINANCING_STATUS_LABELS[status as FinancingStatus] ?? status ?? "Unknown"
-  );
+  const normalized = normalizeFinancingStatus(status);
+  return FINANCING_STATUS_LABELS[normalized] ?? status ?? "Unknown";
 }
 
 export type FinancingProjectSnapshot = {

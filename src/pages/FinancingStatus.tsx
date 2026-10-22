@@ -17,12 +17,19 @@ import type { AssessmentResults } from "../types/assessment";
 import {
   FINANCING_ROUTE_LABELS,
   formatNaira,
+  getFinancingEnquiryByReference,
   loadFinancingEnquiry,
   loadFinancingRequest,
+  saveFinancingEnquiry,
   toNumber,
   type FinancingEnquiry,
   type FinancingPreferences,
 } from "../lib/financing";
+import {
+  financingStatusLabel,
+  normalizeFinancingStatus,
+  type FinancingStatus as AdminFinancingStatus,
+} from "../lib/adminApi";
 
 type FinancingStatusLocationState = {
   financing?: FinancingPreferences;
@@ -33,34 +40,79 @@ type StepState = "done" | "active" | "pending";
 
 const MISSING = "—";
 
-const STATUS_STEPS: Array<{ title: string; copy: string; state: StepState }> =
-  [
-    {
-      title: "Enquiry submitted",
-      copy: "Your financing request and authorised project information were sent.",
-      state: "done",
-    },
-    {
-      title: "Provider review",
-      copy: "The provider is reviewing the enquiry. Additional information may be requested.",
-      state: "active",
-    },
-    {
-      title: "Additional information",
-      copy: "If required, the provider may request documents or clarification directly or through the agreed process.",
-      state: "pending",
-    },
-    {
-      title: "Offer / decision",
-      copy: "If the provider issues terms, SolarVy can display the provider-supplied offer for your review.",
-      state: "pending",
-    },
-    {
-      title: "Your decision",
-      copy: "You decide whether to accept, decline or continue discussing the provider's terms.",
-      state: "pending",
-    },
-  ];
+const STATUS_STEP_DEFS: Array<{
+  key: AdminFinancingStatus;
+  title: string;
+  copy: string;
+}> = [
+  {
+    key: "enquiry_submitted",
+    title: "Enquiry submitted",
+    copy: "Your financing request and authorised project information were sent.",
+  },
+  {
+    key: "provider_review",
+    title: "Provider review",
+    copy: "The provider is reviewing the enquiry. Additional information may be requested.",
+  },
+  {
+    key: "additional_information",
+    title: "Additional information",
+    copy: "If required, the provider may request documents or clarification directly or through the agreed process.",
+  },
+  {
+    key: "offer_decision",
+    title: "Offer / decision",
+    copy: "If the provider issues terms, SolarVy can display the provider-supplied offer for your review.",
+  },
+  {
+    key: "customer_decision",
+    title: "Your decision",
+    copy: "You decide whether to accept, decline or continue discussing the provider's terms.",
+  },
+];
+
+const STATUS_BADGE: Record<AdminFinancingStatus, string> = {
+  enquiry_submitted: "Under review",
+  provider_review: "Under review",
+  additional_information: "Additional info",
+  offer_decision: "Offer",
+  customer_decision: "Your decision",
+  closed: "Closed",
+};
+
+function buildStatusSteps(status: AdminFinancingStatus): Array<{
+  title: string;
+  copy: string;
+  state: StepState;
+}> {
+  if (status === "closed") {
+    return STATUS_STEP_DEFS.map((step) => ({
+      title: step.title,
+      copy: step.copy,
+      state: "done" as StepState,
+    }));
+  }
+
+  // Fresh submissions: mark enquiry done and highlight provider review.
+  const activeKey =
+    status === "enquiry_submitted" ? "provider_review" : status;
+  const activeIndex = Math.max(
+    0,
+    STATUS_STEP_DEFS.findIndex((step) => step.key === activeKey),
+  );
+
+  return STATUS_STEP_DEFS.map((step, index) => ({
+    title: step.title,
+    copy: step.copy,
+    state:
+      index < activeIndex
+        ? ("done" as StepState)
+        : index === activeIndex
+          ? ("active" as StepState)
+          : ("pending" as StepState),
+  }));
+}
 
 const OFFER_ITEMS = [
   "Amount offered",
@@ -99,16 +151,21 @@ function FinancingStatus() {
       : path;
 
   const locationState = location.state as FinancingStatusLocationState | null;
-  const [enquiry] = useState<FinancingEnquiry | null>(
+  const [enquiry, setEnquiry] = useState<FinancingEnquiry | null>(
     () => locationState?.enquiry ?? loadFinancingEnquiry(assessmentId),
   );
   const [financing] = useState<FinancingPreferences | null>(
     () => locationState?.financing ?? loadFinancingRequest(assessmentId),
   );
+  const [liveStatus, setLiveStatus] = useState<AdminFinancingStatus>(() =>
+    normalizeFinancingStatus(enquiry?.status),
+  );
   const [results, setResults] = useState<AssessmentResults | null>(null);
   const [propertyType, setPropertyType] = useState<string | null>(null);
   const { toast, showError, clearToast } = useFeedbackToast();
 
+  const statusSteps = buildStatusSteps(liveStatus);
+  const statusBadge = STATUS_BADGE[liveStatus] || financingStatusLabel(liveStatus);
   const routeLabel = enquiry ? FINANCING_ROUTE_LABELS[enquiry.route] : "";
   const submittedDate = enquiry ? formatSubmittedDate(enquiry.submittedAt) : null;
   const projectCost = toNumber(results?.estimatedSystemCost);
@@ -138,6 +195,38 @@ function FinancingStatus() {
       setOpen(!open);
     }
   };
+
+  useEffect(() => {
+    if (!enquiry?.reference) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getFinancingEnquiryByReference(enquiry.reference);
+        if (cancelled) return;
+        const nextStatus = normalizeFinancingStatus(data.status);
+        setLiveStatus(nextStatus);
+        setEnquiry((prev) => {
+          if (!prev) return prev;
+          const next = {
+            ...prev,
+            id: data.id,
+            status: nextStatus,
+            partnerName: data.partnerName || prev.partnerName,
+            submittedAt: data.submittedAt || prev.submittedAt,
+          };
+          saveFinancingEnquiry(assessmentId, next);
+          return next;
+        });
+      } catch {
+        /* keep local/cached status */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assessmentId, enquiry?.reference]);
 
   useEffect(() => {
     if (!assessmentId) return;
@@ -342,7 +431,7 @@ function FinancingStatus() {
                   <div className="fin-card-topline">
                     <span className="fin-badge fin-badge--blue">
                       <i className="bi bi-hourglass-split" aria-hidden />
-                      Under review
+                      {statusBadge}
                     </span>
                   </div>
                   <h5 className="fw-bold mb-1 heading-ass">
@@ -355,7 +444,7 @@ function FinancingStatus() {
                   </p>
 
                   <ol className="fin-steps fin-steps--wide fin-status-steps">
-                    {STATUS_STEPS.map((step, index) => (
+                    {statusSteps.map((step, index) => (
                       <li
                         className={`fin-step fin-step--${step.state}`}
                         key={step.title}

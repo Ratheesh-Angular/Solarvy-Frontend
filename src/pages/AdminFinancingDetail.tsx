@@ -6,6 +6,7 @@ import {
   adminGetFinancingEnquiry,
   adminUpdateFinancingEnquiry,
   financingStatusLabel,
+  normalizeFinancingStatus,
   type AdminFinancingEnquiry,
   type FinancingStatus,
 } from "../lib/adminApi";
@@ -14,9 +15,11 @@ import { formatNaira } from "../lib/financing";
 const NOTES_MAX_LENGTH = 5000;
 
 const STATUS_HINTS: Record<FinancingStatus, string> = {
-  new: "Submitted, not yet looked at.",
-  in_review: "Admin is checking the request.",
-  sent_to_partner: "Forwarded to the financing partner.",
+  enquiry_submitted: "Enquiry recorded; waiting for provider review.",
+  provider_review: "Provider is reviewing the enquiry.",
+  additional_information: "Provider has requested more information.",
+  offer_decision: "Provider has issued or is preparing terms.",
+  customer_decision: "Customer is deciding on the provider's terms.",
   closed: "No further action needed.",
 };
 
@@ -59,7 +62,7 @@ export default function AdminFinancingDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [status, setStatus] = useState<FinancingStatus>("new");
+  const [status, setStatus] = useState<FinancingStatus>("enquiry_submitted");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{
@@ -78,7 +81,7 @@ export default function AdminFinancingDetail() {
         });
         if (cancelled) return;
         setRecord(data);
-        setStatus(data.status);
+        setStatus(normalizeFinancingStatus(data.status));
         setNotes(data.adminNotes || "");
       } catch (err) {
         if (!cancelled) {

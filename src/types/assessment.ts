@@ -114,6 +114,11 @@ export type ExcelCatalogs = {
   gridUnavailableQuestion: string;
   monthlyGeneratorFuelLabel?: string;
   equipmentCatalog: EquipmentCatalogItem[];
+  financeRoutes?: string[];
+  financeRepaymentTerms?: string[];
+  financeApplicantTypes?: string[];
+  financeIncomeRanges?: string[];
+  financeConsentOptions?: string[];
 };
 
 export type TemplatePrefillRow = {

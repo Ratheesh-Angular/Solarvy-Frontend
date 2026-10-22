@@ -97,6 +97,68 @@
   display: block;
 }
 
+/* Naira prefix adornment (deposit / amount inputs) */
+.fin-naira-input {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fin-naira-input:focus-within {
+  border-color: #174c90;
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12);
+}
+
+.fin-naira-input.is-invalid {
+  border-color: #dc3545;
+}
+
+.fin-naira-input.is-invalid:focus-within {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.fin-naira-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 0 14px;
+  background: #f3f4f6;
+  border-right: 1px solid #d0d5dd;
+  color: #344054;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+.fin-naira-input .form-control.ass-field-control {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+
+.fin-naira-input--readonly {
+  background: #f9fafb;
+}
+
+.fin-naira-input--readonly .form-control.ass-field-control:disabled {
+  background: transparent;
+  color: #344054;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
 /* ---------- Funding panel + split bar ---------- */
 .fin-funding-panel {
   background: #f8fafd;

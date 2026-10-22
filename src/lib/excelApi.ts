@@ -54,6 +54,53 @@ export async function getLiveSummary(formData: AssessmentFormData) {
   return response.data;
 }
 
+export type FinanceMatchRow = {
+  productId: string | null;
+  provider: string | null;
+  financingType: string | null;
+  matchResult: string | null;
+  conditions: string | null;
+  requirements: string[];
+  monthlyRepayment?: number | null;
+  totalRepayment?: number | null;
+  upfrontFee?: number | null;
+};
+
+export type FinanceMatchesResponse = {
+  amountRequested: number | null;
+  requestValid: string | null;
+  preferredRoute: string | null;
+  matches: FinanceMatchRow[];
+  allMatches?: FinanceMatchRow[];
+};
+
+export type FinanceExcelPayload = {
+  depositAvailable: number | null;
+  preferredRoute: string | null;
+  repaymentTerm: string | null;
+  applicantType: string | null;
+  location: string | null;
+  incomeRange: string | null;
+  consent: boolean | string | null;
+};
+
+type FinanceMatchesApiResponse = {
+  success: boolean;
+  data: FinanceMatchesResponse;
+  message?: string;
+};
+
+export async function postFinanceMatches(
+  assessmentId: string,
+  finance: FinanceExcelPayload,
+) {
+  const response = await apiPost<FinanceMatchesApiResponse>(
+    "/excel/finance-matches",
+    { assessmentId, finance },
+  );
+  return response.data;
+}
+
 export async function extractBillValues(
   file: File,
   options?: {

@@ -16,14 +16,16 @@ import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import {
-  FINANCING_PARTNERS,
-  FINANCING_ROUTE_ICONS,
   FINANCING_ROUTE_LABELS,
   formatNaira,
   formatNairaShort,
   isFinancingRouteId,
+  loadFinanceMatchesCache,
   loadFinancingRequest,
+  partnerFromMatch,
   repaymentLabel,
+  saveSelectedPartner,
+  syncFinanceMatches,
   toNumber,
   type FinancingPartner,
   type FinancingPreferences,
@@ -48,7 +50,6 @@ function FinancingPartners() {
     ? routeParam
     : "asset-financing";
   const routeLabel = FINANCING_ROUTE_LABELS[routeId];
-  const partners = FINANCING_PARTNERS[routeId];
   const withAssessment = (path: string) =>
     assessmentId
       ? `${path}${path.includes("?") ? "&" : "?"}assessment=${encodeURIComponent(assessmentId)}`
@@ -59,6 +60,12 @@ function FinancingPartners() {
       (location.state as FinancingPartnersLocationState | null)?.financing ??
       loadFinancingRequest(assessmentId),
   );
+  const [partners, setPartners] = useState<FinancingPartner[]>(() => {
+    const cache = loadFinanceMatchesCache(assessmentId);
+    if (!cache || cache.preferredRoute !== routeLabel) return [];
+    return cache.matches.map((row) => partnerFromMatch(row, routeId));
+  });
+  const [partnersLoading, setPartnersLoading] = useState(partners.length === 0);
   const [projectCost, setProjectCost] = useState<number | null>(null);
   const { toast, showError, clearToast } = useFeedbackToast();
 
@@ -107,6 +114,7 @@ function FinancingPartners() {
   };
 
   const selectPartner = (partner: FinancingPartner) => {
+    saveSelectedPartner(assessmentId, routeId, partner);
     navigate(
       withAssessment(
         `/financing-enquiry?route=${routeId}&partner=${encodeURIComponent(partner.id)}`,
@@ -114,6 +122,48 @@ function FinancingPartners() {
       { state: { financing, route: routeId, partner } },
     );
   };
+
+  useEffect(() => {
+    if (!assessmentId || !financing) {
+      setPartnersLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const cache = loadFinanceMatchesCache(assessmentId);
+    if (cache && cache.preferredRoute === routeLabel && cache.matches.length) {
+      setPartners(cache.matches.map((row) => partnerFromMatch(row, routeId)));
+      setPartnersLoading(false);
+      return;
+    }
+
+    setPartnersLoading(true);
+    (async () => {
+      try {
+        const data = await syncFinanceMatches(
+          assessmentId,
+          financing,
+          routeLabel,
+        );
+        if (cancelled) return;
+        setPartners(data.matches.map((row) => partnerFromMatch(row, routeId)));
+      } catch (err) {
+        if (cancelled) return;
+        setPartners([]);
+        showError(
+          err instanceof Error
+            ? err.message
+            : "Could not load financing partner matches.",
+        );
+      } finally {
+        if (!cancelled) setPartnersLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assessmentId, financing, routeId, routeLabel, showError]);
 
   useEffect(() => {
     if (!assessmentId) return;
@@ -315,6 +365,24 @@ function FinancingPartners() {
                   </div>
 
                   <div className="fin-route-list">
+                    {partnersLoading ? (
+                      <p className="text-muted small mb-0 para-ass">
+                        Loading potential partner matches…
+                      </p>
+                    ) : null}
+                    {!partnersLoading && partners.length === 0 ? (
+                      <div className="fin-empty fin-empty--inline">
+                        <h6 className="fw-bold mb-1 heading-ass">
+                          No preliminary matches yet
+                        </h6>
+                        <p className="text-muted small mb-0 para-ass">
+                          No providers currently show a preliminary match for
+                          this route with your financing preferences. Try
+                          adjusting deposit, repayment period, or applicant
+                          type, or choose another route.
+                        </p>
+                      </div>
+                    ) : null}
                     {partners.map((partner, index) => {
                       const featured = index === 0;
                       return (

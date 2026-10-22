@@ -21,22 +21,37 @@
   background: currentColor;
 }
 
-.admin-fin-status--new {
+.admin-fin-status--new,
+.admin-fin-status--enquiry_submitted {
   color: #1d4ed8;
   background: #eff6ff;
   border-color: #bfdbfe;
 }
 
-.admin-fin-status--in_review {
+.admin-fin-status--in_review,
+.admin-fin-status--provider_review {
   color: #b45309;
   background: #fffbeb;
   border-color: #fde68a;
 }
 
-.admin-fin-status--sent_to_partner {
+.admin-fin-status--additional_information {
+  color: #0369a1;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.admin-fin-status--sent_to_partner,
+.admin-fin-status--offer_decision {
   color: #6d28d9;
   background: #f5f3ff;
   border-color: #ddd6fe;
+}
+
+.admin-fin-status--customer_decision {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
 }
 
 .admin-fin-status--closed {

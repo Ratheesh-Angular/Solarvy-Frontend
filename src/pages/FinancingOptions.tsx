@@ -23,6 +23,7 @@ import {
   formatNairaShort,
   loadFinancingRequest,
   repaymentLabel,
+  syncFinanceMatches,
   toNumber,
   type FinancingPreferences,
   type FinancingRouteId,
@@ -155,6 +156,9 @@ function FinancingOptions() {
       loadFinancingRequest(assessmentId),
   );
   const [projectCost, setProjectCost] = useState<number | null>(null);
+  const [routeLoading, setRouteLoading] = useState<FinancingRouteId | null>(
+    null,
+  );
   const { toast, showError, clearToast } = useFeedbackToast();
 
   const routes = financing ? buildRoutes(financing, projectCost) : [];
@@ -183,10 +187,31 @@ function FinancingOptions() {
     }
   };
 
-  const openRoute = (route: FinancingRouteId) => {
-    navigate(withAssessment(`/financing-partners?route=${route}`), {
-      state: { financing, route },
-    });
+  const openRoute = async (route: FinancingRouteId) => {
+    if (!financing) return;
+    if (!assessmentId) {
+      showError("Open this page from an assessment result to continue.");
+      return;
+    }
+    if (routeLoading) return;
+
+    clearToast();
+    setRouteLoading(route);
+    try {
+      const routeLabel = FINANCING_ROUTE_LABELS[route];
+      await syncFinanceMatches(assessmentId, financing, routeLabel);
+      navigate(withAssessment(`/financing-partners?route=${route}`), {
+        state: { financing, route },
+      });
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Could not update the preferred finance route. Please try again.",
+      );
+    } finally {
+      setRouteLoading(null);
+    }
   };
 
   useEffect(() => {
@@ -447,13 +472,19 @@ function FinancingOptions() {
                                 ? "btn-primary-customss-down"
                                 : "btn-outline-customsss2-req"
                             }
-                            onClick={() => openRoute(route.id)}
+                            onClick={() => void openRoute(route.id)}
+                            disabled={routeLoading !== null}
+                            aria-busy={routeLoading === route.id}
                           >
                             <i
                               className={`bi ${route.id === "eaas" ? "bi-info-circle" : "bi-people"}`}
                               aria-hidden
                             />
-                            <span>{route.cta}</span>
+                            <span>
+                              {routeLoading === route.id
+                                ? "Updating…"
+                                : route.cta}
+                            </span>
                             <i className="bi bi-arrow-right" aria-hidden />
                           </button>
                         </div>
