@@ -130,6 +130,7 @@ CloudFront certificates **must** be in region **US East (N. Virginia) `us-east-1
 3. Paste name and value exactly as ACM shows
 4. Record type: **CNAME** → Create
 
+
 ### Wait until Issued
 
 1. Refresh the certificate page until status is **Issued**

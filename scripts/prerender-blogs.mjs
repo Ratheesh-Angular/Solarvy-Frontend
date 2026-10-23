@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "vite";
 
-const SITE_ORIGIN = "https://www.solarvy.net";
+const SITE_ORIGIN = "https://www.solarvy.ng";
 const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.png`;
 const FETCH_TIMEOUT_MS = 20_000;
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

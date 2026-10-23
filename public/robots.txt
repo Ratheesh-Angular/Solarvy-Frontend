@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 
-Sitemap: https://www.solarvy.net/sitemap.xml
+Sitemap: https://www.solarvy.ng/sitemap.xml

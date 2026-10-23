@@ -1,6 +1,6 @@
 import { apiGet, apiPost } from "./api";
 
-export const BLOG_SITE_ORIGIN = "https://www.solarvy.net";
+export const BLOG_SITE_ORIGIN = "https://www.solarvy.ng";
 
 export type BlogSummary = {
   id: number;

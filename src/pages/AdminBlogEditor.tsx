@@ -479,7 +479,7 @@ export default function AdminBlogEditor() {
               <div>
                 <span className="admin-label">Google preview</span>
                 <div className="admin-blog-serp">
-                  <div className="admin-blog-serp-url">solarvy.net › blog › {previewSlug}</div>
+                  <div className="admin-blog-serp-url">solarvy.ng › blog › {previewSlug}</div>
                   <div className="admin-blog-serp-title">{previewTitle}</div>
                   <div className="admin-blog-serp-desc">{previewDescription}</div>
                 </div>
@@ -491,7 +491,7 @@ export default function AdminBlogEditor() {
                     {previewImage ? <img src={previewImage} alt="" /> : <span>No image</span>}
                   </div>
                   <div className="admin-blog-social-body">
-                    <div className="admin-blog-social-domain">SOLARVY.NET</div>
+                    <div className="admin-blog-social-domain">solarvy.ng</div>
                     <div className="admin-blog-social-title">{previewTitle}</div>
                     <div className="admin-blog-social-desc">{previewDescription}</div>
                   </div>

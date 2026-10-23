@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 
-const SITE_ORIGIN = "https://www.solarvy.net";
+const SITE_ORIGIN = "https://www.solarvy.ng";
 const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.png`;
 
 export type PageSeoProps = {
