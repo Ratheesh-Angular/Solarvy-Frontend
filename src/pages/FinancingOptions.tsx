@@ -557,13 +557,9 @@ function FinancingOptions() {
                   </div>
 
                   <div className="fin-notice" role="note">
-                    <i className="bi bi-exclamation-triangle" aria-hidden />
+                  <i className="bi bi-exclamation-circle-fill" aria-hidden="true" />
                     <p>
-                      <strong>Important:</strong> SolarVy is showing potential
-                      financing routes based on the information provided.
-                      Rates, monthly repayments, eligibility and approval
-                      should only be shown as confirmed when supplied by the
-                      relevant financing provider.
+                      <strong>Financing information:</strong> Financing options are indicative and subject to provider eligibility checks and approval. Final rates, repayment amounts and terms will be confirmed by your chosen financing provider.
                     </p>
                   </div>
 

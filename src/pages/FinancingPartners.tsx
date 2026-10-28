@@ -466,10 +466,7 @@ function FinancingPartners() {
                 <div className="fin-note mt-3 mb-4" role="note">
                   <i className="bi bi-info-circle" aria-hidden />
                   <p>
-                    <strong>Next: Review &amp; send enquiry.</strong> You will
-                    review your contact details, financing request, project
-                    summary and the assessment information being shared.
-                    Nothing is sent to the selected partner until you confirm.
+                    <strong>Next: Review &amp; Submit.</strong> Review your financing request and the information to be shared. Nothing will be sent to your selected financing partner until you confirm.
                   </p>
                 </div>
               </div>
@@ -510,11 +507,10 @@ function FinancingPartners() {
                   </div>
 
                   <div className="fin-notice" role="note">
-                    <i className="bi bi-exclamation-triangle" aria-hidden />
+                  <i className="bi bi-exclamation-circle-fill" aria-hidden="true" />
                     <p>
-                      <strong>No guaranteed approval.</strong> Providers are
-                      never shown as approved, and rates or repayments only
-                      appear once the provider confirms them.
+                    Financing eligibility is not guaranteed These are preliminary financing matches, not loan approvals. Final
+eligibility, rates and repayment terms are determined by the financing provider.
                     </p>
                   </div>
 

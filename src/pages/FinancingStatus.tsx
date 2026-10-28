@@ -564,14 +564,14 @@ function FinancingStatus() {
                     </div>
                   </div>
 
-                  <div className="fin-notice" role="note">
+                  {/* <div className="fin-notice" role="note">
                     <i className="bi bi-exclamation-triangle" aria-hidden />
                     <p>
                       <strong>Status wording matters.</strong> “Under review”
                       means only that the enquiry has been submitted for
                       provider consideration. It does not mean approved.
                     </p>
-                  </div>
+                  </div> */}
                 </aside>
               </div>
             </div>

@@ -1190,7 +1190,7 @@ export function AssessmentReportDocument({
           />
         </View>
 
-        <View style={styles.noteBox}>
+        {/* <View style={styles.noteBox}>
           <Text style={styles.noteText}>
             <Text style={styles.noteBold}>Data quality note: </Text>
             the previous report populated several energy-profile fields
@@ -1199,7 +1199,7 @@ export function AssessmentReportDocument({
             independence and CO2 reduction are not shown as quantified results
             because the supplied report does not contain reliable values for them.
           </Text>
-        </View>
+        </View> */}
 
         <View style={styles.archImageWrap}>
           <Image src={architectureDiagram} style={styles.archImage} />
