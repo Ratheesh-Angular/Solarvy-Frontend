@@ -131,13 +131,17 @@ function FinancingPartners() {
 
     let cancelled = false;
     const cache = loadFinanceMatchesCache(assessmentId);
-    if (cache && cache.preferredRoute === routeLabel && cache.matches.length) {
-      setPartners(cache.matches.map((row) => partnerFromMatch(row, routeId)));
+    const hasOptimistic =
+      Boolean(cache) &&
+      cache!.preferredRoute === routeLabel &&
+      cache!.matches.length > 0;
+    if (hasOptimistic) {
+      setPartners(cache!.matches.map((row) => partnerFromMatch(row, routeId)));
       setPartnersLoading(false);
-      return;
+    } else {
+      setPartnersLoading(true);
     }
 
-    setPartnersLoading(true);
     (async () => {
       try {
         const data = await syncFinanceMatches(
@@ -149,12 +153,14 @@ function FinancingPartners() {
         setPartners(data.matches.map((row) => partnerFromMatch(row, routeId)));
       } catch (err) {
         if (cancelled) return;
-        setPartners([]);
-        showError(
-          err instanceof Error
-            ? err.message
-            : "Could not load financing partner matches.",
-        );
+        if (!hasOptimistic) {
+          setPartners([]);
+          showError(
+            err instanceof Error
+              ? err.message
+              : "Could not load financing partner matches.",
+          );
+        }
       } finally {
         if (!cancelled) setPartnersLoading(false);
       }

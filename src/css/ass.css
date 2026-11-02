@@ -2844,9 +2844,16 @@ textarea:not(.form-control):not(.ass-field-control):not(
   flex-shrink: 0;
 }
 
-.power-setup-fuel-row .form-control {
+.power-setup-fuel-row .fin-naira-input {
   flex: 1 1 180px;
   min-width: 0;
+  height: 40px;
+}
+
+.power-setup-fuel-row .fin-naira-input .form-control.ass-field-control {
+  min-height: 0;
+  height: 100%;
+  padding: 0.35rem 0.65rem;
 }
 
 .power-setup-panel .power-setup-fuel {
@@ -2888,14 +2895,22 @@ textarea:not(.form-control):not(.ass-field-control):not(
     gap: 0.35rem;
   }
 
-  .power-setup-panel--with-fuel .power-setup-fuel-row .form-control {
+  .power-setup-panel--with-fuel .power-setup-fuel-row .fin-naira-input {
     flex: none;
+    height: 40px;
   }
 
   .power-setup-panel--with-fuel input.form-control.ass-field-control {
     min-height: 34px;
     height: 34px;
     padding: 0.35rem 0.65rem;
+  }
+
+  .power-setup-panel--with-fuel
+    .fin-naira-input
+    input.form-control.ass-field-control {
+    min-height: 0;
+    height: 100%;
   }
 }
 

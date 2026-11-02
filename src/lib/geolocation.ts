@@ -17,6 +17,15 @@ function normalizeStateName(value: string): string {
     .replace(/[^a-z]/g, "");
 }
 
+const FCT_ALIASES = new Set([
+  "fct",
+  "abuja",
+  "fctabuja",
+  "federalcapitalterritory",
+  "federalcapitalterritoryfct",
+  "federalcapitalterritoryabuja",
+]);
+
 /** Match reverse-geocoded region against Nigeria state labels. */
 export function matchNigeriaState(
   region: string,
@@ -24,6 +33,14 @@ export function matchNigeriaState(
 ): string | null {
   const needle = normalizeStateName(region);
   if (!needle) return null;
+
+  if (FCT_ALIASES.has(needle)) {
+    const fct = stateOptions.find(
+      (option) =>
+        normalizeStateName(option) === "federalcapitalterritory",
+    );
+    if (fct) return fct;
+  }
 
   for (const option of stateOptions) {
     if (normalizeStateName(option) === needle) return option;

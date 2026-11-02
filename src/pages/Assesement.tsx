@@ -793,7 +793,7 @@ function Assesement() {
   const [calculateErrors, setCalculateErrors] = useState<CalculateFieldErrors>(
     {},
   );
-  const [roofArea, setRoofArea] = useState("400");
+  const [roofArea, setRoofArea] = useState("1000");
   const [backupDuration, setBackupDuration] = useState("");
   const [gridUnavailableBand, setGridUnavailableBand] = useState("");
   const [showOutagePicker, setShowOutagePicker] = useState(false);
@@ -2452,26 +2452,36 @@ function Assesement() {
                           >
                             {monthlyGeneratorFuelLabel} (optional)
                           </label>
-                          <input
-                            id="ass-monthly-generator-fuel"
-                            type="text"
-                            className={`form-control ass-field-control${
+                          <div
+                            className={`fin-naira-input${
                               calculateErrors.monthlyGeneratorFuelSpend
                                 ? " is-invalid"
                                 : ""
                             }`}
-                            placeholder="₦"
-                            value={monthlyGeneratorFuelSpend}
-                            aria-invalid={Boolean(
-                              calculateErrors.monthlyGeneratorFuelSpend,
-                            )}
-                            onChange={(e) => {
-                              setMonthlyGeneratorFuelSpend(
-                                formatIntegerWithCommas(e.target.value),
-                              );
-                              clearCalculateError("monthlyGeneratorFuelSpend");
-                            }}
-                          />
+                          >
+                            <span className="fin-naira-prefix" aria-hidden>
+                              ₦
+                            </span>
+                            <input
+                              id="ass-monthly-generator-fuel"
+                              type="text"
+                              inputMode="numeric"
+                              className="form-control ass-field-control"
+                              placeholder="0"
+                              value={monthlyGeneratorFuelSpend}
+                              aria-invalid={Boolean(
+                                calculateErrors.monthlyGeneratorFuelSpend,
+                              )}
+                              onChange={(e) => {
+                                setMonthlyGeneratorFuelSpend(
+                                  formatIntegerWithCommas(e.target.value),
+                                );
+                                clearCalculateError(
+                                  "monthlyGeneratorFuelSpend",
+                                );
+                              }}
+                            />
+                          </div>
                         </div>
                         {calculateErrors.monthlyGeneratorFuelSpend && (
                           <p className="ass-field-error mt-1 mb-0" role="alert">
