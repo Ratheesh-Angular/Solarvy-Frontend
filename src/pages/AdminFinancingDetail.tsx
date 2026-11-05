@@ -4,13 +4,20 @@ import {
   FINANCING_STATUS_LABELS,
   FINANCING_STATUS_ORDER,
   adminGetFinancingEnquiry,
+  adminGetVisitorDetail,
   adminUpdateFinancingEnquiry,
   financingStatusLabel,
   normalizeFinancingStatus,
   type AdminFinancingEnquiry,
   type FinancingStatus,
+  type VisitorSummary,
 } from "../lib/adminApi";
 import { formatNaira } from "../lib/financing";
+import {
+  downloadFinancingEnquiryReport,
+  formatFinancingReportDate,
+  type FinancingApplicantContact,
+} from "../lib/financingEnquiryReportPdf";
 
 const NOTES_MAX_LENGTH = 5000;
 
@@ -56,11 +63,88 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
+function pickLeadField(
+  row: Record<string, unknown>,
+  ...keys: string[]
+): string | null {
+  for (const key of keys) {
+    const value = row[key];
+    if (value != null && String(value).trim() !== "") {
+      return String(value).trim();
+    }
+  }
+  return null;
+}
+
+function leadCreatedAtMs(row: Record<string, unknown>): number {
+  const raw = row.created_at ?? row.createdAt;
+  if (!raw) return 0;
+  const ms = new Date(String(raw)).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
+function resolveApplicantContact(
+  visitorId: string,
+  detail: Record<string, unknown> | null,
+): FinancingApplicantContact {
+  const visitor = (detail?.visitor as VisitorSummary | undefined) || null;
+  const leadBuckets = [
+    detail?.requestIntros,
+    detail?.expertReviews,
+    detail?.quoteUploads,
+    detail?.contactMessages,
+  ];
+
+  const leads: Record<string, unknown>[] = [];
+  for (const bucket of leadBuckets) {
+    if (!Array.isArray(bucket)) continue;
+    for (const item of bucket) {
+      if (item && typeof item === "object") {
+        leads.push(item as Record<string, unknown>);
+      }
+    }
+  }
+
+  leads.sort((a, b) => leadCreatedAtMs(b) - leadCreatedAtMs(a));
+
+  let fullName: string | null = null;
+  let email: string | null = null;
+  let phone: string | null = null;
+
+  for (const lead of leads) {
+    const name = pickLeadField(lead, "full_name", "fullName");
+    const leadEmail = pickLeadField(lead, "email");
+    const leadPhone = pickLeadField(
+      lead,
+      "phone_number",
+      "phoneNumber",
+      "phone",
+    );
+    if (!name && !leadEmail && !leadPhone) continue;
+    if (!fullName && name) fullName = name;
+    if (!email && leadEmail) email = leadEmail;
+    if (!phone && leadPhone) phone = leadPhone;
+    if (fullName && email && phone) break;
+  }
+
+  return {
+    fullName,
+    email,
+    phone,
+    city: visitor?.lastCity || null,
+    region: visitor?.lastRegion || null,
+    country: visitor?.lastCountry || null,
+    visitorLabel: visitor?.displayName || visitorId || null,
+  };
+}
+
 export default function AdminFinancingDetail() {
   const { id = "", financingId = "" } = useParams();
   const [record, setRecord] = useState<AdminFinancingEnquiry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [downloadError, setDownloadError] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [status, setStatus] = useState<FinancingStatus>("enquiry_submitted");
   const [notes, setNotes] = useState("");
@@ -193,6 +277,35 @@ export default function AdminFinancingDetail() {
     }
   };
 
+  const handleDownload = async () => {
+    if (!record || isDownloading) return;
+    setIsDownloading(true);
+    setDownloadError("");
+    try {
+      let applicantContact: FinancingApplicantContact = {
+        visitorLabel: id || null,
+      };
+      try {
+        const detail = await adminGetVisitorDetail(id);
+        applicantContact = resolveApplicantContact(
+          id,
+          detail as Record<string, unknown>,
+        );
+      } catch {
+        // Best-effort: still generate the PDF with N/A user fields.
+      }
+      await downloadFinancingEnquiryReport({
+        record,
+        applicantContact,
+        generatedDate: formatFinancingReportDate(),
+      });
+    } catch {
+      setDownloadError("Unable to generate the PDF report. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="admin-page-inner admin-fin-detail">
       <div className="admin-page-header admin-page-header-row">
@@ -212,10 +325,27 @@ export default function AdminFinancingDetail() {
             ) : null}
           </p>
         </div>
-        <Link to={`/admin/users/${id}`} className="admin-btn admin-btn-secondary">
-          Back to user
-        </Link>
+        <div className="admin-header-actions">
+          <Link
+            to={`/admin/users/${id}`}
+            className="admin-btn admin-btn-secondary"
+          >
+            Back to user
+          </Link>
+          <button
+            type="button"
+            className="admin-btn admin-btn-primary"
+            disabled={isDownloading}
+            onClick={() => void handleDownload()}
+          >
+            {isDownloading ? "Preparing PDF…" : "Download PDF"}
+          </button>
+        </div>
       </div>
+
+      {downloadError ? (
+        <div className="admin-panel admin-alert">{downloadError}</div>
+      ) : null}
 
       <div className="admin-kpi-grid admin-fin-kpis">
         {kpis.map((kpi) => (

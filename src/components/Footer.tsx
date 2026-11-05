@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
+import { useAuth } from "../context/AuthContext";
 import "../App.css";
 
 function Footer() {
   const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
   const currentYear = new Date().getFullYear();
   return (
     <footer className="footer-section">
@@ -91,6 +93,41 @@ function Footer() {
                       Contact Us
                     </button>
                   </li>
+                  {isAuthenticated ? (
+                    <li>
+                      <button
+                        type="button"
+                        className="footer-link-nav"
+                        onClick={() => {
+                          logout();
+                          navigate("/");
+                        }}
+                      >
+                        Log out
+                      </button>
+                    </li>
+                  ) : (
+                    <>
+                      <li>
+                        <button
+                          type="button"
+                          className="footer-link-nav"
+                          onClick={() => navigate("/login")}
+                        >
+                          Log in
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          type="button"
+                          className="footer-link-nav"
+                          onClick={() => navigate("/signup")}
+                        >
+                          Sign up
+                        </button>
+                      </li>
+                    </>
+                  )}
                   <li>
                     <button
                       type="button"

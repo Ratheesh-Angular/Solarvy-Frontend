@@ -15,9 +15,14 @@ type ApiResponse<T = unknown> = {
 };
 
 export class ApiError extends Error {
-  constructor(message: string) {
+  code?: string;
+  status?: number;
+
+  constructor(message: string, options?: { code?: string; status?: number }) {
     super(message);
     this.name = "ApiError";
+    this.code = options?.code;
+    this.status = options?.status;
   }
 }
 

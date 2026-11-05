@@ -50,11 +50,11 @@ export default function AdminAssessments() {
         </p>
       </div>
 
-      <div className="admin-panel admin-filters">
-        <label className="admin-field">
+      <div className="admin-visitors-toolbar admin-users-toolbar">
+        <label className="admin-field admin-field-inline admin-date-field admin-visitors-search">
           <span className="admin-label">Search</span>
           <input
-            className="admin-input"
+            className="admin-input admin-visitors-search-input"
             value={q}
             onChange={(e) => {
               setPage(1);
@@ -63,11 +63,11 @@ export default function AdminAssessments() {
             placeholder="Assessment id, visitor…"
           />
         </label>
-        <label className="admin-field">
+        <label className="admin-field admin-field-inline admin-date-field">
           <span className="admin-label">From</span>
           <input
             type="date"
-            className="admin-input"
+            className="admin-input admin-date-input"
             value={from}
             onChange={(e) => {
               setPage(1);
@@ -75,11 +75,11 @@ export default function AdminAssessments() {
             }}
           />
         </label>
-        <label className="admin-field">
+        <label className="admin-field admin-field-inline admin-date-field">
           <span className="admin-label">To</span>
           <input
             type="date"
-            className="admin-input"
+            className="admin-input admin-date-input"
             value={to}
             onChange={(e) => {
               setPage(1);

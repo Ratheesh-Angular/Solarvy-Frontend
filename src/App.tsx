@@ -48,6 +48,7 @@ import AdminAssessmentDetail from "./pages/AdminAssessmentDetail.tsx";
 import AdminAssessmentResults from "./pages/AdminAssessmentResults.tsx";
 import AdminFinancingDetail from "./pages/AdminFinancingDetail.tsx";
 import AdminAssessments from "./pages/AdminAssessments.tsx";
+import AdminFinancing from "./pages/AdminFinancing.tsx";
 import AdminLeads from "./pages/AdminLeads.tsx";
 import AdminExcelTemplate from "./pages/AdminExcelTemplate.tsx";
 import AdminBillInput from "./pages/AdminBillInput.tsx";
@@ -59,9 +60,15 @@ import AdminBlogEditor from "./pages/AdminBlogEditor.tsx";
 import AdminBlogAnalytics from "./pages/AdminBlogAnalytics.tsx";
 import AdminRoute from "./components/AdminRoute.tsx";
 import AdminLayout from "./components/AdminLayout.tsx";
+import AdminPermissionRoute from "./components/AdminPermissionRoute.tsx";
+import AdminUsersRoles from "./pages/AdminUsersRoles.tsx";
 import VisitorTracker from "./components/VisitorTracker.tsx";
 import ChatbotWidget from "./components/ChatbotWidget.tsx";
+import { AuthProvider } from "./context/AuthContext.tsx";
+import Signup from "./pages/Signup.tsx";
+import Login from "./pages/Login.tsx";
 import "./css/admin/index.css";
+import "./css/auth-pages.css";
 
 function MainLayout() {
   return (
@@ -86,79 +93,90 @@ function RedirectVisitorToUser() {
 function App() {
   return (
     <Router>
-      <ScrollToTop />
-      <VisitorTracker />
-      <ChatbotWidget />
-      <Routes>
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminRoute />}>
-          <Route element={<AdminLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="users/:id" element={<AdminUserDetail />} />
-            <Route
-              path="users/:id/assessments/:assessmentId"
-              element={<AdminAssessmentDetail />}
-            />
-            <Route
-              path="users/:id/assessments/:assessmentId/results"
-              element={<AdminAssessmentResults />}
-            />
-            <Route
-              path="users/:id/financing/:financingId"
-              element={<AdminFinancingDetail />}
-            />
-            <Route
-              path="visitors"
-              element={<Navigate to="/admin/users" replace />}
-            />
-            <Route path="visitors/:id" element={<RedirectVisitorToUser />} />
-            <Route path="assessments" element={<AdminAssessments />} />
-            <Route path="leads" element={<AdminLeads />} />
-            <Route path="excel-template" element={<AdminExcelTemplate />} />
-            <Route path="bill-input" element={<AdminBillInput />} />
-            <Route path="recommendations" element={<AdminRecommendations />} />
-            <Route path="chatbot-prompt" element={<AdminChatbotPrompt />} />
-            <Route path="faqs" element={<AdminFaqs />} />
-            <Route path="blogs" element={<AdminBlogs />} />
-            <Route path="blogs/new" element={<AdminBlogEditor />} />
-            <Route path="blogs/:id" element={<AdminBlogEditor />} />
-            <Route path="blog-analytics" element={<AdminBlogAnalytics />} />
+      <AuthProvider>
+        <ScrollToTop />
+        <VisitorTracker />
+        <ChatbotWidget />
+        <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<AdminRoute />}>
+            <Route element={<AdminLayout />}>
+              <Route element={<AdminPermissionRoute />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="users/:id" element={<AdminUserDetail />} />
+                <Route
+                  path="users/:id/assessments/:assessmentId"
+                  element={<AdminAssessmentDetail />}
+                />
+                <Route
+                  path="users/:id/assessments/:assessmentId/results"
+                  element={<AdminAssessmentResults />}
+                />
+                <Route
+                  path="users/:id/financing/:financingId"
+                  element={<AdminFinancingDetail />}
+                />
+                <Route
+                  path="visitors"
+                  element={<Navigate to="/admin/users" replace />}
+                />
+                <Route path="visitors/:id" element={<RedirectVisitorToUser />} />
+                <Route path="assessments" element={<AdminAssessments />} />
+                <Route path="financing" element={<AdminFinancing />} />
+                <Route path="leads" element={<AdminLeads />} />
+                <Route path="excel-template" element={<AdminExcelTemplate />} />
+                <Route path="bill-input" element={<AdminBillInput />} />
+                <Route
+                  path="recommendations"
+                  element={<AdminRecommendations />}
+                />
+                <Route path="chatbot-prompt" element={<AdminChatbotPrompt />} />
+                <Route path="faqs" element={<AdminFaqs />} />
+                <Route path="blogs" element={<AdminBlogs />} />
+                <Route path="blogs/new" element={<AdminBlogEditor />} />
+                <Route path="blogs/:id" element={<AdminBlogEditor />} />
+                <Route path="blog-analytics" element={<AdminBlogAnalytics />} />
+                <Route path="users-roles" element={<AdminUsersRoles />} />
+              </Route>
+            </Route>
           </Route>
-        </Route>
 
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/start-assessment" element={<Assesement />} />
-          <Route path="/assessment-result" element={<AssesementResult />} />
-          <Route
-            path="/start-assesement"
-            element={<RedirectWithSearch to="/start-assessment" />}
-          />
-          <Route
-            path="/assesement-result"
-            element={<RedirectWithSearch to="/assessment-result" />}
-          />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/sample-results" element={<SampleResults />} />
-          <Route path="/who-its-for" element={<WhoItsFor />} />
-          <Route path="/matched-installers" element={<MatchedInstallers />} />
-          <Route path="/expert-review" element={<ExpertReview />} />
-          <Route path="/request-intro" element={<RequestIntro />} />
-          <Route path="/explore-financing" element={<ExploreFinancing />} />
-          <Route path="/financing-options" element={<FinancingOptions />} />
-          <Route path="/financing-partners" element={<FinancingPartners />} />
-          <Route path="/financing-enquiry" element={<FinancingEnquiry />} />
-          <Route path="/financing-status" element={<FinancingStatus />} />
-          <Route path="/blog" element={<BlogList />} />
-          <Route path="/blog/:slug" element={<BlogDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/terms-of-use" element={<TermsOfUse />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        </Route>
-      </Routes>
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/start-assessment" element={<Assesement />} />
+            <Route path="/assessment-result" element={<AssesementResult />} />
+            <Route
+              path="/start-assesement"
+              element={<RedirectWithSearch to="/start-assessment" />}
+            />
+            <Route
+              path="/assesement-result"
+              element={<RedirectWithSearch to="/assessment-result" />}
+            />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/sample-results" element={<SampleResults />} />
+            <Route path="/who-its-for" element={<WhoItsFor />} />
+            <Route path="/matched-installers" element={<MatchedInstallers />} />
+            <Route path="/expert-review" element={<ExpertReview />} />
+            <Route path="/request-intro" element={<RequestIntro />} />
+            <Route path="/explore-financing" element={<ExploreFinancing />} />
+            <Route path="/financing-options" element={<FinancingOptions />} />
+            <Route path="/financing-partners" element={<FinancingPartners />} />
+            <Route path="/financing-enquiry" element={<FinancingEnquiry />} />
+            <Route path="/financing-status" element={<FinancingStatus />} />
+            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog/:slug" element={<BlogDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/terms-of-use" element={<TermsOfUse />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }

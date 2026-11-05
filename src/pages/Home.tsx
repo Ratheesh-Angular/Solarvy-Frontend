@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import "../assets/images/logo.png";
-import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import bttnarrowhite from "../assets/images/btton-arrow-white.png";
 import one from "../assets/images/1.png";
@@ -16,7 +13,6 @@ import linktwo from "../assets/images/Link3.png";
 import link from "../assets/images/Link1.png";
 import enery from "../assets/images/energy.png";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import { ApiError } from "../lib/api";
 import { createAssessmentDraft } from "../lib/assessmentApi";
 import {
@@ -27,13 +23,13 @@ import {
 import type { QuickAssessmentFormData } from "../types/assessment";
 import SolarvyLoader from "../components/SolarvyLoader";
 import PageSeo from "../components/PageSeo";
+import MarketingNav from "../components/MarketingNav";
 
 type QuickFormFieldErrors = Partial<
   Record<keyof QuickAssessmentFormData, string>
 >;
 
 function Home() {
-  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const [isStartingAssessment, setIsStartingAssessment] = useState(false);
   const [startError, setStartError] = useState("");
@@ -115,36 +111,6 @@ function Home() {
       setIsStartingAssessment(false);
     }
   };
-  const handleToggle = () => {
-    setOpen(!open);
-  };
-
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 992) {
-        setOpen(false); // reset menu on desktop
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   return (
     <div className="menu-div ">
@@ -161,81 +127,7 @@ function Home() {
         <div className="solar-hero-overlay"></div>
 
         <div className="container-fluid solar-hero-wrapper">
-          <div className="solar-top-navbar">
-            <nav
-              className={`navbar navbar-expand-md  ${scrolled ? "scrolled" : ""}`}
-            >
-              <Link className="navbar-brand" to="/">
-                <img src={logo} alt="logo" className="solar-logo-img" />
-              </Link>
-
-              <button
-                className={`navbar-toggler ${open ? "" : "collapsed"}`}
-                type="button"
-                onClick={handleToggle}
-                aria-expanded={open}
-              >
-                <span className="navbar-toggler-icon"></span>
-              </button>
-
-              <div
-                className={`collapse navbar-collapse ${open ? "show" : ""} ${window.innerWidth >= 768 ? "show" : ""}`}
-              >
-                <ul className="navbar-nav ms-auto align-items-lg-center solar-nav-links">
-                  <li className="nav-item">
-                    <Link
-                      className="nav-link"
-                      to="/how-it-works"
-                      onClick={() => setOpen(false)}
-                    >
-                      {" "}
-                      How It Works
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link
-                      className="nav-link"
-                      to="/sample-results"
-                      onClick={() => setOpen(false)}
-                    >
-                      Sample Results
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link
-                      className="nav-link"
-                      to="/who-its-for"
-                      onClick={() => setOpen(false)}
-                    >
-                      Who It's For
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link
-                      className="nav-link"
-                      to="/blog"
-                      onClick={() => setOpen(false)}
-                    >
-                      Blog
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <button
-                      className="solar-nav-btn"
-                      onClick={() => navigate("/start-assessment")}
-                    >
-                      Start Assessment
-                      <img src={bttnarrow} alt="arrow" />
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </nav>
-          </div>
+          <MarketingNav expand="md" showBlog />
 
           <div className="row solar-main-row align-items-center">
             {/* LEFT SIDE */}

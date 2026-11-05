@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import { adminLogin, getAdminToken } from "../lib/adminApi";
+import { getFirstAllowedAdminPath } from "../lib/adminNav";
 import logo from "../assets/images/logo-dark.png";
 import PageSeo from "../components/PageSeo";
 
@@ -25,9 +26,11 @@ export default function AdminLogin() {
     clearToast();
 
     try {
-      await adminLogin(username.trim(), password);
+      const result = await adminLogin(username.trim(), password);
       showSuccess("Signed in successfully.", "Welcome");
-      navigate("/admin/dashboard");
+      navigate(
+        getFirstAllowedAdminPath(result.user) ?? "/admin/dashboard",
+      );
     } catch (error) {
       showError(
         error instanceof Error ? error.message : "Unable to sign in.",
@@ -62,7 +65,7 @@ export default function AdminLogin() {
           <form onSubmit={handleSubmit}>
             <div className="admin-field">
               <label htmlFor="admin-username" className="admin-label">
-                Username
+                Email or username
               </label>
               <input
                 id="admin-username"

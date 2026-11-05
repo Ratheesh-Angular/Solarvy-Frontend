@@ -1,37 +1,10 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import "../assets/images/logo.png";
-import logo from "../assets/images/logo.png";
-import bttnarrow from "../assets/images/btton-arrow.png";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import PageSeo from "../components/PageSeo";
+import MarketingNav from "../components/MarketingNav";
 import Breadcrumbs from "../components/Breadcrumbs";
 
 function WhoItsFor() {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
-  const handleToggle = () => {
-    if (window.innerWidth < 768) {
-      setOpen(!open);
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
   return (
     <div>
       <PageSeo
@@ -45,61 +18,7 @@ function WhoItsFor() {
 
           <div className="container-fluid px-lg-4 px-3 position-relative z-1 menu-div ass-div">
             <div className="row align-items-start text-divs gx-3 gx-lg-4">
-              <div className="solar-top-navbar">
-                <nav
-                  className={`navbar navbar-expand-lg  ${scrolled ? "scrolled" : ""}`}
-                >
-                  <Link className="navbar-brand" to="/">
-                    <img src={logo} alt="logo" className="solar-logo-img" />
-                  </Link>
-
-                  <button
-                    className="navbar-toggler"
-                    type="button"
-                    onClick={handleToggle}
-                  >
-                    <span className="navbar-toggler-icon"></span>
-                  </button>
-
-                  <div
-                    className={`collapse navbar-collapse ${open ? "show" : ""}`}
-                  >
-                    <ul className="navbar-nav ms-auto align-items-lg-center solar-nav-links">
-                      <li className="nav-item">
-                        <Link
-                          className="nav-link"
-                          to="/how-it-works"
-                          onClick={() => setOpen(false)}
-                        >
-                          How It Works
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link className="nav-link" to="/sample-results">
-                          Sample Results
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <Link className="nav-link" to="/who-its-for">
-                          Who It's For
-                        </Link>
-                      </li>
-
-                      <li className="nav-item">
-                        <button
-                          className="solar-nav-btn"
-                          onClick={() => navigate("/start-assessment")}
-                        >
-                          Start Assessment
-                          <img src={bttnarrow} alt="arrow" />
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </nav>
-              </div>
+              <MarketingNav />
               <div className="nav-bottom-section row align-items-center home-page">
                 <div className="col-12 col-lg-12 text-white ">
                   <h1 className="bannr-text display-5 ass-page ">

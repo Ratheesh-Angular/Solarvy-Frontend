@@ -146,6 +146,14 @@ export default function AdminAssessmentDetail() {
           <h2 className="admin-panel-title">Power &amp; goals</h2>
           <dl className="admin-info-list admin-info-list-wide">
             <Field label="Power setup" value={formData.powerSetup} />
+            <Field
+              label="On a typical day, how many hours is grid power unavailable?"
+              value={formData.gridUnavailableBand}
+            />
+            <Field
+              label="Monthly generator fuel spend (optional)"
+              value={formData.monthlyGeneratorFuelSpend}
+            />
             <Field label="Main objective" value={formData.mainObjective} />
             <Field label="Input method" value={formData.inputMethod} />
             <Field label="Roof area" value={formData.roofArea} />

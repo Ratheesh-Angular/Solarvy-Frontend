@@ -5,8 +5,13 @@ import {
   clearAdminToken,
   type AdminUser,
 } from "../lib/adminApi";
+import {
+  ADMIN_NAV_ITEMS,
+  ADMIN_NAV_SECTIONS,
+  adminHasPageAccess,
+} from "../lib/adminNav";
 import PageSeo from "./PageSeo";
-import logo from "../assets/images/logo.png";
+import logo from "../assets/images/logo-dark.png";
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -33,6 +38,10 @@ export default function AdminLayout() {
     navigate("/admin/login", { replace: true });
   };
 
+  const displayName = user
+    ? user.email || user.username
+    : "Loading...";
+
   return (
     <div className="admin-shell">
       <PageSeo
@@ -47,9 +56,7 @@ export default function AdminLayout() {
           <span className="admin-header-badge">Admin</span>
         </Link>
         <div className="admin-header-actions">
-          <span className="admin-header-user">
-            {user ? user.username : "Loading..."}
-          </span>
+          <span className="admin-header-user">{displayName}</span>
           <button
             type="button"
             className="admin-btn admin-btn-secondary"
@@ -63,98 +70,52 @@ export default function AdminLayout() {
       <div className="admin-body">
         <aside className="admin-sidebar">
           <nav className="admin-nav">
-            <p className="admin-nav-label">Workspace</p>
-            <NavLink
-              to="/admin/dashboard"
-              end
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Dashboard
-            </NavLink>
-            <NavLink
-              to="/admin/users"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Users
-            </NavLink>
-            <NavLink
-              to="/admin/assessments"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Assessments
-            </NavLink>
-            <NavLink
-              to="/admin/leads"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Leads
-            </NavLink>
-            <NavLink
-              to="/admin/excel-template"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Excel Template
-            </NavLink>
-            <p className="admin-nav-label admin-nav-label-spaced">Content</p>
-            <NavLink
-              to="/admin/blogs"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Blogs
-            </NavLink>
-            <NavLink
-              to="/admin/blog-analytics"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Blog Analytics
-            </NavLink>
-            <p className="admin-nav-label admin-nav-label-spaced">AI Training</p>
-            <NavLink
-              to="/admin/bill-input"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Bill Input
-            </NavLink>
-            <NavLink
-              to="/admin/recommendations"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Recommendations
-            </NavLink>
-            {/* <NavLink
-              to="/admin/chatbot-prompt"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Chatbot Prompt
-            </NavLink>
-            <NavLink
-              to="/admin/faqs"
-              className={({ isActive }) =>
-                `admin-nav-link${isActive ? " is-active" : ""}`
-              }
-            >
-              Chatbot FAQs
-            </NavLink> */}
+            {ADMIN_NAV_SECTIONS.map((section, sectionIndex) => {
+              const items = ADMIN_NAV_ITEMS.filter(
+                (item) =>
+                  item.section === section && adminHasPageAccess(user, item.key),
+              );
+              if (items.length === 0) return null;
+              return (
+                <div key={section}>
+                  <p
+                    className={
+                      sectionIndex === 0
+                        ? "admin-nav-label"
+                        : "admin-nav-label admin-nav-label-spaced"
+                    }
+                  >
+                    {section}
+                  </p>
+                  {items.map((item) => (
+                    <NavLink
+                      key={item.key}
+                      to={item.to}
+                      end={item.end}
+                      className={({ isActive }) =>
+                        `admin-nav-link${isActive ? " is-active" : ""}`
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              );
+            })}
+
+            {adminHasPageAccess(user, "users-roles") && (
+              <>
+                <p className="admin-nav-label admin-nav-label-spaced">Admin</p>
+                <NavLink
+                  to="/admin/users-roles"
+                  className={({ isActive }) =>
+                    `admin-nav-link${isActive ? " is-active" : ""}`
+                  }
+                >
+                  Users &amp; Roles
+                </NavLink>
+              </>
+            )}
           </nav>
         </aside>
 

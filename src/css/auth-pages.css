@@ -1,0 +1,222 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(23, 76, 144, 0.12), transparent),
+    linear-gradient(180deg, #f7f9fc 0%, #eef2f8 100%);
+}
+
+.auth-page-inner {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 2rem 1rem 2.5rem;
+}
+
+.auth-card {
+  background: #fff;
+  border: 1px solid #e8edf5;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(26, 34, 89, 0.08);
+  padding: 2rem 1.5rem 1.75rem;
+}
+
+.auth-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.auth-logo {
+  height: 42px;
+  width: auto;
+}
+
+.auth-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a2259;
+  text-align: center;
+  margin-bottom: 0.35rem;
+}
+
+.auth-title--sentence {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 1.35rem;
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: #5a6478;
+  font-size: 0.92rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.15rem 0;
+  color: #8a93a6;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e8edf5;
+}
+
+.auth-google-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 48px;
+  border-radius: 10px;
+  border: 1px solid #e0e6ef;
+  background: #fff;
+  color: #1a2259;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.auth-google-btn:hover:not(:disabled) {
+  background: #f7f9fc;
+  border-color: #c9d4e5;
+}
+
+.auth-google-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.auth-google-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.auth-footer-link {
+  text-align: center;
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  color: #5a6478;
+}
+
+.auth-footer-link--sm {
+  font-size: 12px;
+}
+
+.auth-footer-link a {
+  color: #174c90;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-footer-link a:hover {
+  text-decoration: underline;
+}
+
+.nigeria-phone-input {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e8edf5;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  min-height: 48px;
+}
+
+.nigeria-phone-input:focus-within {
+  border-color: #174c90;
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12);
+}
+
+.nigeria-phone-input--error {
+  border-color: #dc3545;
+}
+
+.nigeria-phone-prefix {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.75rem;
+  background: #f4f7fb;
+  border-right: 1px solid #e8edf5;
+  color: #1a2259;
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.nigeria-phone-flag {
+  display: inline-flex;
+  border-radius: 2px;
+  overflow: hidden;
+  line-height: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.nigeria-phone-input input.form-control.ass-field-control.nigeria-phone-digits {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  min-height: 46px !important;
+}
+
+.nigeria-phone-input input.form-control.ass-field-control.nigeria-phone-digits:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.solar-nav-auth-link {
+  background: none;
+  border: none;
+  padding: inherit;
+  cursor: pointer;
+}
+
+.solar-nav-user {
+  opacity: 0.9;
+  pointer-events: none;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-otp-inputs {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.auth-otp-digit {
+  width: 44px;
+  height: 48px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border: 1px solid #e8edf5;
+  border-radius: 10px;
+  color: #1a2259;
+}
+
+.auth-otp-digit:focus {
+  outline: none;
+  border-color: #174c90;
+  box-shadow: 0 0 0 3px rgba(23, 76, 144, 0.12);
+}

@@ -14,6 +14,23 @@ function buildApiUrl(path: string) {
 export type AdminUser = {
   id: number;
   username: string;
+  email: string | null;
+  isSuperAdmin: boolean;
+  permissions: string[];
+};
+
+export type StaffAdminUser = {
+  id: number;
+  email: string;
+  username: string;
+  permissions: string[];
+  createdAt: string;
+};
+
+export type StaffAdminPayload = {
+  email: string;
+  password?: string;
+  permissions: string[];
 };
 
 export type TemplateInfo = {
@@ -101,6 +118,48 @@ export async function adminLogin(username: string, password: string) {
 export async function adminGetMe() {
   const data = await adminFetch<ApiEnvelope<{ user: AdminUser }>>("/admin/me");
   return data.data!.user;
+}
+
+export async function adminListStaffUsers() {
+  const data = await adminFetch<ApiEnvelope<StaffAdminUser[]>>(
+    "/admin/staff-users",
+  );
+  return data.data ?? [];
+}
+
+export async function adminCreateStaffUser(payload: StaffAdminPayload) {
+  const data = await adminFetch<ApiEnvelope<StaffAdminUser>>(
+    "/admin/staff-users",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return data.data!;
+}
+
+export async function adminUpdateStaffUser(
+  id: number,
+  payload: StaffAdminPayload,
+) {
+  const data = await adminFetch<ApiEnvelope<StaffAdminUser>>(
+    `/admin/staff-users/${id}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return data.data!;
+}
+
+export async function adminDeleteStaffUser(id: number) {
+  const data = await adminFetch<ApiEnvelope<{ id: number }>>(
+    `/admin/staff-users/${id}`,
+    { method: "DELETE" },
+  );
+  return data.data!;
 }
 
 export async function adminGetTemplateInfo() {
