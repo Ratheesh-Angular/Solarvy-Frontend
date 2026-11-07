@@ -118,7 +118,7 @@ function buildRoutes(
           value: formatNairaShort(financing.depositAvailable) || MISSING,
           icon: depositIcon,
         },
-        { label: "STRUCTURE", value: "Instalments", icon: hierarchicalIcon },
+        { label: "STRUCTURE", value: "Installments", icon: hierarchicalIcon },
       ],
       cta: "View Financing Partners",
       featured: false,
@@ -131,7 +131,7 @@ function buildRoutes(
       description:
         "For qualifying projects, a provider may own or finance the system while the customer pays under a service or lease arrangement.",
       facts: [],
-      cta: "Learn More",
+      cta: "View Financing Partners",
       featured: false,
     },
   ];
@@ -404,10 +404,7 @@ function FinancingOptions() {
                             disabled={routeLoading !== null}
                             aria-busy={routeLoading === route.id}
                           >
-                            <i
-                              className={`bi ${route.id === "eaas" ? "bi-info-circle" : "bi-people"}`}
-                              aria-hidden
-                            />
+                            <i className="bi bi-people" aria-hidden />
                             <span>
                               {routeLoading === route.id
                                 ? "Updating…"
@@ -453,7 +450,7 @@ function FinancingOptions() {
                 </div>
               </div>
 
-              <div className="col-lg-4">
+              <div className="col-lg-4 align-self-stretch">
                 <aside className="ri-aside">
                   <div className="ri-aside-card">
                     <div className="fin-aside-head">

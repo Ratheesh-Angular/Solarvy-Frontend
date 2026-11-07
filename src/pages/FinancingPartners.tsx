@@ -364,75 +364,87 @@ function FinancingPartners() {
                       return (
                         <article
                           key={partner.id}
-                          className={`fin-route ${featured ? "fin-route--featured" : ""}`}
+                          className={`fin-route fin-route--compact ${featured ? "fin-route--featured" : ""}`}
                         >
-                          {featured && (
-                            <span className="fin-route-ribbon">
-                              <i className="bi bi-stars" aria-hidden />
-                              Closest match
-                            </span>
-                          )}
-
                           <div className="fin-route-head">
-                            {/* <span className="fin-section-icon" aria-hidden>
-                              <i className="bi bi-building"></i>
-                            </span> */}
-                            <h6 className="fin-route-name">{partner.name}</h6>
+                            <div className="fin-route-title-row">
+                              <h6 className="fin-route-name">{partner.name}</h6>
+                              {featured && (
+                                <span className="fin-route-closest">
+                                  <i className="bi bi-stars" aria-hidden />
+                                  Closest match
+                                </span>
+                              )}
+                            </div>
                             <span className="fin-badge">Potential match</span>
                           </div>
-                          <p className="fin-route-desc">
+                          <p
+                            className="fin-route-desc"
+                            title={partner.description}
+                          >
                             {partner.description}
                           </p>
 
-                          <div className="row g-2 fin-stats fin-route-facts">
-                            {partnerFacts.map((fact) => (
-                              <div className="col-6 col-md-4" key={fact.label}>
-                                <div className="qs-cards h-100">
-                                  <div className="icon-box-right">
-                                    <img
-                                      className="colo-sym-right"
-                                      src={fact.icon}
-                                      alt=""
-                                      aria-hidden
-                                    />
+                          <div className="fin-route-mid">
+                            <div className="fin-route-mini-facts">
+                              {partnerFacts.map((fact) => (
+                                <div
+                                  className="fin-route-mini-fact"
+                                  key={fact.label}
+                                >
+                                  <div
+                                    className="fin-route-mini-fact__icon"
+                                    aria-hidden
+                                  >
+                                    <img src={fact.icon} alt="" />
                                   </div>
-                                  <small className="label">{fact.label}</small>
-                                  <h5 className="value">{fact.value}</h5>
+                                  <div className="fin-route-mini-fact__text">
+                                    <small className="fin-route-mini-fact__label">
+                                      {fact.label}
+                                    </small>
+                                    <span className="fin-route-mini-fact__value">
+                                      {fact.value}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="fin-req">
-                            <span className="fin-req-title">
-                              {/* <i className="bi bi-card-checklist" aria-hidden /> */}
-                              Indicative requirements
-                            </span>
-                            <ul className="fin-req-list">
-                              {partner.requirements.map((item) => (
-                                <li key={item}>
-                                  <i className="bi bi-check2" aria-hidden />
-                                  <span>{item}</span>
-                                </li>
                               ))}
-                            </ul>
+                            </div>
+
+                            <div className="fin-route-footer fin-actions fin-actions--plain">
+                              <button
+                                type="button"
+                                className={
+                                  featured
+                                    ? "btn-primary-customss-down"
+                                    : "btn-outline-customsss2-req"
+                                }
+                                onClick={() => selectPartner(partner)}
+                              >
+                                <i
+                                  className="bi bi-check2-circle"
+                                  aria-hidden
+                                />
+                                <span>Select Partner</span>
+                                <i className="bi bi-arrow-right" aria-hidden />
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="fin-actions fin-actions--plain">
-                            <button
-                              type="button"
-                              className={
-                                featured
-                                  ? "btn-primary-customss-down"
-                                  : "btn-outline-customsss2-req"
-                              }
-                              onClick={() => selectPartner(partner)}
-                            >
-                              <i className="bi bi-check2-circle" aria-hidden />
-                              <span>Select Partner</span>
-                              <i className="bi bi-arrow-right" aria-hidden />
-                            </button>
-                          </div>
+                          {partner.requirements.length > 0 ? (
+                            <div className="fin-route-req-block">
+                              <span className="fin-route-req-line__label">
+                                Indicative requirements
+                              </span>
+                              <ul className="fin-route-req-expanded">
+                                {partner.requirements.map((item) => (
+                                  <li key={item}>
+                                    <i className="bi bi-check2" aria-hidden />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
                         </article>
                       );
                     })}
@@ -480,7 +492,7 @@ function FinancingPartners() {
                 </div>
               </div>
 
-              <div className="col-lg-4">
+              <div className="col-lg-4 align-self-stretch">
                 <aside className="ri-aside">
                   <div className="ri-aside-card">
                     <div className="fin-aside-head">

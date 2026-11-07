@@ -421,7 +421,7 @@ function FinancingStatus() {
                 </div>
               </div>
 
-              <div className="col-lg-4">
+              <div className="col-lg-4 align-self-stretch">
                 <aside className="ri-aside">
                   <div className="ri-aside-card">
                     <div className="fin-aside-head">

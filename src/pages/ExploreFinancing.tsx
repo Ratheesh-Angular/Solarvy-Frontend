@@ -831,7 +831,7 @@ function ExploreFinancing() {
               </form>
             </div>
 
-            <div className="col-lg-4">
+            <div className="col-lg-4 align-self-stretch">
               <aside className="ri-aside">
                 <div className="ri-aside-card">
                   <h5 className="ri-aside-title">How it works</h5>

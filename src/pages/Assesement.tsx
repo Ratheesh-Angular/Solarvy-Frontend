@@ -3136,7 +3136,7 @@ function Assesement() {
               <div className="d-none d-lg-block">{assessmentCtaBar}</div>
             </div>
 
-            <div className="col-lg-4">
+            <div className="col-lg-4 align-self-stretch">
               <div
                 className="assessment-summary-metrics-mobile d-lg-none"
                 aria-busy={isLoadingLiveSummary}

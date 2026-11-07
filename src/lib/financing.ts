@@ -24,7 +24,7 @@ export type FinancingRouteId = "asset-financing" | "instalment" | "eaas";
 
 export const FINANCING_ROUTE_LABELS: Record<FinancingRouteId, string> = {
   "asset-financing": "Asset financing",
-  instalment: "Solar instalment plan",
+  instalment: "Solar installment plan",
   eaas: "Energy-as-a-Service / lease",
 };
 
@@ -104,7 +104,7 @@ export const FINANCING_PARTNERS: Record<FinancingRouteId, FinancingPartner[]> =
         id: "partner-b",
         name: "Financing Partner B",
         description:
-          "Flexible instalments for qualifying homes and small businesses.",
+          "Flexible installments for qualifying homes and small businesses.",
         requirements: [
           "Applicant documentation",
           "Affordability check",
