@@ -11,6 +11,11 @@ import PageSeo from "../components/PageSeo";
 import MarketingNav from "../components/MarketingNav";
 import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
+import NigeriaPhoneInput, {
+  isValidNigeriaLocalPhone,
+  toNigeriaE164,
+} from "../components/NigeriaPhoneInput";
+import { useAuth } from "../context/AuthContext";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import type { AssessmentResults } from "../types/assessment";
 import {
@@ -37,9 +42,34 @@ type FinancingEnquiryLocationState = {
   partner?: FinancingPartner;
 };
 
-type ConfirmErrors = Partial<Record<"accurate" | "terms", string>>;
+type ConfirmErrors = Partial<
+  Record<
+    "fullName" | "email" | "phone" | "notes" | "accurate" | "terms",
+    string
+  >
+>;
 
 const MISSING = "—";
+const NOTES_MAX_LENGTH = 500;
+const CONTACT_FIELD_ORDER = [
+  "fullName",
+  "email",
+  "phone",
+  "notes",
+  "accurate",
+  "terms",
+] as const;
+
+function localPhoneFromE164(phoneE164: string | null | undefined): string {
+  const digits = String(phoneE164 || "").replace(/\D/g, "");
+  if (digits.startsWith("234") && digits.length >= 13) {
+    return digits.slice(3, 13);
+  }
+  if (digits.startsWith("0") && digits.length >= 11) {
+    return digits.slice(1, 11);
+  }
+  return digits.slice(0, 10);
+}
 
 function formatSize(value: unknown, unit: string): string | null {
   const n = toNumber(value);
@@ -51,6 +81,7 @@ function FinancingEnquiry() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const assessmentId = searchParams.get("assessment")?.trim() || "";
   const routeParam = searchParams.get("route");
   const routeId: FinancingRouteId = isFinancingRouteId(routeParam)
@@ -89,11 +120,30 @@ function FinancingEnquiry() {
   });
   const [results, setResults] = useState<AssessmentResults | null>(null);
   const [propertyType, setPropertyType] = useState<string | null>(null);
+  const [contactFullName, setContactFullName] = useState(
+    () => user?.fullName?.trim() || "",
+  );
+  const [contactEmail, setContactEmail] = useState(
+    () => user?.email?.trim() || "",
+  );
+  const [contactPhoneLocal, setContactPhoneLocal] = useState(
+    () => localPhoneFromE164(user?.phoneE164),
+  );
+  const [contactNotes, setContactNotes] = useState(
+    () => financing?.notes ?? "",
+  );
   const [confirmAccurate, setConfirmAccurate] = useState(false);
   const [confirmTerms, setConfirmTerms] = useState(false);
   const [errors, setErrors] = useState<ConfirmErrors>({});
   const [sending, setSending] = useState(false);
   const { toast, showError, clearToast } = useFeedbackToast();
+
+  useEffect(() => {
+    if (!user) return;
+    setContactFullName((prev) => prev || user.fullName?.trim() || "");
+    setContactEmail((prev) => prev || user.email?.trim() || "");
+    setContactPhoneLocal((prev) => prev || localPhoneFromE164(user.phoneE164));
+  }, [user]);
 
   const projectCost = toNumber(results?.estimatedSystemCost);
   const solar = formatSize(results?.recommendedSolarKwp, "kWp");
@@ -154,6 +204,26 @@ function FinancingEnquiry() {
     if (!financing || !partner || sending) return;
 
     const nextErrors: ConfirmErrors = {};
+    const trimmedName = contactFullName.trim();
+    const trimmedEmail = contactEmail.trim();
+    const trimmedNotes = contactNotes.trim();
+
+    if (!trimmedName) {
+      nextErrors.fullName = "Please enter your full name.";
+    }
+    if (!trimmedEmail) {
+      nextErrors.email = "Please enter your email address.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      nextErrors.email = "Please enter a valid email address.";
+    }
+    if (!contactPhoneLocal.trim()) {
+      nextErrors.phone = "Please enter your phone number.";
+    } else if (!isValidNigeriaLocalPhone(contactPhoneLocal)) {
+      nextErrors.phone = "Please enter a valid Nigeria phone number.";
+    }
+    if (trimmedNotes.length > NOTES_MAX_LENGTH) {
+      nextErrors.notes = `Notes must be at most ${NOTES_MAX_LENGTH} characters.`;
+    }
     if (!confirmAccurate) {
       nextErrors.accurate =
         "Please confirm your information is correct and authorise SolarVy to send it.";
@@ -164,9 +234,7 @@ function FinancingEnquiry() {
     }
     setErrors(nextErrors);
 
-    const firstKey = (["accurate", "terms"] as const).find(
-      (key) => nextErrors[key],
-    );
+    const firstKey = CONTACT_FIELD_ORDER.find((key) => nextErrors[key]);
     if (firstKey) {
       document
         .getElementById(`fin-field-${firstKey}`)
@@ -187,6 +255,10 @@ function FinancingEnquiry() {
         sharedItems,
         confirmAccurate,
         confirmTerms,
+        contactFullName: trimmedName,
+        contactEmail: trimmedEmail.toLowerCase(),
+        contactPhone: toNigeriaE164(contactPhoneLocal),
+        notes: trimmedNotes,
       });
     } catch (err) {
       setSending(false);
@@ -423,6 +495,135 @@ function FinancingEnquiry() {
                       provider and with clear disclosure.
                     </span>
                   </p>
+                </div>
+
+                <div className="p-4 shadow-sm rounded-4 ass-first mt-3 mb-4">
+                  <div className="fin-section-head">
+                    <div>
+                      <h5 className="fw-bold mb-1 heading-ass">
+                        Your contact details
+                      </h5>
+                      <p className="text-muted small mb-0 para-ass">
+                        Financing partners need a way to reach you about this
+                        enquiry.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="row g-3 fin-contact-form">
+                    <div className="col-md-6" id="fin-field-fullName">
+                      <label
+                        className="form-label ass-field-label"
+                        htmlFor="fin-contact-fullName"
+                      >
+                        Full name
+                      </label>
+                      <input
+                        id="fin-contact-fullName"
+                        type="text"
+                        className="form-control ass-field-control"
+                        value={contactFullName}
+                        autoComplete="name"
+                        aria-invalid={Boolean(errors.fullName)}
+                        onChange={(e) => {
+                          setContactFullName(e.target.value);
+                          clearError("fullName");
+                        }}
+                        placeholder="e.g. Ada Okonkwo"
+                      />
+                      {errors.fullName ? (
+                        <p className="ass-field-error" role="alert">
+                          {errors.fullName}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="col-md-6" id="fin-field-email">
+                      <label
+                        className="form-label ass-field-label"
+                        htmlFor="fin-contact-email"
+                      >
+                        Email address
+                      </label>
+                      <input
+                        id="fin-contact-email"
+                        type="email"
+                        className="form-control ass-field-control"
+                        value={contactEmail}
+                        autoComplete="email"
+                        aria-invalid={Boolean(errors.email)}
+                        onChange={(e) => {
+                          setContactEmail(e.target.value);
+                          clearError("email");
+                        }}
+                        placeholder="you@example.com"
+                      />
+                      {errors.email ? (
+                        <p className="ass-field-error" role="alert">
+                          {errors.email}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="col-md-6" id="fin-field-phone">
+                      <label
+                        className="form-label ass-field-label"
+                        htmlFor="fin-contact-phone"
+                      >
+                        Phone number
+                      </label>
+                      <NigeriaPhoneInput
+                        id="fin-contact-phone"
+                        value={contactPhoneLocal}
+                        hasError={Boolean(errors.phone)}
+                        onChange={(digits) => {
+                          setContactPhoneLocal(digits);
+                          clearError("phone");
+                        }}
+                      />
+                      {errors.phone ? (
+                        <p className="ass-field-error" role="alert">
+                          {errors.phone}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="col-12" id="fin-field-notes">
+                      <label
+                        className="form-label ass-field-label"
+                        htmlFor="fin-contact-notes"
+                      >
+                        Notes{" "}
+                        <span className="fin-label-optional">(optional)</span>
+                      </label>
+                      <textarea
+                        id="fin-contact-notes"
+                        className="form-control ass-field-control fin-textarea"
+                        rows={4}
+                        maxLength={NOTES_MAX_LENGTH}
+                        value={contactNotes}
+                        aria-invalid={Boolean(errors.notes)}
+                        onChange={(e) => {
+                          setContactNotes(e.target.value);
+                          clearError("notes");
+                        }}
+                        placeholder="Anything else the financing partner should know…"
+                      />
+                      <div className="fin-textarea-footer">
+                        <span>
+                          Shared with {partner.name} as part of this enquiry.
+                        </span>
+                        <span className="fin-textarea-count">
+                          {contactNotes.length} / {NOTES_MAX_LENGTH}
+                        </span>
+                      </div>
+                      {errors.notes ? (
+                        <p className="ass-field-error" role="alert">
+                          {errors.notes}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-4 shadow-sm rounded-4 ass-first mt-3 mb-4">

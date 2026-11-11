@@ -288,6 +288,7 @@ export default function AdminUserDetail() {
                 <thead>
                   <tr>
                     <th>Reference</th>
+                    <th>Contact</th>
                     <th>Submitted</th>
                     <th>Partner / route</th>
                     <th>Amount requested</th>
@@ -303,6 +304,14 @@ export default function AdminUserDetail() {
                         {row.assessmentRef ? (
                           <span className="admin-fin-sub">
                             {String(row.assessmentRef)}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>
+                        <strong>{valueOrDash(row.contactFullName)}</strong>
+                        {row.contactEmail ? (
+                          <span className="admin-fin-sub">
+                            {String(row.contactEmail)}
                           </span>
                         ) : null}
                       </td>

@@ -283,16 +283,25 @@ export default function AdminFinancingDetail() {
     setDownloadError("");
     try {
       let applicantContact: FinancingApplicantContact = {
+        fullName: record.contactFullName || null,
+        email: record.contactEmail || null,
+        phone: record.contactPhone || null,
         visitorLabel: id || null,
       };
       try {
         const detail = await adminGetVisitorDetail(id);
-        applicantContact = resolveApplicantContact(
+        const inferred = resolveApplicantContact(
           id,
           detail as Record<string, unknown>,
         );
+        applicantContact = {
+          ...inferred,
+          fullName: record.contactFullName || inferred.fullName,
+          email: record.contactEmail || inferred.email,
+          phone: record.contactPhone || inferred.phone,
+        };
       } catch {
-        // Best-effort: still generate the PDF with N/A user fields.
+        // Best-effort: still generate the PDF with enquiry contact fields.
       }
       await downloadFinancingEnquiryReport({
         record,
@@ -358,6 +367,15 @@ export default function AdminFinancingDetail() {
 
       <div className="admin-fin-layout">
         <div className="admin-fin-main">
+          <section className="admin-panel admin-detail-section">
+            <h2 className="admin-panel-title">Contact details</h2>
+            <dl className="admin-info-list admin-info-list-wide">
+              <Field label="Full name" value={record.contactFullName} />
+              <Field label="Email address" value={record.contactEmail} />
+              <Field label="Phone number" value={record.contactPhone} />
+            </dl>
+          </section>
+
           <section className="admin-panel admin-detail-section">
             <h2 className="admin-panel-title">Financing request</h2>
             <dl className="admin-info-list admin-info-list-wide">

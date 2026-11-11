@@ -294,6 +294,15 @@ button.fin-pill:focus-visible {
   text-transform: none;
 }
 
+/* ---------- Contact details on enquiry confirmation ---------- */
+.fin-contact-form {
+  margin-top: 4px;
+}
+
+.fin-contact-form .ass-field-label {
+  margin-bottom: 0.35rem;
+}
+
 /* ---------- Notes textarea ---------- */
 textarea.form-control.ass-field-control.fin-textarea {
   min-height: 120px;

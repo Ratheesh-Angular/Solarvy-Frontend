@@ -619,6 +619,9 @@ export type AdminFinancingEnquiry = {
   incomeRange: string;
   location: string;
   notes: string;
+  contactFullName: string;
+  contactEmail: string;
+  contactPhone: string;
   routeId: string;
   routeLabel: string;
   partnerId: string;

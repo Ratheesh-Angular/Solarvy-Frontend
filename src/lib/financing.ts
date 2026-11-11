@@ -378,6 +378,10 @@ export type SubmitFinancingEnquiryPayload = {
   sharedItems: string[];
   confirmAccurate: boolean;
   confirmTerms: boolean;
+  contactFullName: string;
+  contactEmail: string;
+  contactPhone: string;
+  notes?: string;
 };
 
 export async function submitFinancingEnquiry({
@@ -388,6 +392,10 @@ export async function submitFinancingEnquiry({
   sharedItems,
   confirmAccurate,
   confirmTerms,
+  contactFullName,
+  contactEmail,
+  contactPhone,
+  notes,
 }: SubmitFinancingEnquiryPayload): Promise<{
   id: number;
   reference: string;
@@ -412,7 +420,10 @@ export async function submitFinancingEnquiry({
     repaymentLabel: repaymentLabel(financing.repaymentPeriod) ?? "",
     incomeRange: financing.incomeRange,
     location: financing.location,
-    notes: financing.notes,
+    notes: notes ?? financing.notes,
+    contactFullName,
+    contactEmail,
+    contactPhone,
     routeId: route,
     routeLabel: FINANCING_ROUTE_LABELS[route],
     partnerId: partner.id,
