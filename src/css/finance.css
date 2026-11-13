@@ -1255,6 +1255,22 @@ textarea.form-control.ass-field-control.fin-textarea:focus {
 }
 
 /* ---------- Responsive ---------- */
+/* Equalize stacked section gaps on finance pages (mobile/tablet only). */
+@media (max-width: 991.98px) {
+  .row.g-4.fin-page-layout {
+    --bs-gutter-y: 1rem; /* match mt-3 section rhythm; beat Bootstrap .g-4 */
+  }
+
+  .fin-page-layout > .col-lg-8 > .mb-4,
+  .fin-page-layout > .col-lg-8 > form > .mb-4 {
+    margin-bottom: 0 !important; /* drop stacked mb-4; next mt-3 / gutter owns spacing */
+  }
+
+  .fin-page-layout .ri-aside {
+    margin-top: 0; /* row gutter already separates stacked cols */
+  }
+}
+
 @media (max-width: 767.98px) {
   .fin-split-total {
     margin-left: 0;

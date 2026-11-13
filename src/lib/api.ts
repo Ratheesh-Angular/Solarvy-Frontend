@@ -127,14 +127,24 @@ export async function checkApiHealth() {
   return response.json();
 }
 
+export type ChatMode = "faq" | "assessment";
+
 export type ChatReply = {
   sessionId: string;
   reply: string;
+  mode?: ChatMode;
+  draftId?: number | null;
+  formData?: import("../types/assessment").AssessmentFormData;
+  missingFields?: string[];
+  suggestedReplies?: string[];
+  readyToComplete?: boolean;
 };
 
 export async function sendChatMessage(payload: {
   sessionId?: string;
   message: string;
+  mode?: ChatMode;
+  draftId?: number | null;
 }): Promise<ChatReply> {
   const data = await apiPost<ApiResponse<ChatReply>>("/chat", payload);
   if (!data.data?.sessionId || typeof data.data.reply !== "string") {

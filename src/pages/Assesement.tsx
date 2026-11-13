@@ -61,6 +61,11 @@ import {
   buildAssessmentFormData,
 } from "../lib/assessmentFormHelpers";
 import {
+  DRAFT_BRIDGE_EVENT,
+  useOptionalAssessmentDraftBridge,
+  type DraftBridgeSnapshot,
+} from "../contexts/AssessmentDraftBridge";
+import {
   DEFAULT_GRID_TARIFF,
   formatIntegerWithCommas,
   formatMetricDisplay,
@@ -75,6 +80,7 @@ import {
   getTemplatePrefill,
 } from "../lib/excelApi";
 import type {
+  AssessmentFormData,
   ExcelCatalogs,
   EquipmentCatalogItem,
   LoadTableRow,
@@ -721,6 +727,7 @@ function ApplianceKindSelect({
 }
 
 function Assesement() {
+  const draftBridge = useOptionalAssessmentDraftBridge();
   const [selectedProperty, setSelectedProperty] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [showTemplatePopup, setShowTemplatePopup] = useState(false);
@@ -1595,16 +1602,19 @@ function Assesement() {
     (async () => {
       try {
         let formData;
+        let publishedDraftId: number | null = null;
         if (draftIdParam) {
           const draft = await getAssessmentDraft(draftNumericId);
           if (cancelled) return;
           setDraftId(draft.id);
+          publishedDraftId = draft.id;
           formData = draft.formData;
         } else {
           const assessment = await getAssessment(assessmentIdParam!);
           if (cancelled) return;
           if (assessment.draftId != null) {
             setDraftId(assessment.draftId);
+            publishedDraftId = assessment.draftId;
           }
           formData = assessment.formData;
         }
@@ -1630,6 +1640,13 @@ function Assesement() {
           setGridUnavailableBand,
           setMonthlyGeneratorFuelSpend,
         });
+        if (publishedDraftId != null) {
+          draftBridge?.setDraft(
+            publishedDraftId,
+            formData as AssessmentFormData,
+            "hydrate",
+          );
+        }
         if (formData?.template) {
           templatePromptHandledRef.current = true;
         }
@@ -1684,7 +1701,46 @@ function Assesement() {
     return () => {
       cancelled = true;
     };
-  }, [draftIdParam, assessmentIdParam, showError]);
+  }, [draftIdParam, assessmentIdParam, showError, draftBridge]);
+
+  // Apply chatbot assessment updates into the open form without losing draft id.
+  useEffect(() => {
+    const onBridge = (event: Event) => {
+      const detail = (event as CustomEvent<DraftBridgeSnapshot>).detail;
+      if (!detail || detail.source !== "chat" || !detail.formData) return;
+
+      if (detail.draftId != null && detail.draftId !== draftId) {
+        setDraftId(detail.draftId);
+        setSearchParams({ draft: String(detail.draftId) });
+      }
+
+      applyAssessmentFormData(detail.formData, {
+        setSelectedProperty,
+        setSelectedTemplate,
+        setSelectedPower,
+        setInputMethod,
+        setSelectedObjective,
+        setFormData,
+        setFileName,
+        setBillNotes,
+        setMonthlyUsage,
+        setUsageUnit,
+        setMonthlySpend,
+        setGridTariff,
+        setMonthlyElectricityBill,
+        setApplianceRows,
+        setCustomRows,
+        setRoofArea,
+        setBackupDuration,
+        setGridUnavailableBand,
+        setMonthlyGeneratorFuelSpend,
+      });
+    };
+
+    window.addEventListener(DRAFT_BRIDGE_EVENT, onBridge as EventListener);
+    return () =>
+      window.removeEventListener(DRAFT_BRIDGE_EVENT, onBridge as EventListener);
+  }, [draftId, setSearchParams]);
 
   const handleSaveDraft = async () => {
     setIsSavingDraft(true);
@@ -1695,6 +1751,7 @@ function Assesement() {
 
       if (draftId) {
         await updateAssessmentDraft(draftId, payload);
+        draftBridge?.setDraft(draftId, payload, "form");
         await finishLoader();
         showSuccess("Draft saved successfully.");
       } else {
@@ -1702,6 +1759,7 @@ function Assesement() {
         await finishLoader();
         setDraftId(draft.id);
         setSearchParams({ draft: String(draft.id) });
+        draftBridge?.setDraft(draft.id, payload, "form");
         showSuccess("Draft created and saved.");
       }
     } catch (error) {

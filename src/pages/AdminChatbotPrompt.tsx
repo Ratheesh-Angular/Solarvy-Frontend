@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import FeedbackToast from "../components/FeedbackToast";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import {
+  adminGetChatbotAssessmentPrompt,
   adminGetChatbotPrompt,
+  adminSaveChatbotAssessmentPrompt,
   adminSaveChatbotPrompt,
   type AiPromptSetting,
 } from "../lib/adminApi";
@@ -14,20 +16,30 @@ function formatDate(value: string | null) {
 
 export default function AdminChatbotPrompt() {
   const { toast, showError, showSuccess, clearToast } = useFeedbackToast();
-  const [prompt, setPrompt] = useState("");
-  const [meta, setMeta] = useState<AiPromptSetting | null>(null);
+  const [faqPrompt, setFaqPrompt] = useState("");
+  const [faqMeta, setFaqMeta] = useState<AiPromptSetting | null>(null);
+  const [assessmentPrompt, setAssessmentPrompt] = useState("");
+  const [assessmentMeta, setAssessmentMeta] = useState<AiPromptSetting | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingFaq, setSavingFaq] = useState(false);
+  const [savingAssessment, setSavingAssessment] = useState(false);
 
-  const loadPrompt = async () => {
+  const loadPrompts = async () => {
     setIsLoading(true);
     try {
-      const data = await adminGetChatbotPrompt();
-      setMeta(data);
-      setPrompt(data.value);
+      const [faq, assessment] = await Promise.all([
+        adminGetChatbotPrompt(),
+        adminGetChatbotAssessmentPrompt(),
+      ]);
+      setFaqMeta(faq);
+      setFaqPrompt(faq.value);
+      setAssessmentMeta(assessment);
+      setAssessmentPrompt(assessment.value);
     } catch (error) {
       showError(
-        error instanceof Error ? error.message : "Unable to load AI prompt.",
+        error instanceof Error ? error.message : "Unable to load AI prompts.",
       );
     } finally {
       setIsLoading(false);
@@ -35,34 +47,61 @@ export default function AdminChatbotPrompt() {
   };
 
   useEffect(() => {
-    loadPrompt();
+    loadPrompts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSave = async () => {
-    const value = prompt.trim();
+  const handleSaveFaq = async () => {
+    const value = faqPrompt.trim();
     if (!value) {
-      showError("Prompt cannot be empty.");
+      showError("FAQ prompt cannot be empty.");
       return;
     }
-
-    setIsSaving(true);
+    setSavingFaq(true);
     clearToast();
     try {
       const saved = await adminSaveChatbotPrompt(value);
-      setMeta(saved);
-      setPrompt(saved.value);
+      setFaqMeta(saved);
+      setFaqPrompt(saved.value);
       showSuccess(
-        "Website chatbot will use this prompt on the next visitor message.",
-        "Prompt saved",
+        "FAQ / Ask-a-question mode will use this prompt on the next visitor message.",
+        "FAQ prompt saved",
       );
     } catch (error) {
       showError(
-        error instanceof Error ? error.message : "Unable to save prompt.",
+        error instanceof Error ? error.message : "Unable to save FAQ prompt.",
         "Save failed",
       );
     } finally {
-      setIsSaving(false);
+      setSavingFaq(false);
+    }
+  };
+
+  const handleSaveAssessment = async () => {
+    const value = assessmentPrompt.trim();
+    if (!value) {
+      showError("Assessment prompt cannot be empty.");
+      return;
+    }
+    setSavingAssessment(true);
+    clearToast();
+    try {
+      const saved = await adminSaveChatbotAssessmentPrompt(value);
+      setAssessmentMeta(saved);
+      setAssessmentPrompt(saved.value);
+      showSuccess(
+        "Assessment mode will use this prompt on the next guided turn.",
+        "Assessment prompt saved",
+      );
+    } catch (error) {
+      showError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save assessment prompt.",
+        "Save failed",
+      );
+    } finally {
+      setSavingAssessment(false);
     }
   };
 
@@ -71,35 +110,39 @@ export default function AdminChatbotPrompt() {
       <FeedbackToast toast={toast} onClose={clearToast} />
 
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Chatbot : AI training prompt</h1>
+        <h1 className="admin-page-title">Chatbot prompts</h1>
         <p className="admin-page-subtitle">
-          This system prompt trains the site-wide Solarvy Assistant. Combine it
-          with active FAQ entries to guide tone, scope, and redirects for
-          unsupported questions.
+          Separate system prompts for FAQ chat and guided assessment mode.
+          Active FAQ entries still inject into FAQ mode only.
         </p>
       </div>
 
       <div className="admin-panel">
         <div className="admin-panel-toolbar">
-          <div className="admin-meta">
-            Last updated: {formatDate(meta?.updatedAt ?? null)}
+          <div>
+            <h2 className="admin-panel-title" style={{ margin: 0 }}>
+              Ask a question (FAQ)
+            </h2>
+            <div className="admin-meta">
+              Last updated: {formatDate(faqMeta?.updatedAt ?? null)}
+            </div>
           </div>
           <div className="admin-panel-actions">
             <button
               type="button"
               className="admin-btn admin-btn-secondary"
-              disabled={isLoading || isSaving}
-              onClick={loadPrompt}
+              disabled={isLoading || savingFaq}
+              onClick={loadPrompts}
             >
               Reload
             </button>
             <button
               type="button"
               className="admin-btn admin-btn-primary"
-              disabled={isLoading || isSaving}
-              onClick={handleSave}
+              disabled={isLoading || savingFaq}
+              onClick={handleSaveFaq}
             >
-              {isSaving ? "Saving..." : "Save prompt"}
+              {savingFaq ? "Saving..." : "Save FAQ prompt"}
             </button>
           </div>
         </div>
@@ -109,11 +152,47 @@ export default function AdminChatbotPrompt() {
         ) : (
           <textarea
             className="admin-prompt-textarea"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={22}
+            value={faqPrompt}
+            onChange={(e) => setFaqPrompt(e.target.value)}
+            rows={16}
             spellCheck={false}
-            disabled={isSaving}
+            disabled={savingFaq}
+          />
+        )}
+      </div>
+
+      <div className="admin-panel" style={{ marginTop: "1.25rem" }}>
+        <div className="admin-panel-toolbar">
+          <div>
+            <h2 className="admin-panel-title" style={{ margin: 0 }}>
+              Help with my assessment
+            </h2>
+            <div className="admin-meta">
+              Last updated: {formatDate(assessmentMeta?.updatedAt ?? null)}
+            </div>
+          </div>
+          <div className="admin-panel-actions">
+            <button
+              type="button"
+              className="admin-btn admin-btn-primary"
+              disabled={isLoading || savingAssessment}
+              onClick={handleSaveAssessment}
+            >
+              {savingAssessment ? "Saving..." : "Save assessment prompt"}
+            </button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <p className="admin-muted">Loading prompt...</p>
+        ) : (
+          <textarea
+            className="admin-prompt-textarea"
+            value={assessmentPrompt}
+            onChange={(e) => setAssessmentPrompt(e.target.value)}
+            rows={16}
+            spellCheck={false}
+            disabled={savingAssessment}
           />
         )}
       </div>

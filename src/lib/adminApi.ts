@@ -303,6 +303,94 @@ export async function adminSaveChatbotPrompt(value: string) {
   return data.data!;
 }
 
+export async function adminGetChatbotAssessmentPrompt() {
+  const data = await adminFetch<ApiEnvelope<AiPromptSetting>>(
+    "/admin/ai-prompts/chatbot-assessment",
+  );
+  return data.data!;
+}
+
+export async function adminSaveChatbotAssessmentPrompt(value: string) {
+  const data = await adminFetch<ApiEnvelope<AiPromptSetting>>(
+    "/admin/ai-prompts/chatbot-assessment",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value }),
+    },
+  );
+  return data.data!;
+}
+
+export type AdminChatSessionRow = {
+  id: string;
+  visitorId: string | null;
+  draftId: number | null;
+  mode: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+};
+
+export type AdminChatAnalytics = {
+  totalSessions: number;
+  totalMessages: number;
+  assessmentSessions: number;
+  sessionsWithDraft: number;
+  faqSessions: number;
+};
+
+export type AdminChatSessionDetail = {
+  id: string;
+  visitorId: string | null;
+  draftId: number | null;
+  mode: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: Array<{
+    id: number;
+    sessionId: string;
+    role: string;
+    content: string;
+    createdAt: string;
+  }>;
+};
+
+export async function adminGetChatAnalytics() {
+  const data = await adminFetch<ApiEnvelope<AdminChatAnalytics>>(
+    "/admin/chat/analytics",
+  );
+  return data.data!;
+}
+
+export async function adminListChatSessions(params?: {
+  mode?: "faq" | "assessment" | "";
+  limit?: number;
+  offset?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.mode) qs.set("mode", params.mode);
+  if (params?.limit != null) qs.set("limit", String(params.limit));
+  if (params?.offset != null) qs.set("offset", String(params.offset));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  const data = await adminFetch<
+    ApiEnvelope<{
+      sessions: AdminChatSessionRow[];
+      total: number;
+      limit: number;
+      offset: number;
+    }>
+  >(`/admin/chat/sessions${suffix}`);
+  return data.data!;
+}
+
+export async function adminGetChatSession(id: string) {
+  const data = await adminFetch<ApiEnvelope<AdminChatSessionDetail>>(
+    `/admin/chat/sessions/${id}`,
+  );
+  return data.data!;
+}
+
 export type FaqEntry = {
   id: number;
   question: string;

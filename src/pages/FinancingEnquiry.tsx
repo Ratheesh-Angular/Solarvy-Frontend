@@ -11,7 +11,7 @@ import PageSeo from "../components/PageSeo";
 import MarketingNav from "../components/MarketingNav";
 import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
-import NigeriaPhoneInput, {
+import {
   isValidNigeriaLocalPhone,
   toNigeriaE164,
 } from "../components/NigeriaPhoneInput";
@@ -59,17 +59,6 @@ const CONTACT_FIELD_ORDER = [
   "accurate",
   "terms",
 ] as const;
-
-function localPhoneFromE164(phoneE164: string | null | undefined): string {
-  const digits = String(phoneE164 || "").replace(/\D/g, "");
-  if (digits.startsWith("234") && digits.length >= 13) {
-    return digits.slice(3, 13);
-  }
-  if (digits.startsWith("0") && digits.length >= 11) {
-    return digits.slice(1, 11);
-  }
-  return digits.slice(0, 10);
-}
 
 function formatSize(value: unknown, unit: string): string | null {
   const n = toNumber(value);
@@ -127,7 +116,7 @@ function FinancingEnquiry() {
     () => user?.email?.trim() || "",
   );
   const [contactPhoneLocal, setContactPhoneLocal] = useState(
-    () => localPhoneFromE164(user?.phoneE164),
+    () => user?.phoneE164?.trim() || "",
   );
   const [contactNotes, setContactNotes] = useState(
     () => financing?.notes ?? "",
@@ -142,7 +131,7 @@ function FinancingEnquiry() {
     if (!user) return;
     setContactFullName((prev) => prev || user.fullName?.trim() || "");
     setContactEmail((prev) => prev || user.email?.trim() || "");
-    setContactPhoneLocal((prev) => prev || localPhoneFromE164(user.phoneE164));
+    setContactPhoneLocal((prev) => prev || user.phoneE164?.trim() || "");
   }, [user]);
 
   const projectCost = toNumber(results?.estimatedSystemCost);
@@ -422,7 +411,7 @@ function FinancingEnquiry() {
               </div>
             </div>
           ) : (
-            <div className="row g-4 align-items-start">
+            <div className="row g-4 align-items-start fin-page-layout">
               <div className="col-lg-8">
                 <div className="p-4 shadow-sm rounded-4 ass-first">
                   <div className="fin-card-topline">
@@ -572,12 +561,16 @@ function FinancingEnquiry() {
                       >
                         Phone number
                       </label>
-                      <NigeriaPhoneInput
+                      <input
                         id="fin-contact-phone"
+                        type="tel"
+                        className="form-control ass-field-control"
                         value={contactPhoneLocal}
-                        hasError={Boolean(errors.phone)}
-                        onChange={(digits) => {
-                          setContactPhoneLocal(digits);
+                        autoComplete="tel"
+                        placeholder="e.g. +234..."
+                        aria-invalid={Boolean(errors.phone)}
+                        onChange={(e) => {
+                          setContactPhoneLocal(e.target.value);
                           clearError("phone");
                         }}
                       />

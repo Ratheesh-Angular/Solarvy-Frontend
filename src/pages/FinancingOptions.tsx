@@ -309,7 +309,7 @@ function FinancingOptions() {
               </div>
             </div>
           ) : (
-            <div className="row g-4 align-items-start">
+            <div className="row g-4 align-items-start fin-page-layout">
               <div className="col-12">
                 <div className="fin-status" role="status">
                   <span className="fin-status-icon" aria-hidden>

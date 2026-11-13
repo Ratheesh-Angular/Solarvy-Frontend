@@ -2756,7 +2756,7 @@ input:not(.form-control):not(.ass-field-control):not(
   ):not(.appliance-select-search-input):not(.admin-input):not(.admin-file),
 textarea:not(.form-control):not(.ass-field-control):not(
     .footer-newsletter-input
-  ):not(.admin-input):not(.admin-prompt-textarea) {
+  ):not(.admin-input):not(.admin-prompt-textarea):not(.sv-chatbot-input) {
   width: 60px;
   padding: 6px;
   border: 1px solid #ddd;

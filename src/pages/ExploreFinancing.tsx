@@ -462,7 +462,7 @@ function ExploreFinancing() {
 
         <section className="container-fluid px-lg-4 py-4">
           <Breadcrumbs />
-          <div className="row g-4 align-items-start">
+          <div className="row g-4 align-items-start fin-page-layout">
             <div className="col-lg-8">
               <form
                 id="explore-financing-form"

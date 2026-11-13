@@ -307,7 +307,7 @@ function FinancingPartners() {
               </div>
             </div>
           ) : (
-            <div className="row g-4 align-items-start">
+            <div className="row g-4 align-items-start fin-page-layout">
               <div className="col-lg-8">
                 <div className="p-4 shadow-sm rounded-4 ass-first">
                   {/* <div className="fin-card-topline">

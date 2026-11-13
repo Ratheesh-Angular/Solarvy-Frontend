@@ -13,6 +13,7 @@ import PageSeo from "../components/PageSeo";
 import MarketingNav from "../components/MarketingNav";
 import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
+import { isValidNigeriaLocalPhone } from "../components/NigeriaPhoneInput";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import type {
   AssessmentFormData,
@@ -190,7 +191,7 @@ function RequestIntro() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-
+  const [phoneError, setPhoneError] = useState("");
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -202,12 +203,28 @@ function RequestIntro() {
       ...prev,
       [name]: value,
     }));
+    if (name === "phoneNumber" && phoneError) {
+      setPhoneError("");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setSubmitError("");
+
+    if (!formData.phoneNumber.trim()) {
+      setPhoneError("Please enter your phone number.");
+      return;
+    }
+    if (!isValidNigeriaLocalPhone(formData.phoneNumber)) {
+      setPhoneError(
+        "Enter a valid Nigeria number using 0… or +234…",
+      );
+      return;
+    }
+    setPhoneError("");
+
+    setIsSubmitting(true);
 
     try {
       await apiPost("/request-intro", {
@@ -380,7 +397,13 @@ function RequestIntro() {
                         className="form-control ass-field-control"
                         placeholder="e.g. +234..."
                         required
+                        aria-invalid={Boolean(phoneError)}
                       />
+                      {phoneError ? (
+                        <p className="ass-field-error" role="alert">
+                          {phoneError}
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="col-md-6">

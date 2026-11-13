@@ -8,7 +8,10 @@ export type AdminPageKey =
   | "blogs"
   | "blog-analytics"
   | "bill-input"
-  | "recommendations";
+  | "recommendations"
+  | "chatbot-prompt"
+  | "faqs"
+  | "chat-sessions";
 
 export type AdminNavSection = "Workspace" | "Content" | "AI Training";
 
@@ -20,7 +23,16 @@ export type AdminNavItem = {
   end?: boolean;
 };
 
-export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
+/** Set to true to restore the floating chatbot and its admin menus. */
+export const SHOW_CHATBOT = false;
+
+const CHATBOT_NAV_KEYS = new Set<AdminPageKey>([
+  "chatbot-prompt",
+  "faqs",
+  "chat-sessions",
+]);
+
+const ALL_ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     key: "dashboard",
     label: "Dashboard",
@@ -82,7 +94,29 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     to: "/admin/recommendations",
     section: "AI Training",
   },
+  {
+    key: "chatbot-prompt",
+    label: "Chatbot prompts",
+    to: "/admin/chatbot-prompt",
+    section: "AI Training",
+  },
+  {
+    key: "faqs",
+    label: "Chatbot FAQs",
+    to: "/admin/faqs",
+    section: "AI Training",
+  },
+  {
+    key: "chat-sessions",
+    label: "Chat sessions",
+    to: "/admin/chat-sessions",
+    section: "AI Training",
+  },
 ];
+
+export const ADMIN_NAV_ITEMS: AdminNavItem[] = SHOW_CHATBOT
+  ? ALL_ADMIN_NAV_ITEMS
+  : ALL_ADMIN_NAV_ITEMS.filter((item) => !CHATBOT_NAV_KEYS.has(item.key));
 
 export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   "Workspace",

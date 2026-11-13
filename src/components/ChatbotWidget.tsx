@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { ApiError, sendChatMessage } from "../lib/api";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ApiError, sendChatMessage, type ChatMode } from "../lib/api";
+import {
+  completeAssessmentDraft,
+  getAssessmentDraft,
+} from "../lib/assessmentApi";
+import { useOptionalAssessmentDraftBridge } from "../contexts/AssessmentDraftBridge";
 import "../css/chatbot.css";
 
 const CHAT_SESSION_KEY = "solarvy_chat_session_id";
@@ -15,11 +20,26 @@ type ChatMessage = {
   isError?: boolean;
 };
 
-const SUGGESTIONS = [
+const FAQ_SUGGESTIONS = [
   "How does Solarvy work?",
   "What does the assessment cover?",
   "Who is Solarvy for?",
 ];
+
+const MISSING_LABELS: Record<string, string> = {
+  propertyType: "Property type",
+  template: "Template",
+  powerSetup: "Power setup",
+  gridUnavailableBand: "Grid unavailability",
+  mainObjective: "Main objective",
+  country: "Country",
+  city: "State / city",
+  backupDuration: "Backup duration",
+  inputMethod: "Input method",
+  monthlyElectricityBill: "Monthly bill",
+  "appliance.rows": "Appliances",
+  "custom.rows": "Custom equipment",
+};
 
 function loadSessionId(): string | null {
   try {
@@ -106,6 +126,8 @@ function SunMark() {
 
 export default function ChatbotWidget() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const draftBridge = useOptionalAssessmentDraftBridge();
   const panelId = useId();
   const titleId = useId();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -117,8 +139,25 @@ export default function ChatbotWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(() => loadSessionId());
   const [isSending, setIsSending] = useState(false);
+  const [mode, setMode] = useState<ChatMode | null>(null);
+  const [draftId, setDraftId] = useState<number | null>(
+    () => draftBridge?.draftId ?? null,
+  );
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [suggestedReplies, setSuggestedReplies] = useState<string[]>([]);
+  const [readyToComplete, setReadyToComplete] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(
+    null,
+  );
 
   const isAdminRoute = location.pathname.startsWith("/admin");
+
+  useEffect(() => {
+    if (draftBridge?.draftId != null) {
+      setDraftId(draftBridge.draftId);
+    }
+  }, [draftBridge?.draftId]);
 
   useEffect(() => {
     if (!open) return;
@@ -129,7 +168,7 @@ export default function ChatbotWidget() {
   useEffect(() => {
     if (!listRef.current) return;
     listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages, isSending, open]);
+  }, [messages, isSending, open, suggestedReplies, readyToComplete]);
 
   useEffect(() => {
     if (!open) return;
@@ -144,8 +183,27 @@ export default function ChatbotWidget() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  const selectMode = useCallback((next: ChatMode) => {
+    setMode(next);
+    setSuggestedReplies([]);
+    setMissingFields([]);
+    setReadyToComplete(false);
+    setLastFailedMessage(null);
+    if (next === "faq") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `sys-${Date.now()}`,
+          role: "assistant",
+          content:
+            "Ask me anything about Solarvy, solar energy, or next steps. Your assessment draft is still saved if you need it.",
+        },
+      ]);
+    }
+  }, []);
+
   const sendMessage = useCallback(
-    async (rawText: string) => {
+    async (rawText: string, activeMode: ChatMode = mode || "faq") => {
       const text = rawText.trim();
       if (!text || isSending) return;
 
@@ -162,6 +220,8 @@ export default function ChatbotWidget() {
         return;
       }
 
+      if (!mode) setMode(activeMode);
+
       const userMessage: ChatMessage = {
         id: `u-${Date.now()}`,
         role: "user",
@@ -171,16 +231,36 @@ export default function ChatbotWidget() {
       setMessages((prev) => [...prev, userMessage]);
       setInput("");
       setIsSending(true);
+      setLastFailedMessage(null);
 
       try {
         const result = await sendChatMessage({
           sessionId: sessionId ?? undefined,
           message: text,
+          mode: activeMode,
+          draftId: draftId ?? draftBridge?.draftId ?? undefined,
         });
 
         if (result.sessionId && result.sessionId !== sessionId) {
           setSessionId(result.sessionId);
           saveSessionId(result.sessionId);
+        }
+
+        if (result.mode === "assessment") {
+          if (result.draftId != null) {
+            setDraftId(result.draftId);
+            draftBridge?.setDraft(
+              result.draftId,
+              result.formData ?? null,
+              "chat",
+            );
+          }
+          setMissingFields(result.missingFields ?? []);
+          setSuggestedReplies(result.suggestedReplies ?? []);
+          setReadyToComplete(Boolean(result.readyToComplete));
+        } else {
+          setSuggestedReplies([]);
+          setReadyToComplete(false);
         }
 
         setMessages((prev) => [
@@ -197,6 +277,7 @@ export default function ChatbotWidget() {
             ? error.message
             : "Sorry — I couldn't reach Solarvy support right now. Please try again in a moment.";
 
+        setLastFailedMessage(text);
         setMessages((prev) => [
           ...prev,
           {
@@ -210,24 +291,78 @@ export default function ChatbotWidget() {
         setIsSending(false);
       }
     },
-    [isSending, sessionId],
+    [isSending, sessionId, mode, draftId, draftBridge],
   );
+
+  const startAssessmentMode = useCallback(() => {
+    setMode("assessment");
+    setSuggestedReplies([]);
+    setMissingFields([]);
+    setReadyToComplete(false);
+    setLastFailedMessage(null);
+    void sendMessage(
+      "I'd like help completing my solar assessment.",
+      "assessment",
+    );
+  }, [sendMessage]);
+
+  const handleComplete = useCallback(async () => {
+    const id = draftId ?? draftBridge?.draftId;
+    if (!id || isCompleting) return;
+    setIsCompleting(true);
+    try {
+      const draft = await getAssessmentDraft(id);
+      const result = await completeAssessmentDraft(id, draft.formData);
+      setReadyToComplete(false);
+      setOpen(false);
+      navigate(`/assessment-result?assessment=${result.id}`);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "assistant",
+          content:
+            error instanceof ApiError
+              ? error.message
+              : "Unable to complete the assessment from chat. Open the form to finish, or try again.",
+          isError: true,
+        },
+      ]);
+    } finally {
+      setIsCompleting(false);
+    }
+  }, [draftId, draftBridge?.draftId, isCompleting, navigate]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    void sendMessage(input);
+    if (!mode) {
+      selectMode("faq");
+      void sendMessage(input, "faq");
+      return;
+    }
+    void sendMessage(input, mode);
   };
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      void sendMessage(input);
+      handleSubmit(event);
     }
   };
 
   if (isAdminRoute) return null;
 
-  const showWelcome = messages.length === 0 && !isSending;
+  const showWelcome = messages.length === 0 && !isSending && mode == null;
+  const filledHint =
+    mode === "assessment" && missingFields.length
+      ? `Still need: ${missingFields
+          .slice(0, 3)
+          .map((f) => MISSING_LABELS[f] || f)
+          .join(", ")}${missingFields.length > 3 ? "…" : ""}`
+      : mode === "assessment" && readyToComplete
+        ? "Draft looks complete — finish to see results."
+        : null;
 
   return (
     <div className="sv-chatbot">
@@ -239,6 +374,7 @@ export default function ChatbotWidget() {
         aria-modal="false"
         aria-hidden={!open}
         inert={!open ? true : undefined}
+        aria-labelledby={titleId}
       >
         <header className="sv-chatbot-header">
           <div className="sv-chatbot-avatar">
@@ -246,9 +382,13 @@ export default function ChatbotWidget() {
           </div>
           <div className="sv-chatbot-header-text">
             <h2 id={titleId} className="sv-chatbot-title">
-              Solarvy Assistant
+              SolarVy Assistant
             </h2>
-            <p className="sv-chatbot-subtitle">Ask about solar, assessments &amp; next steps</p>
+            <p className="sv-chatbot-subtitle">
+              {mode === "assessment"
+                ? "Guided assessment · synced with form"
+                : "FAQ · assessment help · next steps"}
+            </p>
           </div>
           <button
             type="button"
@@ -260,27 +400,99 @@ export default function ChatbotWidget() {
           </button>
         </header>
 
+        {mode != null && (
+          <div className="sv-chatbot-modebar" role="tablist" aria-label="Chat mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "faq"}
+              className={`sv-chatbot-mode${mode === "faq" ? " is-active" : ""}`}
+              disabled={isSending}
+              onClick={() => selectMode("faq")}
+            >
+              Ask a question
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "assessment"}
+              className={`sv-chatbot-mode${mode === "assessment" ? " is-active" : ""}`}
+              disabled={isSending}
+              onClick={() => {
+                if (mode !== "assessment") startAssessmentMode();
+              }}
+            >
+              Help with my assessment
+            </button>
+          </div>
+        )}
+
         <div className="sv-chatbot-messages" ref={listRef} aria-live="polite">
           {showWelcome && (
             <div className="sv-chatbot-welcome">
-              <strong>Hi — how can Solarvy help?</strong>
+              <strong>Hi — how can I help?</strong>
               <p>
-                I can explain how Solarvy works, what the assessment covers, and
-                how to compare installer options. Ask anything solar-related.
+                Assessment, solar questions, financing, or installers.
               </p>
               <div className="sv-chatbot-suggestions">
-                {SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    className="sv-chatbot-suggestion"
-                    disabled={isSending}
-                    onClick={() => void sendMessage(suggestion)}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  className="sv-chatbot-suggestion is-primary"
+                  disabled={isSending}
+                  onClick={() => startAssessmentMode()}
+                >
+                  Help with my assessment
+                </button>
+                <button
+                  type="button"
+                  className="sv-chatbot-suggestion is-primary"
+                  disabled={isSending}
+                  onClick={() => selectMode("faq")}
+                >
+                  Ask a question
+                </button>
               </div>
+              <p className="sv-chatbot-privacy">
+                AI guidance.{" "}
+                <Link to="/privacy-policy" onClick={() => setOpen(false)}>
+                  Privacy
+                </Link>
+                {" · "}
+                <Link to="/contact" onClick={() => setOpen(false)}>
+                  Support
+                </Link>
+              </p>
+            </div>
+          )}
+
+          {mode === "faq" && messages.length <= 1 && (
+            <div className="sv-chatbot-suggestions sv-chatbot-suggestions-inline">
+              {FAQ_SUGGESTIONS.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  className="sv-chatbot-suggestion"
+                  disabled={isSending}
+                  onClick={() => void sendMessage(suggestion, "faq")}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {filledHint && (
+            <div className="sv-chatbot-progress" role="status">
+              {filledHint}
+              {draftId != null && (
+                <Link
+                  to={`/start-assessment?draft=${draftId}`}
+                  className="sv-chatbot-progress-link"
+                  onClick={() => setOpen(false)}
+                >
+                  Open form
+                </Link>
+              )}
             </div>
           )}
 
@@ -298,12 +510,60 @@ export default function ChatbotWidget() {
           ))}
 
           {isSending && (
-            <div className="sv-chatbot-bubble-row is-assistant" aria-label="Assistant is typing">
+            <div
+              className="sv-chatbot-bubble-row is-assistant"
+              aria-label="Assistant is typing"
+            >
               <div className="sv-chatbot-typing">
                 <span />
                 <span />
                 <span />
               </div>
+            </div>
+          )}
+
+          {mode === "assessment" &&
+            suggestedReplies.length > 0 &&
+            !isSending && (
+              <div className="sv-chatbot-suggestions sv-chatbot-suggestions-inline">
+                {suggestedReplies.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="sv-chatbot-suggestion"
+                    disabled={isSending}
+                    onClick={() => void sendMessage(suggestion, "assessment")}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
+
+          {mode === "assessment" && readyToComplete && !isSending && (
+            <div className="sv-chatbot-complete-row">
+              <button
+                type="button"
+                className="sv-chatbot-complete"
+                disabled={isCompleting}
+                onClick={() => void handleComplete()}
+              >
+                {isCompleting ? "Completing…" : "Complete assessment"}
+              </button>
+            </div>
+          )}
+
+          {lastFailedMessage && !isSending && (
+            <div className="sv-chatbot-complete-row">
+              <button
+                type="button"
+                className="sv-chatbot-suggestion"
+                onClick={() =>
+                  void sendMessage(lastFailedMessage, mode || "faq")
+                }
+              >
+                Retry last message
+              </button>
             </div>
           )}
         </div>
@@ -316,7 +576,11 @@ export default function ChatbotWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
             onKeyDown={handleInputKeyDown}
-            placeholder="Type your question…"
+            placeholder={
+              mode === "assessment"
+                ? "Property, appliances, or bill…"
+                : "Ask a question…"
+            }
             disabled={isSending}
             aria-label="Chat message"
             maxLength={MAX_INPUT_LENGTH}
@@ -331,21 +595,24 @@ export default function ChatbotWidget() {
           </button>
         </form>
         <p className="sv-chatbot-footnote">
-          Guidance only — not a substitute for a full site survey.
+          Guidance only — not a site survey.{" "}
+          <Link to="/privacy-policy" onClick={() => setOpen(false)}>
+            Privacy
+          </Link>
         </p>
       </div>
 
-      {/* <button
+      <button
         type="button"
         className={`sv-chatbot-fab${open ? " is-open" : ""}`}
         aria-expanded={open}
         aria-controls={panelId}
-        aria-label={open ? "Close Solarvy chat" : "Open Solarvy chat"}
+        aria-label={open ? "Close SolarVy chat" : "Open SolarVy chat"}
         onClick={() => setOpen((value) => !value)}
       >
         <ChatIcon className="sv-chatbot-fab-icon sv-chatbot-fab-open" />
         <CloseIcon className="sv-chatbot-fab-icon sv-chatbot-fab-close" />
-      </button> */}
+      </button>
     </div>
   );
 }

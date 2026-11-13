@@ -54,6 +54,7 @@ import AdminExcelTemplate from "./pages/AdminExcelTemplate.tsx";
 import AdminBillInput from "./pages/AdminBillInput.tsx";
 import AdminRecommendations from "./pages/AdminRecommendations.tsx";
 import AdminChatbotPrompt from "./pages/AdminChatbotPrompt.tsx";
+import AdminChatSessions from "./pages/AdminChatSessions.tsx";
 import AdminFaqs from "./pages/AdminFaqs.tsx";
 import AdminBlogs from "./pages/AdminBlogs.tsx";
 import AdminBlogEditor from "./pages/AdminBlogEditor.tsx";
@@ -64,7 +65,9 @@ import AdminPermissionRoute from "./components/AdminPermissionRoute.tsx";
 import AdminUsersRoles from "./pages/AdminUsersRoles.tsx";
 import VisitorTracker from "./components/VisitorTracker.tsx";
 import ChatbotWidget from "./components/ChatbotWidget.tsx";
+import { SHOW_CHATBOT } from "./lib/adminNav.ts";
 import { AuthProvider } from "./context/AuthContext.tsx";
+import { AssessmentDraftBridgeProvider } from "./contexts/AssessmentDraftBridge.tsx";
 import Signup from "./pages/Signup.tsx";
 import Login from "./pages/Login.tsx";
 import "./css/admin/index.css";
@@ -94,9 +97,10 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <AssessmentDraftBridgeProvider>
         <ScrollToTop />
         <VisitorTracker />
-        <ChatbotWidget />
+        {SHOW_CHATBOT && <ChatbotWidget />}
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/signup" element={<Signup />} />
@@ -136,6 +140,7 @@ function App() {
                 />
                 <Route path="chatbot-prompt" element={<AdminChatbotPrompt />} />
                 <Route path="faqs" element={<AdminFaqs />} />
+                <Route path="chat-sessions" element={<AdminChatSessions />} />
                 <Route path="blogs" element={<AdminBlogs />} />
                 <Route path="blogs/new" element={<AdminBlogEditor />} />
                 <Route path="blogs/:id" element={<AdminBlogEditor />} />
@@ -176,6 +181,7 @@ function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           </Route>
         </Routes>
+        </AssessmentDraftBridgeProvider>
       </AuthProvider>
     </Router>
   );

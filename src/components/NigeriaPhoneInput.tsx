@@ -8,6 +8,21 @@ type NigeriaPhoneInputProps = {
   placeholder?: string;
 };
 
+/** Normalize Nigeria phone input to 10 national digits (aligned with backend). */
+function nigeriaNationalDigits(input: string): string | null {
+  let digits = String(input || "").replace(/\D/g, "");
+  if (digits.startsWith("234")) {
+    digits = digits.slice(3);
+  }
+  if (digits.startsWith("0")) {
+    digits = digits.slice(1);
+  }
+  if (!/^\d{10}$/.test(digits)) {
+    return null;
+  }
+  return digits;
+}
+
 /** Nigeria-only phone field: fixed +234 prefix with flag + local digits. */
 export default function NigeriaPhoneInput({
   id = "phone",
@@ -19,7 +34,8 @@ export default function NigeriaPhoneInput({
   placeholder = "801 234 5678",
 }: NigeriaPhoneInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+    // Allow up to 11 digits so leading-0 local numbers (0XXXXXXXXXX) can be entered.
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
     onChange(digits);
   };
 
@@ -59,15 +75,12 @@ export default function NigeriaPhoneInput({
   );
 }
 
-/** Build E.164 from local digits (strips leading 0 if present). */
-export function toNigeriaE164(localDigits: string): string {
-  const digits = localDigits.replace(/\D/g, "");
-  const national = digits.startsWith("0") ? digits.slice(1) : digits;
-  return `+234${national}`;
+/** Build E.164 from 0…, +234…, 234…, or 10-digit national input. */
+export function toNigeriaE164(input: string): string {
+  const national = nigeriaNationalDigits(input);
+  return national ? `+234${national}` : "";
 }
 
-export function isValidNigeriaLocalPhone(localDigits: string): boolean {
-  const digits = localDigits.replace(/\D/g, "");
-  const national = digits.startsWith("0") ? digits.slice(1) : digits;
-  return /^[789]\d{9}$/.test(national) || /^\d{10}$/.test(national);
+export function isValidNigeriaLocalPhone(input: string): boolean {
+  return nigeriaNationalDigits(input) !== null;
 }
