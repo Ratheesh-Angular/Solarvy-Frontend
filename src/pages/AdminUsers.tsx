@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { adminListVisitors, type VisitorSummary } from "../lib/adminApi";
 
+type UsersTab = "users" | "guests";
+
 function displayOrNA(value?: string | null): ReactNode {
   const text = value?.trim();
   if (!text) {
@@ -23,7 +25,15 @@ function formatLocation(visitor: VisitorSummary) {
     .join(", ");
 }
 
+function rowLabel(user: VisitorSummary, tab: UsersTab) {
+  if (tab === "users") {
+    return user.fullName?.trim() || user.displayName || "user_—";
+  }
+  return user.displayName || "user_—";
+}
+
 export default function AdminUsers() {
+  const [tab, setTab] = useState<UsersTab>("users");
   const [q, setQ] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -40,7 +50,7 @@ export default function AdminUsers() {
       setLoading(true);
       setError("");
       try {
-        const data = await adminListVisitors({ q, from, to, page, limit });
+        const data = await adminListVisitors({ q, from, to, page, limit, kind: tab });
         if (!cancelled) {
           setItems(data.items);
           setTotal(data.total);
@@ -56,7 +66,7 @@ export default function AdminUsers() {
     return () => {
       cancelled = true;
     };
-  }, [q, from, to, page]);
+  }, [tab, q, from, to, page]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -65,9 +75,30 @@ export default function AdminUsers() {
       <div className="admin-page-header">
         <h1 className="admin-page-title">Users</h1>
         <p className="admin-page-subtitle">
-          Anonymous visitors with memorable labels. Open a user to review
+          Registered accounts and anonymous guests. Open a user to review
           assessments and submissions.
         </p>
+      </div>
+
+      <div className="admin-tabs">
+        {(
+          [
+            ["users", "Users"],
+            ["guests", "Guests"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`admin-tab${tab === key ? " is-active" : ""}`}
+            onClick={() => {
+              setTab(key);
+              setPage(1);
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="admin-visitors-toolbar admin-users-toolbar">
@@ -115,7 +146,9 @@ export default function AdminUsers() {
         {loading ? (
           <p className="admin-empty-text">Loading…</p>
         ) : items.length === 0 ? (
-          <p className="admin-empty-text">No users found.</p>
+          <p className="admin-empty-text">
+            {tab === "users" ? "No users found." : "No guests found."}
+          </p>
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -129,31 +162,47 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((user) => (
-                  <tr key={user.id}>
+                {items.map((user) => {
+                  const secondary =
+                    tab === "users"
+                      ? user.email?.trim() ||
+                        (user.id ? `${user.id.slice(0, 8)}…` : "")
+                      : user.id
+                        ? `${user.id.slice(0, 8)}…`
+                        : "";
+                  const openTo = user.id ? `/admin/users/${user.id}` : null;
+                  return (
+                  <tr key={user.userId || user.id || rowLabel(user, tab)}>
                     <td>
                       <div className="admin-user-cell">
                         <span className="admin-user-name">
-                          {user.displayName || "user_—"}
+                          {rowLabel(user, tab)}
                         </span>
-                        <code className="admin-code admin-user-id">
-                          {user.id.slice(0, 8)}…
-                        </code>
+                        {secondary ? (
+                          <code className="admin-code admin-user-id">
+                            {secondary}
+                          </code>
+                        ) : null}
                       </div>
                     </td>
                     <td>{displayOrNA(formatLastSeen(user.lastSeenAt))}</td>
                     <td>{displayOrNA(formatLocation(user))}</td>
                     <td>{user.assessmentCount ?? 0}</td>
                     <td>
-                      <Link
-                        className="admin-btn admin-btn-secondary admin-btn-sm"
-                        to={`/admin/users/${user.id}`}
-                      >
-                        Open
-                      </Link>
+                      {openTo ? (
+                        <Link
+                          className="admin-btn admin-btn-secondary admin-btn-sm"
+                          to={openTo}
+                        >
+                          Open
+                        </Link>
+                      ) : (
+                        <span className="admin-muted">—</span>
+                      )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -17,6 +17,7 @@ import {
   type VisitorSummary,
 } from "../lib/adminApi";
 import { formatNaira } from "../lib/financing";
+import { enrichLeadsWithInstallers } from "../lib/leadInstallerResolve";
 
 type UserTab =
   | "activity"
@@ -121,22 +122,33 @@ export default function AdminUserDetail() {
       setTabLoading(true);
       setTabError("");
       try {
-        const loader =
-          tab === "assessments"
-            ? adminListAssessments
-            : tab === "request-intros"
-              ? adminListRequestIntros
-              : tab === "expert-reviews"
-                ? adminListExpertReviews
-                : tab === "financing"
-                  ? adminListFinancingEnquiries
-                  : tab === "contact"
-                    ? adminListContactMessages
-                    : adminListQuoteUploads;
-        const data = await loader({ visitorId: id, page, limit });
-        if (!cancelled) {
-          setItems(data.items);
-          setTotal(data.total);
+        if (tab === "request-intros" || tab === "expert-reviews") {
+          const data =
+            tab === "request-intros"
+              ? await adminListRequestIntros({ visitorId: id, page, limit })
+              : await adminListExpertReviews({ visitorId: id, page, limit });
+          const enriched = await enrichLeadsWithInstallers(
+            data.items,
+            tab === "request-intros" ? "request_intro" : "expert_review",
+          );
+          if (!cancelled) {
+            setItems(enriched);
+            setTotal(data.total);
+          }
+        } else {
+          const loader =
+            tab === "assessments"
+              ? adminListAssessments
+              : tab === "financing"
+                ? adminListFinancingEnquiries
+                : tab === "contact"
+                  ? adminListContactMessages
+                  : adminListQuoteUploads;
+          const data = await loader({ visitorId: id, page, limit });
+          if (!cancelled) {
+            setItems(data.items);
+            setTotal(data.total);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -348,164 +360,114 @@ export default function AdminUserDetail() {
               </table>
             </div>
           ) : tab === "request-intros" ? (
-            <div className="admin-lead-list">
-              {items.map((row) => {
-                const open = expandedId === row.id;
-                const name = valueOrDash(row.full_name);
-                const initial =
-                  name !== "—" ? name.trim().charAt(0).toUpperCase() : "?";
-                return (
-                  <article
-                    key={row.id}
-                    className={`admin-lead-card admin-lead-card--intro${open ? " is-open" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      className="admin-lead-card-toggle"
-                      onClick={() => setExpandedId(open ? null : row.id)}
-                    >
-                      <div className="admin-lead-card-identity">
-                        <span className="admin-lead-avatar" aria-hidden="true">
-                          {initial}
-                        </span>
-                        <div className="admin-lead-card-copy">
-                          <div className="admin-lead-card-title-row">
-                            <strong>{name}</strong>
-                            <span className="admin-lead-type-badge">
-                              Request Intro
-                            </span>
-                          </div>
-                          <span className="admin-muted">
-                            {valueOrDash(row.email)} ·{" "}
-                            {new Date(row.created_at).toLocaleString()}
+            <div className="admin-table-wrap">
+              <table className="admin-table admin-fin-table">
+                <thead>
+                  <tr>
+                    <th>Submitted</th>
+                    <th>Contact</th>
+                    <th>Installer</th>
+                    <th>Timeline</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => (
+                    <tr key={String(row.id)}>
+                      <td>
+                        {row.createdAt
+                          ? new Date(String(row.createdAt)).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td>
+                        <strong>{valueOrDash(row.fullName)}</strong>
+                        {row.email ? (
+                          <span className="admin-fin-sub">
+                            {String(row.email)}
                           </span>
-                        </div>
-                      </div>
-                      <span className="admin-lead-chevron">
-                        {open ? "Hide" : "View"}
-                      </span>
-                    </button>
-                    {open ? (
-                      <div className="admin-lead-detail">
-                        <div className="admin-lead-fields">
-                          <div className="admin-lead-field">
-                            <span className="admin-lead-field-label">Phone</span>
-                            <span className="admin-lead-field-value">
-                              {valueOrDash(row.phone_number)}
-                            </span>
-                          </div>
-                          <div className="admin-lead-field">
-                            <span className="admin-lead-field-label">
-                              Timeline
-                            </span>
-                            <span className="admin-lead-field-value">
-                              {valueOrDash(row.project_timeline)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="admin-lead-notes">
-                          <span className="admin-lead-field-label">Notes</span>
-                          <p>{valueOrDash(row.additional_notes)}</p>
-                        </div>
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })}
+                        ) : null}
+                      </td>
+                      <td>
+                        <strong>{valueOrDash(row.installerName)}</strong>
+                        {row.matchPct != null &&
+                        Number.isFinite(Number(row.matchPct)) ? (
+                          <span className="admin-fin-sub">
+                            {Math.round(Number(row.matchPct))}% match
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>{valueOrDash(row.projectTimeline)}</td>
+                      <td>
+                        <Link
+                          className="admin-btn admin-btn-secondary admin-btn-sm"
+                          to={`/admin/users/${id}/request-intros/${row.id}`}
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : tab === "expert-reviews" ? (
-            <div className="admin-lead-list">
-              {items.map((row) => {
-                const open = expandedId === row.id;
-                const name = valueOrDash(row.full_name);
-                const initial =
-                  name !== "—" ? name.trim().charAt(0).toUpperCase() : "?";
-                return (
-                  <article
-                    key={row.id}
-                    className={`admin-lead-card admin-lead-card--review${open ? " is-open" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      className="admin-lead-card-toggle"
-                      onClick={() => setExpandedId(open ? null : row.id)}
-                    >
-                      <div className="admin-lead-card-identity">
-                        <span className="admin-lead-avatar" aria-hidden="true">
-                          {initial}
-                        </span>
-                        <div className="admin-lead-card-copy">
-                          <div className="admin-lead-card-title-row">
-                            <strong>{name}</strong>
-                            <span className="admin-lead-type-badge">
-                              Expert Review
+            <div className="admin-table-wrap">
+              <table className="admin-table admin-fin-table">
+                <thead>
+                  <tr>
+                    <th>Submitted</th>
+                    <th>Contact</th>
+                    <th>Installer</th>
+                    <th>Details</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => {
+                    const detail = [
+                      row.projectLocation,
+                      row.reviewType,
+                    ]
+                      .filter((v) => v && String(v).trim())
+                      .join(" · ");
+                    return (
+                      <tr key={String(row.id)}>
+                        <td>
+                          {row.createdAt
+                            ? new Date(String(row.createdAt)).toLocaleString()
+                            : "—"}
+                        </td>
+                        <td>
+                          <strong>{valueOrDash(row.fullName)}</strong>
+                          {row.email ? (
+                            <span className="admin-fin-sub">
+                              {String(row.email)}
                             </span>
-                          </div>
-                          <span className="admin-muted">
-                            {valueOrDash(row.email)} ·{" "}
-                            {new Date(row.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="admin-lead-chevron">
-                        {open ? "Hide" : "View"}
-                      </span>
-                    </button>
-                    {open ? (
-                      <div className="admin-lead-detail">
-                        <div className="admin-lead-fields">
-                          <div className="admin-lead-field">
-                            <span className="admin-lead-field-label">Phone</span>
-                            <span className="admin-lead-field-value">
-                              {valueOrDash(row.phone_number)}
+                          ) : null}
+                        </td>
+                        <td>
+                          <strong>{valueOrDash(row.installerName)}</strong>
+                          {row.matchPct != null &&
+                          Number.isFinite(Number(row.matchPct)) ? (
+                            <span className="admin-fin-sub">
+                              {Math.round(Number(row.matchPct))}% match
                             </span>
-                          </div>
-                          <div className="admin-lead-field">
-                            <span className="admin-lead-field-label">
-                              Location
-                            </span>
-                            <span className="admin-lead-field-value">
-                              {valueOrDash(row.project_location)}
-                            </span>
-                          </div>
-                          <div className="admin-lead-field">
-                            <span className="admin-lead-field-label">
-                              Review type
-                            </span>
-                            <span className="admin-lead-field-value">
-                              {valueOrDash(row.review_type)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="admin-lead-notes">
-                          <span className="admin-lead-field-label">Notes</span>
-                          <p>{valueOrDash(row.additional_notes)}</p>
-                        </div>
-                        {row.storage_path ? (
-                          <div className="admin-lead-attachment">
-                            <span className="admin-lead-field-label">
-                              Attachment
-                            </span>
-                            <button
-                              type="button"
-                              className="admin-btn admin-btn-secondary admin-btn-sm"
-                              onClick={() =>
-                                void adminDownloadLeadFile(
-                                  "expert-reviews",
-                                  row.id,
-                                  row.attachment_file_name || "attachment",
-                                )
-                              }
-                            >
-                              Download file
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })}
+                          ) : null}
+                        </td>
+                        <td>{detail || "—"}</td>
+                        <td>
+                          <Link
+                            className="admin-btn admin-btn-secondary admin-btn-sm"
+                            to={`/admin/users/${id}/expert-reviews/${row.id}`}
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           ) : tab === "contact" ? (
             <div className="admin-lead-list">

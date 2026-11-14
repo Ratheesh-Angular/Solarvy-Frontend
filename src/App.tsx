@@ -47,6 +47,8 @@ import AdminUserDetail from "./pages/AdminUserDetail.tsx";
 import AdminAssessmentDetail from "./pages/AdminAssessmentDetail.tsx";
 import AdminAssessmentResults from "./pages/AdminAssessmentResults.tsx";
 import AdminFinancingDetail from "./pages/AdminFinancingDetail.tsx";
+import AdminRequestIntroDetail from "./pages/AdminRequestIntroDetail.tsx";
+import AdminExpertReviewDetail from "./pages/AdminExpertReviewDetail.tsx";
 import AdminAssessments from "./pages/AdminAssessments.tsx";
 import AdminFinancing from "./pages/AdminFinancing.tsx";
 import AdminLeads from "./pages/AdminLeads.tsx";
@@ -70,6 +72,8 @@ import { AuthProvider } from "./context/AuthContext.tsx";
 import { AssessmentDraftBridgeProvider } from "./contexts/AssessmentDraftBridge.tsx";
 import Signup from "./pages/Signup.tsx";
 import Login from "./pages/Login.tsx";
+import Profile from "./pages/Profile.tsx";
+import Projects from "./pages/Projects.tsx";
 import "./css/admin/index.css";
 import "./css/auth-pages.css";
 
@@ -125,6 +129,14 @@ function App() {
                   element={<AdminFinancingDetail />}
                 />
                 <Route
+                  path="users/:id/request-intros/:leadId"
+                  element={<AdminRequestIntroDetail />}
+                />
+                <Route
+                  path="users/:id/expert-reviews/:leadId"
+                  element={<AdminExpertReviewDetail />}
+                />
+                <Route
                   path="visitors"
                   element={<Navigate to="/admin/users" replace />}
                 />
@@ -177,6 +189,8 @@ function App() {
             <Route path="/blog/:slug" element={<BlogDetail />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/projects" element={<Projects />} />
             <Route path="/terms-of-use" element={<TermsOfUse />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           </Route>

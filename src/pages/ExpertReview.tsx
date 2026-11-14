@@ -14,9 +14,15 @@ import {
   formatCityState,
 } from "../lib/geolocation";
 import { ensureTrackingSession } from "../lib/visitorTracking";
+import type { AssessmentResults } from "../types/assessment";
+
+type InstallerMatch = NonNullable<
+  AssessmentResults["installerMatches"]
+>[number];
 
 type ExpertReviewLocationState = {
   from?: "assessment-result" | "matched-installers";
+  installer?: InstallerMatch;
 };
 
 function ExpertReview() {
@@ -24,7 +30,19 @@ function ExpertReview() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get("assessment")?.trim() || "";
-  const fromPage = (location.state as ExpertReviewLocationState | null)?.from;
+  const locationState = location.state as ExpertReviewLocationState | null;
+  const fromPage = locationState?.from;
+  const installerFromState = locationState?.installer;
+  const selectedInstallerName =
+    installerFromState?.installerName?.trim() || "";
+  const matchPct = installerFromState?.matchPct ?? null;
+  const coverage = installerFromState?.coverage?.trim() || null;
+  const bestSuitedFor = installerFromState?.bestSuitedFor?.trim() || null;
+  const matchTier = installerFromState?.matchTier?.trim() || null;
+  const matchScoreLabel =
+    typeof matchPct === "number" && Number.isFinite(matchPct)
+      ? `Match score: ${Math.round(matchPct)}/100`
+      : null;
   const backLabel =
     fromPage === "assessment-result"
       ? "Back to Assessment Results"
@@ -92,6 +110,26 @@ function ExpertReview() {
       payload.append("projectLocation", formData.projectLocation);
       payload.append("reviewType", formData.reviewType);
       payload.append("additionalNotes", formData.additionalNotes);
+      if (assessmentId) {
+        payload.append("assessmentId", assessmentId);
+      }
+      if (selectedInstallerName && installerFromState) {
+        payload.append("installerName", selectedInstallerName);
+        payload.append(
+          "installerSnapshot",
+          JSON.stringify({
+            installerName: installerFromState.installerName,
+            cardNumber: installerFromState.cardNumber ?? null,
+            matchPct: installerFromState.matchPct ?? null,
+            matchTier: installerFromState.matchTier ?? null,
+            bestSuitedFor: installerFromState.bestSuitedFor ?? null,
+            coverage: installerFromState.coverage ?? null,
+            strengths: installerFromState.strengths ?? null,
+            pricing: installerFromState.pricing ?? null,
+            response: installerFromState.response ?? null,
+          }),
+        );
+      }
       if (attachmentFile) {
         payload.append("attachment", attachmentFile);
       }
@@ -100,13 +138,19 @@ function ExpertReview() {
       showSuccess(
         "Your expert review request was submitted successfully.",
       );
+      window.setTimeout(() => {
+        navigate(
+          assessmentId
+            ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+            : "/matched-installers",
+        );
+      }, 1500);
     } catch (error) {
       setSubmitError(
         error instanceof ApiError
           ? error.message
           : "Unable to submit request. Please try again.",
       );
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -169,12 +213,15 @@ function ExpertReview() {
               <div className="nav-bottom-section row align-items-center">
                 <div className="col-12 col-lg-12 text-white ">
                   <h1 className="bannr-text start-assesement-banner-text display-5 ass-page ">
-                    Request Expert System Review
+                    {selectedInstallerName
+                      ? `Expert Review for ${selectedInstallerName}`
+                      : "Request Expert System Review"}
                   </h1>
 
                   <p className="bannr-text-s text-light mt-2 mb-5 ass-page-two">
-                    Upload your installer quote or project details for an
-                    independent technical review by Solarvy engineers.
+                    {selectedInstallerName
+                      ? `Upload your quote or project details related to ${selectedInstallerName} for an independent technical review by Solarvy engineers.`
+                      : "Upload your installer quote or project details for an independent technical review by Solarvy engineers."}
                   </p>
                 </div>
               </div>
@@ -188,6 +235,37 @@ function ExpertReview() {
             <div className="col-lg-8">
               <form id="expert-review-form" onSubmit={handleSubmit}>
                 <div className="p-4 shadow-sm rounded-4 ass-first">
+                  {selectedInstallerName ? (
+                    <div className="d-flex align-items-start gap-3 mb-4 rounded-3 installer-highlight-box">
+                      <div className="flex-grow-1">
+                        <h5 className="fw-bold mb-2 heading-ass mb-3">
+                          {selectedInstallerName}
+                        </h5>
+                        <div className="d-flex flex-wrap gap-2">
+                          {matchScoreLabel && (
+                            <span className="badge bg-success ri-match-badge">
+                              {matchScoreLabel}
+                            </span>
+                          )}
+                          {coverage && (
+                            <span className="badge bg-secondary ri-match-badge">
+                              {coverage}
+                            </span>
+                          )}
+                          {bestSuitedFor && (
+                            <span className="badge bg-secondary ri-match-badge">
+                              {bestSuitedFor}
+                            </span>
+                          )}
+                          {matchTier && (
+                            <span className="badge bg-secondary ri-match-badge">
+                              {matchTier}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="d-flex align-items-center mb-3">
                     <div className="step-box me-3">1</div>
                     <div>

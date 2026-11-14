@@ -531,7 +531,10 @@ function MatchedInstallers() {
                           </button>
                           <Link
                             to={expertReviewPath}
-                            state={{ from: "matched-installers" }}
+                            state={{
+                              from: "matched-installers",
+                              installer,
+                            }}
                             className="installer-secondary-cta"
                             onClick={() => {
                               void trackCtaClick("expert_review", {

@@ -1,0 +1,569 @@
+/**
+ * Solarvy Expert Review pack PDF
+ *
+ * Single-page A4 summary aligned with the Financing enquiry pack /
+ * Request Introduction pack layout.
+ */
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
+  Font,
+  pdf,
+} from "@react-pdf/renderer";
+import type { AdminExpertReview } from "./adminApi";
+import notoSansRegular from "../assets/fonts/NotoSans-Regular.ttf";
+import notoSansBold from "../assets/fonts/NotoSans-Bold.ttf";
+import appLogo from "../assets/images/logo-dark.png";
+import { formatLeadReportDate } from "./leadRequestIntroReportPdf";
+
+Font.register({
+  family: "NotoSans",
+  src: notoSansRegular,
+});
+Font.register({
+  family: "NotoSans-Bold",
+  src: notoSansBold,
+});
+
+export { formatLeadReportDate };
+
+const MISSING = "N/A";
+
+const formatText = (value: unknown): string => {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return MISSING;
+  }
+  return String(value);
+};
+
+const formatDateTime = (value: string | null | undefined): string => {
+  if (!value) return MISSING;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return MISSING;
+  return date.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+function splitStrengths(raw: string | null | undefined): string[] {
+  if (!raw || !String(raw).trim()) return [];
+  return String(raw)
+    .split(/[;|]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+const colors = {
+  navy: "#1b3b6b",
+  navyDeep: "#193760",
+  orange: "#F5921E",
+  text: "#3a3f47",
+  textDark: "#22303f",
+  muted: "#7f8b9a",
+  line: "#d8e0e9",
+  tableHeaderBg: "#e9eef4",
+  white: "#ffffff",
+  noteCream: "#fbf3e0",
+  noteCreamBorder: "#eddaae",
+};
+
+const styles = StyleSheet.create({
+  page: {
+    fontFamily: "NotoSans",
+    fontSize: 10,
+    color: colors.text,
+    backgroundColor: colors.white,
+    paddingTop: 30,
+    paddingBottom: 46,
+    paddingHorizontal: 36,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 22,
+  },
+  brandLogo: {
+    width: 120,
+    height: 36,
+    objectFit: "contain",
+  },
+  headerMeta: { textAlign: "right" },
+  headerMetaLabel: {
+    fontSize: 7,
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  headerMetaValue: {
+    fontSize: 9,
+    fontFamily: "NotoSans-Bold",
+    color: colors.navy,
+  },
+  footer: {
+    position: "absolute",
+    left: 36,
+    right: 36,
+    bottom: 22,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    paddingTop: 8,
+  },
+  footerText: {
+    fontSize: 8,
+    color: colors.muted,
+  },
+  eyebrow: {
+    fontSize: 8,
+    color: colors.navy,
+    fontFamily: "NotoSans-Bold",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: 6,
+  },
+  title: {
+    fontSize: 18,
+    fontFamily: "NotoSans-Bold",
+    color: colors.navy,
+    lineHeight: 1.2,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 10,
+    color: colors.text,
+    lineHeight: 1.4,
+    marginBottom: 10,
+  },
+  metaGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  metaItem: {
+    width: "50%",
+    marginBottom: 12,
+  },
+  metaLabel: {
+    fontSize: 7.5,
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  metaValue: {
+    fontSize: 12,
+    fontFamily: "NotoSans-Bold",
+    color: colors.navy,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontFamily: "NotoSans-Bold",
+    color: colors.navy,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  kpiRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 6,
+  },
+  kpiCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 3,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  kpiLabel: {
+    fontSize: 6.5,
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 5,
+  },
+  kpiValue: {
+    fontSize: 10,
+    fontFamily: "NotoSans-Bold",
+    color: colors.navy,
+  },
+  darkPanel: {
+    marginTop: 14,
+    backgroundColor: colors.navyDeep,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  darkPanelTitle: {
+    fontSize: 9,
+    fontFamily: "NotoSans-Bold",
+    color: colors.white,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  darkPanelText: {
+    fontSize: 9,
+    color: "#dbe4f0",
+    lineHeight: 1.5,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginBottom: 6,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: colors.tableHeaderBg,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  tableHeaderText: {
+    fontSize: 7,
+    fontFamily: "NotoSans-Bold",
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  colLeft: {
+    width: "42%",
+    paddingRight: 8,
+    borderRightWidth: 1,
+    borderRightColor: colors.line,
+  },
+  colRight: {
+    width: "58%",
+    paddingLeft: 8,
+  },
+  cellLabel: {
+    fontSize: 9,
+    color: colors.textDark,
+  },
+  cellValue: {
+    fontSize: 9,
+    color: colors.navy,
+  },
+  listBlock: {
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  listItem: {
+    flexDirection: "row",
+    marginBottom: 4,
+    gap: 6,
+  },
+  listBullet: {
+    fontSize: 9,
+    fontFamily: "NotoSans-Bold",
+    color: colors.orange,
+    width: 10,
+  },
+  listText: {
+    flex: 1,
+    fontSize: 8.5,
+    color: colors.text,
+    lineHeight: 1.4,
+  },
+  noteBox: {
+    marginTop: 10,
+    backgroundColor: colors.noteCream,
+    borderWidth: 1,
+    borderColor: colors.noteCreamBorder,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  noteText: {
+    fontSize: 8,
+    color: colors.text,
+    lineHeight: 1.5,
+  },
+  noteBold: {
+    fontFamily: "NotoSans-Bold",
+    color: colors.navy,
+  },
+});
+
+function ReportHeader({
+  reference,
+  logoSrc,
+  generatedDate,
+}: {
+  reference: string;
+  logoSrc?: string;
+  generatedDate: string;
+}) {
+  return (
+    <View style={styles.headerRow} fixed>
+      <Image src={logoSrc || appLogo} style={styles.brandLogo} />
+      <View style={styles.headerMeta}>
+        <Text style={styles.headerMetaLabel}>Generated</Text>
+        <Text style={styles.headerMetaValue}>{generatedDate}</Text>
+        <Text style={[styles.headerMetaLabel, { marginTop: 6 }]}>
+          Review reference
+        </Text>
+        <Text style={styles.headerMetaValue}>{reference}</Text>
+      </View>
+    </View>
+  );
+}
+
+function ReportFooter({ reference }: { reference: string }) {
+  return (
+    <View style={styles.footer} fixed>
+      <Text style={styles.footerText}>
+        {reference} · SolarVy Expert Review
+      </Text>
+      <Text
+        style={styles.footerText}
+        render={({ pageNumber, totalPages }) =>
+          `Page ${pageNumber} of ${totalPages}`
+        }
+      />
+    </View>
+  );
+}
+
+function TwoColTable({
+  rows,
+}: {
+  rows: Array<{ label: string; value: string }>;
+}) {
+  return (
+    <View style={styles.table}>
+      <View style={styles.tableHeader}>
+        <View style={styles.colLeft}>
+          <Text style={styles.tableHeaderText}>Field</Text>
+        </View>
+        <View style={styles.colRight}>
+          <Text style={styles.tableHeaderText}>Details</Text>
+        </View>
+      </View>
+      {rows.map((row, index) => (
+        <View
+          style={[
+            styles.tableRow,
+            index === rows.length - 1 ? { borderBottomWidth: 0 } : {},
+          ]}
+          key={`${row.label}-${index}`}
+        >
+          <View style={styles.colLeft}>
+            <Text style={styles.cellLabel}>{row.label}</Text>
+          </View>
+          <View style={styles.colRight}>
+            <Text style={styles.cellValue}>{row.value}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function BulletList({ items }: { items: string[] }) {
+  if (items.length === 0) {
+    return <Text style={styles.listText}>{MISSING}</Text>;
+  }
+  return (
+    <View style={styles.listBlock}>
+      {items.map((item) => (
+        <View style={styles.listItem} key={item}>
+          <Text style={styles.listBullet}>•</Text>
+          <Text style={styles.listText}>{item}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export type ExpertReviewReportPayload = {
+  record: AdminExpertReview;
+  generatedDate: string;
+  logoSrc?: string;
+};
+
+function ExpertReviewDocument({
+  record,
+  generatedDate,
+  logoSrc,
+}: ExpertReviewReportPayload) {
+  const snap = record.installerSnapshot;
+  const reference = `REVIEW-${record.id}`;
+  const installerName = formatText(record.installerName);
+  const matchLabel =
+    record.matchPct != null && Number.isFinite(record.matchPct)
+      ? `${Math.round(record.matchPct)}%`
+      : MISSING;
+  const strengths = splitStrengths(snap?.strengths);
+  const notes = String(record.additionalNotes || "").trim();
+  const attachmentLabel = record.hasAttachment
+    ? formatText(record.attachmentFileName || "Attached file")
+    : "None";
+
+  return (
+    <Document
+      title={`SolarVy Expert Review ${reference}`}
+      author="SolarVy"
+      subject="Expert review lead summary"
+    >
+      <Page size="A4" style={styles.page}>
+        <ReportHeader
+          reference={reference}
+          logoSrc={logoSrc}
+          generatedDate={generatedDate}
+        />
+
+        <Text style={styles.eyebrow}>Expert review pack</Text>
+        <Text style={styles.title}>Expert review summary</Text>
+        <Text style={styles.subtitle}>
+          Prepared for admin follow-up of the customer’s review request.
+          Generated {generatedDate}.
+        </Text>
+
+        <View style={styles.metaGrid}>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Review ID</Text>
+            <Text style={styles.metaValue}>#{record.id}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Submitted</Text>
+            <Text style={styles.metaValue}>
+              {formatDateTime(record.createdAt)}
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Assessment</Text>
+            <Text style={styles.metaValue}>
+              {formatText(record.assessmentRef)}
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Review type</Text>
+            <Text style={styles.metaValue}>
+              {formatText(record.reviewType)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.kpiRow}>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Match</Text>
+            <Text style={styles.kpiValue}>{matchLabel}</Text>
+          </View>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Match tier</Text>
+            <Text style={styles.kpiValue}>
+              {formatText(snap?.matchTier)}
+            </Text>
+          </View>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Pricing</Text>
+            <Text style={styles.kpiValue}>{formatText(snap?.pricing)}</Text>
+          </View>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Response</Text>
+            <Text style={styles.kpiValue}>{formatText(snap?.response)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.darkPanel}>
+          <Text style={styles.darkPanelTitle}>Executive summary</Text>
+          <Text style={styles.darkPanelText}>
+            {formatText(record.fullName)} requested an expert review
+            {installerName !== MISSING ? ` related to ${installerName}` : ""}
+            {record.assessmentRef
+              ? ` (linked assessment ${record.assessmentRef})`
+              : ""}
+            . This pack summarises the contact details, installer context, and
+            review request captured at submission.
+          </Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Selected installer</Text>
+        <TwoColTable
+          rows={[
+            { label: "Installer name", value: installerName },
+            { label: "Coverage", value: formatText(snap?.coverage) },
+            {
+              label: "Best suited for",
+              value: formatText(snap?.bestSuitedFor),
+            },
+          ]}
+        />
+
+        <Text style={styles.sectionTitle}>Strengths</Text>
+        <BulletList items={strengths} />
+
+        <Text style={styles.sectionTitle}>Contact</Text>
+        <TwoColTable
+          rows={[
+            { label: "Full name", value: formatText(record.fullName) },
+            { label: "Email", value: formatText(record.email) },
+            { label: "Phone", value: formatText(record.phoneNumber) },
+          ]}
+        />
+
+        <Text style={styles.sectionTitle}>Review request</Text>
+        <TwoColTable
+          rows={[
+            {
+              label: "Project location",
+              value: formatText(record.projectLocation),
+            },
+            { label: "Review type", value: formatText(record.reviewType) },
+            { label: "Attachment", value: attachmentLabel },
+          ]}
+        />
+
+        <View style={styles.noteBox}>
+          <Text style={styles.noteText}>
+            <Text style={styles.noteBold}>Additional notes. </Text>
+            {notes || "No notes provided."}
+          </Text>
+        </View>
+
+        <ReportFooter reference={reference} />
+      </Page>
+    </Document>
+  );
+}
+
+export async function downloadExpertReviewReport(
+  payload: ExpertReviewReportPayload,
+): Promise<void> {
+  const blob = await pdf(
+    <ExpertReviewDocument
+      record={payload.record}
+      generatedDate={payload.generatedDate}
+      logoSrc={payload.logoSrc}
+    />,
+  ).toBlob();
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `Solarvy-Expert-Review-${payload.record.id}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}

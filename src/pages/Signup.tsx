@@ -5,6 +5,7 @@ import NigeriaPhoneInput, {
   isValidNigeriaLocalPhone,
   toNigeriaE164,
 } from "../components/NigeriaPhoneInput";
+import OtpInput from "../components/OtpInput";
 import SolarvyLoader from "../components/SolarvyLoader";
 import FeedbackToast from "../components/FeedbackToast";
 import PageSeo from "../components/PageSeo";
@@ -376,22 +377,17 @@ function Signup() {
                   <label htmlFor="signup-otp" className="form-label ass-field-label">
                     Verification code
                   </label>
-                  <input
+                  <OtpInput
                     id="signup-otp"
-                    type="text"
-                    inputMode="numeric"
-                    className="form-control ass-field-control text-center"
                     value={otp}
-                    onChange={(e) => {
-                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    onChange={(next) => {
+                      setOtp(next);
                       if (fieldErrors.otp) {
                         setFieldErrors((prev) => ({ ...prev, otp: undefined }));
                       }
                     }}
-                    maxLength={6}
-                    autoComplete="one-time-code"
                     disabled={busy}
-                    placeholder="000000"
+                    hasError={Boolean(fieldErrors.otp)}
                   />
                   {fieldErrors.otp ? (
                     <div className="ass-field-error">{fieldErrors.otp}</div>
@@ -399,7 +395,7 @@ function Signup() {
                 </div>
                 <button
                   type="submit"
-                  className="btn-primary-custom w-100"
+                  className="btn-primary-custom w-100 justify-content-center"
                   disabled={busy}
                 >
                   Create account

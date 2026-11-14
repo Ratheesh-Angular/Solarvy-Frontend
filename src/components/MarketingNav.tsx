@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import bttnarrow from "../assets/images/btton-arrow.png";
+import ProfileMenu from "./ProfileMenu";
 import { useAuth } from "../context/AuthContext";
 
 type MarketingNavProps = {
@@ -88,24 +89,7 @@ export default function MarketingNav({
                 </NavLink>
               </li>
             ) : null}
-            {isAuthenticated ? (
-              <>
-                <li className="nav-item">
-                  <span className="nav-link solar-nav-user" title={user?.email}>
-                    {user?.fullName?.split(" ")[0] || "Account"}
-                  </span>
-                </li>
-                <li className="nav-item">
-                  <button
-                    type="button"
-                    className="nav-link solar-nav-auth-link"
-                    onClick={handleLogout}
-                  >
-                    Log out
-                  </button>
-                </li>
-              </>
-            ) : (
+            {isAuthenticated ? null : (
               <>
                 <li className="nav-item">
                   <Link className="nav-link" to="/login" onClick={close}>
@@ -132,6 +116,15 @@ export default function MarketingNav({
                 <img src={bttnarrow} alt="" aria-hidden="true" />
               </button>
             </li>
+            {isAuthenticated ? (
+              <li className="nav-item solar-profile-nav-item">
+                <ProfileMenu
+                  user={user}
+                  onLogout={handleLogout}
+                  onNavigate={close}
+                />
+              </li>
+            ) : null}
           </ul>
         </div>
       </nav>

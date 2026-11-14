@@ -478,10 +478,12 @@ export type ActivityItem = {
 };
 
 export type VisitorSummary = {
-  id: string;
+  id: string | null;
   userId: string | null;
   userNumber: number | null;
   displayName: string | null;
+  fullName?: string | null;
+  email?: string | null;
   firstSeenAt: string;
   lastSeenAt: string;
   lastIp: string;
@@ -533,6 +535,7 @@ export async function adminListVisitors(params: {
   to?: string;
   page?: number;
   limit?: number;
+  kind?: "users" | "guests";
 } = {}) {
   const data = await adminFetch<ApiEnvelope<PagedResult<VisitorSummary>>>(
     `/admin/visitors${toQuery(params)}`,
@@ -571,6 +574,216 @@ export async function adminGetAssessment(
   return data.data!;
 }
 
+export type AdminInstallerSnapshot = {
+  installerName: string | null;
+  cardNumber: number | null;
+  matchPct: number | null;
+  matchTier: string | null;
+  bestSuitedFor: string | null;
+  coverage: string | null;
+  strengths: string | null;
+  pricing: string | null;
+  response: string | null;
+};
+
+export type AdminRequestIntro = {
+  id: number;
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  projectTimeline: string;
+  additionalNotes: string;
+  projectSummary: Array<{ label?: string; value?: string }> | null;
+  visitorId: string | null;
+  sessionId: string | null;
+  installerName: string;
+  installerSnapshot: AdminInstallerSnapshot | null;
+  matchPct: number | null;
+  assessmentId: number | null;
+  assessmentRef: string | null;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type AdminExpertReview = {
+  id: number;
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  projectLocation: string;
+  reviewType: string;
+  additionalNotes: string;
+  attachmentFileName: string;
+  storedFileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  hasAttachment: boolean;
+  visitorId: string | null;
+  sessionId: string | null;
+  installerName: string;
+  installerSnapshot: AdminInstallerSnapshot | null;
+  matchPct: number | null;
+  assessmentId: number | null;
+  assessmentRef: string | null;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+function pickLeadStr(
+  row: Record<string, unknown>,
+  ...keys: string[]
+): string {
+  for (const key of keys) {
+    const value = row[key];
+    if (value != null && String(value).trim() !== "") {
+      return String(value);
+    }
+  }
+  return "";
+}
+
+function pickLeadNullableStr(
+  row: Record<string, unknown>,
+  ...keys: string[]
+): string | null {
+  const value = pickLeadStr(row, ...keys);
+  return value || null;
+}
+
+function pickLeadNumber(
+  row: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
+  for (const key of keys) {
+    const value = row[key];
+    if (value == null || value === "") continue;
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function normalizeInstallerSnapshot(
+  raw: unknown,
+): AdminInstallerSnapshot | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const snap = raw as Record<string, unknown>;
+  const installerName = pickLeadNullableStr(
+    snap,
+    "installerName",
+    "installer_name",
+  );
+  return {
+    installerName,
+    cardNumber: pickLeadNumber(snap, "cardNumber", "card_number"),
+    matchPct: pickLeadNumber(snap, "matchPct", "match_pct"),
+    matchTier: pickLeadNullableStr(snap, "matchTier", "match_tier"),
+    bestSuitedFor: pickLeadNullableStr(
+      snap,
+      "bestSuitedFor",
+      "best_suited_for",
+    ),
+    coverage: pickLeadNullableStr(snap, "coverage"),
+    strengths: pickLeadNullableStr(snap, "strengths"),
+    pricing: pickLeadNullableStr(snap, "pricing"),
+    response: pickLeadNullableStr(snap, "response"),
+  };
+}
+
+function normalizeRequestIntro(row: unknown): AdminRequestIntro {
+  const r = (row && typeof row === "object" ? row : {}) as Record<
+    string,
+    unknown
+  >;
+  const snapshot = normalizeInstallerSnapshot(
+    r.installerSnapshot ?? r.installer_snapshot,
+  );
+  const assessmentId = pickLeadNumber(r, "assessmentId", "assessment_id");
+  return {
+    id: pickLeadNumber(r, "id") ?? 0,
+    fullName: pickLeadStr(r, "fullName", "full_name"),
+    phoneNumber: pickLeadStr(r, "phoneNumber", "phone_number"),
+    email: pickLeadStr(r, "email"),
+    projectTimeline: pickLeadStr(r, "projectTimeline", "project_timeline"),
+    additionalNotes: pickLeadStr(r, "additionalNotes", "additional_notes"),
+    projectSummary: (Array.isArray(r.projectSummary)
+      ? r.projectSummary
+      : Array.isArray(r.project_summary)
+        ? r.project_summary
+        : null) as AdminRequestIntro["projectSummary"],
+    visitorId: pickLeadNullableStr(r, "visitorId", "visitor_id"),
+    sessionId: pickLeadNullableStr(r, "sessionId", "session_id"),
+    installerName:
+      pickLeadStr(r, "installerName", "installer_name") ||
+      snapshot?.installerName ||
+      "",
+    installerSnapshot: snapshot,
+    matchPct:
+      pickLeadNumber(r, "matchPct", "match_pct") ?? snapshot?.matchPct ?? null,
+    assessmentId,
+    assessmentRef:
+      pickLeadNullableStr(r, "assessmentRef", "assessment_ref") ??
+      (assessmentId != null
+        ? `SV-${String(assessmentId).padStart(4, "0")}`
+        : null),
+    createdAt: pickLeadStr(r, "createdAt", "created_at"),
+    updatedAt: pickLeadStr(r, "updatedAt", "updated_at") || undefined,
+  };
+}
+
+function normalizeExpertReview(row: unknown): AdminExpertReview {
+  const r = (row && typeof row === "object" ? row : {}) as Record<
+    string,
+    unknown
+  >;
+  const snapshot = normalizeInstallerSnapshot(
+    r.installerSnapshot ?? r.installer_snapshot,
+  );
+  const assessmentId = pickLeadNumber(r, "assessmentId", "assessment_id");
+  const storagePath = pickLeadStr(r, "storagePath", "storage_path");
+  const hasAttachment =
+    typeof r.hasAttachment === "boolean"
+      ? r.hasAttachment
+      : Boolean(storagePath);
+  return {
+    id: pickLeadNumber(r, "id") ?? 0,
+    fullName: pickLeadStr(r, "fullName", "full_name"),
+    phoneNumber: pickLeadStr(r, "phoneNumber", "phone_number"),
+    email: pickLeadStr(r, "email"),
+    projectLocation: pickLeadStr(r, "projectLocation", "project_location"),
+    reviewType: pickLeadStr(r, "reviewType", "review_type"),
+    additionalNotes: pickLeadStr(r, "additionalNotes", "additional_notes"),
+    attachmentFileName: pickLeadStr(
+      r,
+      "attachmentFileName",
+      "attachment_file_name",
+    ),
+    storedFileName: pickLeadStr(r, "storedFileName", "stored_file_name"),
+    mimeType: pickLeadStr(r, "mimeType", "mime_type"),
+    sizeBytes: pickLeadNumber(r, "sizeBytes", "size_bytes") ?? 0,
+    storagePath,
+    hasAttachment,
+    visitorId: pickLeadNullableStr(r, "visitorId", "visitor_id"),
+    sessionId: pickLeadNullableStr(r, "sessionId", "session_id"),
+    installerName:
+      pickLeadStr(r, "installerName", "installer_name") ||
+      snapshot?.installerName ||
+      "",
+    installerSnapshot: snapshot,
+    matchPct:
+      pickLeadNumber(r, "matchPct", "match_pct") ?? snapshot?.matchPct ?? null,
+    assessmentId,
+    assessmentRef:
+      pickLeadNullableStr(r, "assessmentRef", "assessment_ref") ??
+      (assessmentId != null
+        ? `SV-${String(assessmentId).padStart(4, "0")}`
+        : null),
+    createdAt: pickLeadStr(r, "createdAt", "created_at"),
+    updatedAt: pickLeadStr(r, "updatedAt", "updated_at") || undefined,
+  };
+}
+
 export async function adminListRequestIntros(params: {
   q?: string;
   from?: string;
@@ -582,7 +795,36 @@ export async function adminListRequestIntros(params: {
   const data = await adminFetch<
     ApiEnvelope<PagedResult<Record<string, unknown>>>
   >(`/admin/request-intros${toQuery(params)}`);
-  return data.data!;
+  const page = data.data!;
+  return {
+    ...page,
+    items: (page.items ?? []).map(normalizeRequestIntro),
+  };
+}
+
+export async function adminGetRequestIntro(
+  id: string | number,
+  params: { visitorId?: string } = {},
+) {
+  const numericId = Number(id);
+  try {
+    const data = await adminFetch<ApiEnvelope<Record<string, unknown>>>(
+      `/admin/request-intros/${encodeURIComponent(String(id))}${toQuery(params)}`,
+    );
+    return normalizeRequestIntro(data.data!);
+  } catch (error) {
+    if (!params.visitorId || !Number.isFinite(numericId)) {
+      throw error;
+    }
+    const listed = await adminListRequestIntros({
+      visitorId: params.visitorId,
+      page: 1,
+      limit: 100,
+    });
+    const found = listed.items.find((item) => item.id === numericId);
+    if (!found) throw error;
+    return found;
+  }
 }
 
 export async function adminListContactMessages(params: {
@@ -610,7 +852,36 @@ export async function adminListExpertReviews(params: {
   const data = await adminFetch<
     ApiEnvelope<PagedResult<Record<string, unknown>>>
   >(`/admin/expert-reviews${toQuery(params)}`);
-  return data.data!;
+  const page = data.data!;
+  return {
+    ...page,
+    items: (page.items ?? []).map(normalizeExpertReview),
+  };
+}
+
+export async function adminGetExpertReview(
+  id: string | number,
+  params: { visitorId?: string } = {},
+) {
+  const numericId = Number(id);
+  try {
+    const data = await adminFetch<ApiEnvelope<Record<string, unknown>>>(
+      `/admin/expert-reviews/${encodeURIComponent(String(id))}${toQuery(params)}`,
+    );
+    return normalizeExpertReview(data.data!);
+  } catch (error) {
+    if (!params.visitorId || !Number.isFinite(numericId)) {
+      throw error;
+    }
+    const listed = await adminListExpertReviews({
+      visitorId: params.visitorId,
+      page: 1,
+      limit: 100,
+    });
+    const found = listed.items.find((item) => item.id === numericId);
+    if (!found) throw error;
+    return found;
+  }
 }
 
 export async function adminListQuoteUploads(params: {
@@ -912,7 +1183,7 @@ export async function adminGetBlogPostAnalytics(
   return data.data!;
 }
 
-export async function adminDownloadLeadFile(
+async function adminFetchLeadFileBlob(
   kind: "expert-reviews" | "quote-uploads",
   id: number,
   fallbackName: string,
@@ -937,16 +1208,45 @@ export async function adminDownloadLeadFile(
   const disposition = response.headers.get("Content-Disposition") ?? "";
   const utfMatch = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
   const plainMatch = /filename="?([^";]+)"?/i.exec(disposition);
-  const downloadName = decodeURIComponent(
+  const fileName = decodeURIComponent(
     utfMatch?.[1] || plainMatch?.[1] || fallbackName,
   );
 
+  return { blob, fileName };
+}
+
+export async function adminDownloadLeadFile(
+  kind: "expert-reviews" | "quote-uploads",
+  id: number,
+  fallbackName: string,
+) {
+  const { blob, fileName } = await adminFetchLeadFileBlob(
+    kind,
+    id,
+    fallbackName,
+  );
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = objectUrl;
-  anchor.download = downloadName;
+  anchor.download = fileName;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(objectUrl);
+}
+
+export async function adminViewLeadFile(
+  kind: "expert-reviews" | "quote-uploads",
+  id: number,
+  fallbackName = "attachment",
+) {
+  const { blob } = await adminFetchLeadFileBlob(kind, id, fallbackName);
+  const objectUrl = URL.createObjectURL(blob);
+  const opened = window.open(objectUrl, "_blank", "noopener,noreferrer");
+  // if (!opened) {
+  //   URL.revokeObjectURL(objectUrl);
+  //   throw new Error("Unable to open attachment. Allow pop-ups and try again.");
+  // }
+  // Revoke after the new tab has had time to load the blob URL.
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
 }

@@ -239,10 +239,19 @@ p.bannr-text-s.text-light {
   height: auto;
 }
 
+.solar-nav-links {
+  gap: 4px 18px;
+  column-gap: 18px;
+}
+
 .solar-nav-links .nav-link {
   color: #ffffff !important;
   font-size: 13px;
   font-weight: 400;
+}
+
+.solar-nav-links .nav-item.solar-profile-nav-item {
+  margin-left: 4px;
 }
 
 /* top button */

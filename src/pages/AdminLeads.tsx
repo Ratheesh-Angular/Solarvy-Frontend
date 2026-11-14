@@ -5,9 +5,22 @@ import {
   adminListExpertReviews,
   adminListQuoteUploads,
   adminListRequestIntros,
+  type AdminExpertReview,
+  type AdminRequestIntro,
 } from "../lib/adminApi";
+import { enrichLeadsWithInstallers } from "../lib/leadInstallerResolve";
 
 type LeadTab = "request-intros" | "expert-reviews" | "quote-uploads";
+
+function valueOrDash(value: unknown) {
+  if (value == null || String(value).trim() === "") return "—";
+  return String(value);
+}
+
+function formatMatchPct(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return null;
+  return `${Math.round(value)}% match`;
+}
 
 export default function AdminLeads() {
   const [tab, setTab] = useState<LeadTab>("request-intros");
@@ -27,16 +40,25 @@ export default function AdminLeads() {
       setLoading(true);
       setError("");
       try {
-        const loader =
-          tab === "request-intros"
-            ? adminListRequestIntros
-            : tab === "expert-reviews"
-              ? adminListExpertReviews
-              : adminListQuoteUploads;
-        const data = await loader({ q, from, to, page, limit });
-        if (!cancelled) {
-          setItems(data.items);
-          setTotal(data.total);
+        if (tab === "quote-uploads") {
+          const data = await adminListQuoteUploads({ q, from, to, page, limit });
+          if (!cancelled) {
+            setItems(data.items as Record<string, any>[]);
+            setTotal(data.total);
+          }
+        } else {
+          const data =
+            tab === "request-intros"
+              ? await adminListRequestIntros({ q, from, to, page, limit })
+              : await adminListExpertReviews({ q, from, to, page, limit });
+          const enriched = await enrichLeadsWithInstallers(
+            data.items,
+            tab === "request-intros" ? "request_intro" : "expert_review",
+          );
+          if (!cancelled) {
+            setItems(enriched as Record<string, any>[]);
+            setTotal(data.total);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -94,7 +116,11 @@ export default function AdminLeads() {
               setPage(1);
               setQ(e.target.value);
             }}
-            placeholder="Name, email…"
+            placeholder={
+              tab === "quote-uploads"
+                ? "Name, email…"
+                : "Name, email, installer…"
+            }
           />
         </label>
         <label className="admin-field admin-field-inline admin-date-field">
@@ -130,7 +156,7 @@ export default function AdminLeads() {
           <p className="admin-empty-text">Loading…</p>
         ) : items.length === 0 ? (
           <p className="admin-empty-text">No records found.</p>
-        ) : (
+        ) : tab === "quote-uploads" ? (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
@@ -152,33 +178,23 @@ export default function AdminLeads() {
                       <span className="admin-muted">{row.email || "—"}</span>
                     </td>
                     <td>
-                      {tab === "request-intros"
-                        ? row.project_timeline || "—"
-                        : tab === "expert-reviews"
-                          ? row.project_location || row.review_type || "—"
-                          : (
-                              <>
-                                {row.original_name || "—"}
-                                {row.location ? (
-                                  <>
-                                    <br />
-                                    <span className="admin-muted">
-                                      {row.location}
-                                    </span>
-                                  </>
-                                ) : null}
-                                {row.additional_notes ? (
-                                  <>
-                                    <br />
-                                    <span className="admin-muted">
-                                      {String(row.additional_notes).length > 80
-                                        ? `${String(row.additional_notes).slice(0, 80)}…`
-                                        : row.additional_notes}
-                                    </span>
-                                  </>
-                                ) : null}
-                              </>
-                            )}
+                      {row.original_name || "—"}
+                      {row.location ? (
+                        <>
+                          <br />
+                          <span className="admin-muted">{row.location}</span>
+                        </>
+                      ) : null}
+                      {row.additional_notes ? (
+                        <>
+                          <br />
+                          <span className="admin-muted">
+                            {String(row.additional_notes).length > 80
+                              ? `${String(row.additional_notes).slice(0, 80)}…`
+                              : row.additional_notes}
+                          </span>
+                        </>
+                      ) : null}
                     </td>
                     <td>
                       {row.visitor_id ? (
@@ -190,22 +206,7 @@ export default function AdminLeads() {
                       )}
                     </td>
                     <td>
-                      {tab === "expert-reviews" && row.storage_path ? (
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn-secondary"
-                          onClick={() =>
-                            void adminDownloadLeadFile(
-                              "expert-reviews",
-                              row.id,
-                              row.attachment_file_name || "attachment",
-                            )
-                          }
-                        >
-                          File
-                        </button>
-                      ) : null}
-                      {tab === "quote-uploads" && row.storage_path ? (
+                      {row.storage_path ? (
                         <button
                           type="button"
                           className="admin-btn admin-btn-secondary"
@@ -223,6 +224,83 @@ export default function AdminLeads() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="admin-table-wrap">
+            <table className="admin-table admin-fin-table">
+              <thead>
+                <tr>
+                  <th>Submitted</th>
+                  <th>Contact</th>
+                  <th>Installer</th>
+                  <th>{tab === "request-intros" ? "Timeline" : "Details"}</th>
+                  <th>Visitor</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((raw) => {
+                  const row = raw as AdminRequestIntro | AdminExpertReview;
+                  const matchLabel = formatMatchPct(row.matchPct);
+                  const detail =
+                    tab === "request-intros"
+                      ? valueOrDash((row as AdminRequestIntro).projectTimeline)
+                      : [
+                          (row as AdminExpertReview).projectLocation,
+                          (row as AdminExpertReview).reviewType,
+                        ]
+                          .filter((v) => v && String(v).trim())
+                          .join(" · ") || "—";
+                  return (
+                    <tr key={row.id}>
+                      <td>
+                        {row.createdAt
+                          ? new Date(row.createdAt).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td>
+                        <strong>{valueOrDash(row.fullName)}</strong>
+                        {row.email ? (
+                          <span className="admin-fin-sub">{row.email}</span>
+                        ) : null}
+                      </td>
+                      <td>
+                        <strong>{valueOrDash(row.installerName)}</strong>
+                        {matchLabel ? (
+                          <span className="admin-fin-sub">{matchLabel}</span>
+                        ) : null}
+                      </td>
+                      <td>{detail}</td>
+                      <td>
+                        {row.visitorId ? (
+                          <Link to={`/admin/users/${row.visitorId}`}>
+                            {String(row.visitorId).slice(0, 8)}…
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        {row.visitorId ? (
+                          <Link
+                            className="admin-btn admin-btn-secondary admin-btn-sm"
+                            to={
+                              tab === "request-intros"
+                                ? `/admin/users/${row.visitorId}/request-intros/${row.id}`
+                                : `/admin/users/${row.visitorId}/expert-reviews/${row.id}`
+                            }
+                          >
+                            View
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

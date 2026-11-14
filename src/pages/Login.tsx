@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo-dark.png";
+import OtpInput from "../components/OtpInput";
 import SolarvyLoader from "../components/SolarvyLoader";
 import FeedbackToast from "../components/FeedbackToast";
 import PageSeo from "../components/PageSeo";
@@ -267,7 +268,7 @@ function Login() {
                 </div>
                 <button
                   type="submit"
-                  className="btn-primary-custom w-100"
+                  className="btn-primary-custom w-100 justify-content-center"
                   disabled={busy}
                 >
                   Continue with email
@@ -290,19 +291,15 @@ function Login() {
                   <label htmlFor="login-otp" className="form-label ass-field-label">
                     Login code
                   </label>
-                  <input
+                  <OtpInput
                     id="login-otp"
-                    type="text"
-                    inputMode="numeric"
-                    className="form-control ass-field-control text-center"
                     value={otp}
-                    onChange={(e) =>
-                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    maxLength={6}
-                    autoComplete="one-time-code"
+                    onChange={(next) => {
+                      setOtp(next);
+                      if (otpError) setOtpError("");
+                    }}
                     disabled={busy}
-                    placeholder="000000"
+                    hasError={Boolean(otpError)}
                   />
                   {otpError ? (
                     <div className="ass-field-error">{otpError}</div>
@@ -310,7 +307,7 @@ function Login() {
                 </div>
                 <button
                   type="submit"
-                  className="btn-primary-custom w-100"
+                  className="btn-primary-custom w-100 justify-content-center"
                   disabled={busy}
                 >
                   Log in

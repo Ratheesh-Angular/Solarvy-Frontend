@@ -356,6 +356,28 @@
   justify-items: start;
 }
 
+.admin-attachment-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.admin-attachment-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-ink);
+  word-break: break-word;
+}
+
+.admin-attachment-icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
 .admin-assessment-detail {
   position: relative;
   padding-bottom: 88px;
@@ -896,5 +918,166 @@
 
   .admin-lead-chevron {
     margin-top: 4px;
+  }
+}
+
+/* Lead detail pages (Request Intro / Expert Review) */
+
+.admin-lead-detail .admin-panel-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+}
+
+.admin-lead-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.admin-lead-installer-panel {
+  grid-column: 1 / -1;
+}
+
+.admin-lead-installer-card {
+  border: 1px solid #d7e3f2;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f4f8fd 0%, #ffffff 48%);
+  overflow: hidden;
+}
+
+.admin-lead-installer-head {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid #e4edf7;
+}
+
+.admin-lead-installer-label {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.admin-lead-installer-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--admin-navy);
+  line-height: 1.25;
+}
+
+.admin-lead-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.admin-lead-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid #c9daf0;
+  background: #eef5fc;
+  color: #1e3a5f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.admin-lead-installer-card .admin-lead-compact-list {
+  padding: 8px 18px 14px;
+}
+
+.admin-lead-compact-list .admin-info-row {
+  grid-template-columns: 140px 1fr;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--admin-hover);
+}
+
+.admin-lead-compact-list .admin-info-row:last-child {
+  border-bottom: none;
+}
+
+.admin-lead-compact-list dt {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+.admin-lead-compact-list dd {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.admin-lead-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-lead-summary-item {
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: #fafbfd;
+}
+
+.admin-lead-summary-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+}
+
+.admin-lead-summary-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.admin-lead-notes {
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: #fafbfd;
+}
+
+.admin-lead-notes p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-lead-empty-note {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px dashed #c9d6e8;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .admin-lead-detail-grid,
+  .admin-lead-summary-grid {
+    grid-template-columns: 1fr;
   }
 }

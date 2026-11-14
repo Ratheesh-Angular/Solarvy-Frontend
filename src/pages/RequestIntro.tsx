@@ -230,17 +230,39 @@ function RequestIntro() {
       await apiPost("/request-intro", {
         ...formData,
         projectSummary,
+        ...(assessmentId ? { assessmentId } : {}),
+        ...(installerFromState?.installerName?.trim()
+          ? {
+              installer: {
+                installerName: installerFromState.installerName,
+                cardNumber: installerFromState.cardNumber ?? null,
+                matchPct: installerFromState.matchPct ?? null,
+                matchTier: installerFromState.matchTier ?? null,
+                bestSuitedFor: installerFromState.bestSuitedFor ?? null,
+                coverage: installerFromState.coverage ?? null,
+                strengths: installerFromState.strengths ?? null,
+                pricing: installerFromState.pricing ?? null,
+                response: installerFromState.response ?? null,
+              },
+            }
+          : {}),
       });
       showSuccess(
         "Your introduction request was submitted successfully.",
       );
+      window.setTimeout(() => {
+        navigate(
+          assessmentId
+            ? `/matched-installers?assessment=${encodeURIComponent(assessmentId)}`
+            : "/matched-installers",
+        );
+      }, 1500);
     } catch (error) {
       setSubmitError(
         error instanceof ApiError
           ? error.message
           : "Unable to submit request. Please try again.",
       );
-    } finally {
       setIsSubmitting(false);
     }
   };
