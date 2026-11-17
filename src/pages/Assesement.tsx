@@ -46,6 +46,7 @@ import { NIGERIA_STATE_LABELS } from "../lib/nigeriaStates";
 import {
   detectUserLocation,
   matchNigeriaState,
+  type DetectedLocation,
 } from "../lib/geolocation";
 import { ensureTrackingSession } from "../lib/visitorTracking";
 import {
@@ -901,6 +902,10 @@ function Assesement() {
     country: "",
     state: "",
   });
+  const detectedNigeriaLocationRef = useRef<DetectedLocation | null>(null);
+  const [detectedNigeriaRegion, setDetectedNigeriaRegion] = useState<
+    string | null
+  >(null);
 
   const [fileName, setFileName] = useState("No file chosen");
   const [billFile, setBillFile] = useState<File | null>(null);
@@ -918,17 +923,12 @@ function Assesement() {
         /nigeria/i.test(location.country || "");
 
       if (isNigeria) {
-        const stateOptions = catalogs?.states?.length
-          ? catalogs.states
-          : NIGERIA_STATE_LABELS;
-        const matchedState = matchNigeriaState(location.state, stateOptions);
-
+        detectedNigeriaLocationRef.current = location;
+        setDetectedNigeriaRegion(location.state || null);
         setFormData((prev) => {
-          if (prev.country || prev.state) return prev;
-          return {
-            country: "Nigeria",
-            state: matchedState || prev.state,
-          };
+          if (prev.country && prev.country !== "Nigeria") return prev;
+          if (prev.country) return prev;
+          return { ...prev, country: "Nigeria" };
         });
       }
 
@@ -943,6 +943,30 @@ function Assesement() {
       cancelled = true;
     };
   }, []);
+
+  // Match state against the options the select actually uses (fallback, then catalog).
+  useEffect(() => {
+    const region =
+      detectedNigeriaRegion ??
+      detectedNigeriaLocationRef.current?.state ??
+      null;
+    if (!region) return;
+
+    const stateOptions = catalogs?.states?.length
+      ? catalogs.states
+      : NIGERIA_STATE_LABELS;
+    const matchedState = matchNigeriaState(region, stateOptions);
+    if (!matchedState) return;
+
+    setFormData((prev) => {
+      if (prev.country && prev.country !== "Nigeria") return prev;
+      if (prev.state && stateOptions.includes(prev.state)) return prev;
+      return {
+        country: prev.country || "Nigeria",
+        state: matchedState,
+      };
+    });
+  }, [detectedNigeriaRegion, catalogs?.states]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,

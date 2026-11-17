@@ -59,6 +59,14 @@ export async function getAssessment(id: string) {
   return response.data;
 }
 
+export async function recalculateAssessment(id: string) {
+  const response = await apiPost<AssessmentResponse>(
+    `/assessments/${id}/recalculate`,
+    {},
+  );
+  return response.data;
+}
+
 export async function getAssessmentRecommendation(id: string) {
   const response = await apiPost<{
     success: boolean;

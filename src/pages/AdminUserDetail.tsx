@@ -36,15 +36,19 @@ const PROJECT_TIMELINE_LABELS: Record<string, string> = {
   exploring: "Just exploring",
 };
 
-function formatLocation(visitor: VisitorSummary) {
-  return [visitor.lastCity, visitor.lastRegion, visitor.lastCountry]
-    .filter(Boolean)
-    .join(", ");
-}
-
 function valueOrDash(value: unknown) {
   if (value == null || String(value).trim() === "") return "—";
   return String(value);
+}
+
+function InfoField({ label, value }: { label: string; value: unknown }) {
+  const text = valueOrDash(value);
+  return (
+    <div className="admin-user-info-field">
+      <dt>{label}</dt>
+      <dd className={text === "—" ? "admin-muted" : undefined}>{text}</dd>
+    </div>
+  );
 }
 
 function formatProjectTimeline(value: unknown) {
@@ -200,18 +204,26 @@ export default function AdminUserDetail() {
             <code className="admin-code">{visitor.id}</code>
             <span className="admin-meta-sep">·</span>
             Last seen {new Date(visitor.lastSeenAt).toLocaleString()}
-            {formatLocation(visitor) ? (
-              <>
-                <span className="admin-meta-sep">·</span>
-                {formatLocation(visitor)}
-              </>
-            ) : null}
           </p>
         </div>
         <Link to="/admin/users" className="admin-btn admin-btn-secondary">
           Back
         </Link>
       </div>
+
+      <section className="admin-panel admin-user-info-card">
+        <div className="admin-panel-header-row">
+          <h2 className="admin-panel-title">User info</h2>
+        </div>
+        <dl className="admin-user-info-grid">
+          <InfoField label="Full name" value={visitor.fullName} />
+          <InfoField label="Email address" value={visitor.email} />
+          <InfoField label="Phone number" value={visitor.phoneNumber} />
+          <InfoField label="Country" value={visitor.lastCountry} />
+          <InfoField label="State" value={visitor.lastRegion} />
+          <InfoField label="City" value={visitor.lastCity} />
+        </dl>
+      </section>
 
       <div className="admin-tabs admin-user-tabs">
         {(

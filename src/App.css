@@ -250,6 +250,13 @@ p.bannr-text-s.text-light {
   font-weight: 400;
 }
 
+.solar-nav-links button.nav-link {
+  background: transparent;
+  border: none;
+  text-align: left;
+  width: 100%;
+}
+
 .solar-nav-links .nav-item.solar-profile-nav-item {
   margin-left: 4px;
 }

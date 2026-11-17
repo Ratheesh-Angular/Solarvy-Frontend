@@ -162,6 +162,33 @@ export async function adminDeleteStaffUser(id: number) {
   return data.data!;
 }
 
+export type DataClearCategory =
+  | "users"
+  | "guests"
+  | "assessments"
+  | "financing"
+  | "leads";
+
+export type DataManagementCounts = Record<DataClearCategory, number>;
+
+export async function adminGetDataManagementCounts() {
+  const data = await adminFetch<ApiEnvelope<DataManagementCounts>>(
+    "/admin/data-management/counts",
+  );
+  return data.data!;
+}
+
+export async function adminClearDataCategory(category: DataClearCategory) {
+  const data = await adminFetch<
+    ApiEnvelope<{ category: DataClearCategory; deleted: Record<string, number> }>
+  >("/admin/data-management/clear", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ category }),
+  });
+  return data.data!;
+}
+
 export async function adminGetTemplateInfo() {
   const data =
     await adminFetch<ApiEnvelope<TemplateInfo>>("/admin/excel/template");
@@ -484,6 +511,7 @@ export type VisitorSummary = {
   displayName: string | null;
   fullName?: string | null;
   email?: string | null;
+  phoneNumber?: string | null;
   firstSeenAt: string;
   lastSeenAt: string;
   lastIp: string;

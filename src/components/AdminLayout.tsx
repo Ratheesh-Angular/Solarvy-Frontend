@@ -114,6 +114,14 @@ export default function AdminLayout() {
                 >
                   Users &amp; Roles
                 </NavLink>
+                {/* <NavLink
+                  to="/admin/data-management"
+                  className={({ isActive }) =>
+                    `admin-nav-link${isActive ? " is-active" : ""}`
+                  }
+                >
+                  Data Management
+                </NavLink> */}
               </>
             )}
           </nav>

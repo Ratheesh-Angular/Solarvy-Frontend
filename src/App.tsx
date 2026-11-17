@@ -65,6 +65,7 @@ import AdminRoute from "./components/AdminRoute.tsx";
 import AdminLayout from "./components/AdminLayout.tsx";
 import AdminPermissionRoute from "./components/AdminPermissionRoute.tsx";
 import AdminUsersRoles from "./pages/AdminUsersRoles.tsx";
+import AdminDataManagement from "./pages/AdminDataManagement.tsx";
 import VisitorTracker from "./components/VisitorTracker.tsx";
 import ChatbotWidget from "./components/ChatbotWidget.tsx";
 import { SHOW_CHATBOT } from "./lib/adminNav.ts";
@@ -158,6 +159,10 @@ function App() {
                 <Route path="blogs/:id" element={<AdminBlogEditor />} />
                 <Route path="blog-analytics" element={<AdminBlogAnalytics />} />
                 <Route path="users-roles" element={<AdminUsersRoles />} />
+                <Route
+                  path="data-management"
+                  element={<AdminDataManagement />}
+                />
               </Route>
             </Route>
           </Route>

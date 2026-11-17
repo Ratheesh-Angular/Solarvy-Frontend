@@ -68,12 +68,21 @@ function Login() {
   const [busy, setBusy] = useState(false);
   const [loaderMessage, setLoaderMessage] = useState("Please wait...");
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     const clientId = getGoogleClientId();
@@ -102,12 +111,35 @@ function Login() {
     try {
       await requestLoginOtp({ email: email.trim().toLowerCase() });
       setStep("otp");
+      setResendCooldown(60);
       showSuccess("We sent a login code to your email.", "Check your inbox");
     } catch (error) {
       showError(
         error instanceof ApiError
           ? error.message
           : "Unable to send login code. Please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (busy || resendCooldown > 0) return;
+
+    setBusy(true);
+    setLoaderMessage("Sending login code...");
+    try {
+      await requestLoginOtp({ email: email.trim().toLowerCase() });
+      setOtp("");
+      setOtpError("");
+      setResendCooldown(60);
+      showSuccess("We sent a new login code to your email.", "Check your inbox");
+    } catch (error) {
+      showError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to resend login code. Please try again.",
       );
     } finally {
       setBusy(false);
@@ -282,25 +314,27 @@ function Login() {
             </>
           ) : (
             <>
-              <h2 className="auth-title">Enter login code</h2>
-              <p className="auth-subtitle">
-                Enter the 6-digit code we sent to <strong>{email}</strong>.
+              <h2 className="auth-title mb-3">Enter login code</h2>
+              <p className="auth-subtitle auth-subtitle--otp">
+                Enter the 6-digit code we sent to <br /> <strong>{email}</strong>.
               </p>
               <form onSubmit={handleVerifyOtp} noValidate>
-                <div className="mb-3">
-                  <label htmlFor="login-otp" className="form-label ass-field-label">
-                    Login code
-                  </label>
-                  <OtpInput
-                    id="login-otp"
-                    value={otp}
-                    onChange={(next) => {
-                      setOtp(next);
-                      if (otpError) setOtpError("");
-                    }}
-                    disabled={busy}
-                    hasError={Boolean(otpError)}
-                  />
+                <div className="mb-4">
+                  <div className="auth-otp-field">
+                    <label htmlFor="login-otp" className="form-label ass-field-label">
+                      Login code
+                    </label>
+                    <OtpInput
+                      id="login-otp"
+                      value={otp}
+                      onChange={(next) => {
+                        setOtp(next);
+                        if (otpError) setOtpError("");
+                      }}
+                      disabled={busy}
+                      hasError={Boolean(otpError)}
+                    />
+                  </div>
                   {otpError ? (
                     <div className="ass-field-error">{otpError}</div>
                   ) : null}
@@ -310,19 +344,17 @@ function Login() {
                   className="btn-primary-custom w-100 justify-content-center"
                   disabled={busy}
                 >
-                  Log in
+                  Verify OTP
                 </button>
                 <button
                   type="button"
-                  className="btn btn-link w-100 mt-2"
-                  onClick={() => {
-                    setStep("form");
-                    setOtp("");
-                    setOtpError("");
-                  }}
-                  disabled={busy}
+                  className="auth-resend-otp"
+                  onClick={handleResendOtp}
+                  disabled={busy || resendCooldown > 0}
                 >
-                  Back
+                  {resendCooldown > 0
+                    ? `Resend OTP in ${resendCooldown}s`
+                    : "Resend OTP"}
                 </button>
               </form>
             </>

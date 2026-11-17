@@ -47,6 +47,9 @@ export default function MarketingNav({
 
   const expandClass =
     expand === "md" ? "navbar-expand-md" : "navbar-expand-lg";
+  const mobileOnlyClass = expand === "md" ? "d-md-none" : "d-lg-none";
+  const desktopOnlyClass =
+    expand === "md" ? "d-none d-md-flex" : "d-none d-lg-flex";
 
   return (
     <div className={`solar-top-navbar ${className}`.trim()}>
@@ -103,6 +106,29 @@ export default function MarketingNav({
                 </li>
               </>
             )}
+            {isAuthenticated ? (
+              <>
+                <li className={`nav-item ${mobileOnlyClass}`}>
+                  <Link className="nav-link" to="/profile" onClick={close}>
+                    Profile
+                  </Link>
+                </li>
+                <li className={`nav-item ${mobileOnlyClass}`}>
+                  <Link className="nav-link" to="/projects" onClick={close}>
+                    Projects
+                  </Link>
+                </li>
+                <li className={`nav-item ${mobileOnlyClass}`}>
+                  <button
+                    type="button"
+                    className="nav-link"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </li>
+              </>
+            ) : null}
             <li className="nav-item">
               <button
                 type="button"
@@ -117,7 +143,9 @@ export default function MarketingNav({
               </button>
             </li>
             {isAuthenticated ? (
-              <li className="nav-item solar-profile-nav-item">
+              <li
+                className={`nav-item solar-profile-nav-item ${desktopOnlyClass}`}
+              >
                 <ProfileMenu
                   user={user}
                   onLogout={handleLogout}

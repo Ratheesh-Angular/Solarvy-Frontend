@@ -128,16 +128,18 @@ export const ADMIN_PAGE_KEYS: AdminPageKey[] = ADMIN_NAV_ITEMS.map(
   (item) => item.key,
 );
 
+export type SuperAdminOnlyPageKey = "users-roles" | "data-management";
+
 export function adminHasPageAccess(
   user: {
     isSuperAdmin?: boolean;
     permissions?: string[];
   } | null | undefined,
-  pageKey: AdminPageKey | "users-roles",
+  pageKey: AdminPageKey | SuperAdminOnlyPageKey,
 ): boolean {
   if (!user) return false;
   if (user.isSuperAdmin) return true;
-  if (pageKey === "users-roles") return false;
+  if (pageKey === "users-roles" || pageKey === "data-management") return false;
   return (user.permissions ?? []).includes(pageKey);
 }
 
@@ -158,7 +160,7 @@ export function getFirstAllowedAdminPath(user: {
 /** Resolve which page key a pathname belongs to (longest prefix match). */
 export function getAdminPageKeyForPath(
   pathname: string,
-): AdminPageKey | "users-roles" | null {
+): AdminPageKey | SuperAdminOnlyPageKey | null {
   const normalized = pathname.replace(/\/+$/, "") || "/";
 
   if (
@@ -166,6 +168,13 @@ export function getAdminPageKeyForPath(
     normalized.startsWith("/admin/users-roles/")
   ) {
     return "users-roles";
+  }
+
+  if (
+    normalized === "/admin/data-management" ||
+    normalized.startsWith("/admin/data-management/")
+  ) {
+    return "data-management";
   }
 
   // Prefer more specific prefixes first (blogs before nothing else conflicts).

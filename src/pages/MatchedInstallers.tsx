@@ -15,7 +15,7 @@ import FeedbackToast from "../components/FeedbackToast";
 import QuoteUploadModal from "../components/QuoteUploadModal";
 import SolarvyLoader from "../components/SolarvyLoader";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
-import { getAssessment } from "../lib/assessmentApi";
+import { getAssessment, recalculateAssessment } from "../lib/assessmentApi";
 import type { AssessmentResults } from "../types/assessment";
 import { trackCtaClick, trackEvent } from "../lib/visitorTracking";
 
@@ -286,7 +286,12 @@ function MatchedInstallers() {
 
     (async () => {
       try {
-        const data = await getAssessment(assessmentId);
+        let data;
+        try {
+          data = await recalculateAssessment(assessmentId);
+        } catch {
+          data = await getAssessment(assessmentId);
+        }
         if (cancelled) return;
         const matches = data.results?.installerMatches ?? [];
         setInstallers(matches);

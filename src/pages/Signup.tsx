@@ -83,6 +83,7 @@ function Signup() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
   const [loaderMessage, setLoaderMessage] = useState("Please wait...");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const googleReady = useRef(false);
 
   useEffect(() => {
@@ -90,6 +91,14 @@ function Signup() {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     const clientId = getGoogleClientId();
@@ -145,12 +154,39 @@ function Signup() {
         email: email.trim().toLowerCase(),
       });
       setStep("otp");
+      setResendCooldown(60);
       showSuccess("We sent a verification code to your email.", "Check your inbox");
     } catch (error) {
       showError(
         error instanceof ApiError
           ? error.message
           : "Unable to send verification code. Please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (busy || resendCooldown > 0) return;
+
+    setBusy(true);
+    setLoaderMessage("Sending verification code...");
+    try {
+      await requestSignupOtp({
+        fullName: fullName.trim(),
+        phoneE164: toNigeriaE164(phoneLocal),
+        email: email.trim().toLowerCase(),
+      });
+      setOtp("");
+      setFieldErrors((prev) => ({ ...prev, otp: undefined }));
+      setResendCooldown(60);
+      showSuccess("We sent a new verification code to your email.", "Check your inbox");
+    } catch (error) {
+      showError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to resend verification code. Please try again.",
       );
     } finally {
       setBusy(false);
@@ -368,27 +404,29 @@ function Signup() {
             </>
           ) : (
             <>
-              <h2 className="auth-title">Verify your email</h2>
-              <p className="auth-subtitle">
-                Enter the 6-digit code we sent to <strong>{email}</strong>.
+              <h2 className="auth-title mb-3">Verify your email</h2>
+              <p className="auth-subtitle auth-subtitle--otp">
+                Enter the 6-digit code we sent to <br /> <strong>{email}</strong>.
               </p>
               <form onSubmit={handleVerifyOtp} noValidate>
-                <div className="mb-3">
-                  <label htmlFor="signup-otp" className="form-label ass-field-label">
-                    Verification code
-                  </label>
-                  <OtpInput
-                    id="signup-otp"
-                    value={otp}
-                    onChange={(next) => {
-                      setOtp(next);
-                      if (fieldErrors.otp) {
-                        setFieldErrors((prev) => ({ ...prev, otp: undefined }));
-                      }
-                    }}
-                    disabled={busy}
-                    hasError={Boolean(fieldErrors.otp)}
-                  />
+                <div className="mb-4">
+                  <div className="auth-otp-field">
+                    <label htmlFor="signup-otp" className="form-label ass-field-label">
+                      Verification code
+                    </label>
+                    <OtpInput
+                      id="signup-otp"
+                      value={otp}
+                      onChange={(next) => {
+                        setOtp(next);
+                        if (fieldErrors.otp) {
+                          setFieldErrors((prev) => ({ ...prev, otp: undefined }));
+                        }
+                      }}
+                      disabled={busy}
+                      hasError={Boolean(fieldErrors.otp)}
+                    />
+                  </div>
                   {fieldErrors.otp ? (
                     <div className="ass-field-error">{fieldErrors.otp}</div>
                   ) : null}
@@ -398,19 +436,17 @@ function Signup() {
                   className="btn-primary-custom w-100 justify-content-center"
                   disabled={busy}
                 >
-                  Create account
+                  Verify OTP
                 </button>
                 <button
                   type="button"
-                  className="btn btn-link w-100 mt-2"
-                  onClick={() => {
-                    setStep("form");
-                    setOtp("");
-                    setFieldErrors({});
-                  }}
-                  disabled={busy}
+                  className="auth-resend-otp"
+                  onClick={handleResendOtp}
+                  disabled={busy || resendCooldown > 0}
                 >
-                  Back
+                  {resendCooldown > 0
+                    ? `Resend OTP in ${resendCooldown}s`
+                    : "Resend OTP"}
                 </button>
               </form>
             </>

@@ -35,9 +35,8 @@ export function matchNigeriaState(
   if (!needle) return null;
 
   if (FCT_ALIASES.has(needle)) {
-    const fct = stateOptions.find(
-      (option) =>
-        normalizeStateName(option) === "federalcapitalterritory",
+    const fct = stateOptions.find((option) =>
+      FCT_ALIASES.has(normalizeStateName(option)),
     );
     if (fct) return fct;
   }

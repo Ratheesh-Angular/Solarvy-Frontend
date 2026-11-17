@@ -1,0 +1,52 @@
+.admin-data-mgmt-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 800px) {
+  .admin-data-mgmt-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.admin-data-mgmt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-data-mgmt-card .admin-panel-actions {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.admin-data-mgmt-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--admin-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-data-mgmt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.admin-data-mgmt-dialog {
+  width: min(440px, 100%);
+  height: auto;
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+}
+
+.admin-data-mgmt-dialog .admin-panel-actions {
+  margin-top: 8px;
+  justify-content: flex-end;
+}
