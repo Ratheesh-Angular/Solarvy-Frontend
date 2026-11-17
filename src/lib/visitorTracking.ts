@@ -67,6 +67,53 @@ function setSessionId(id: string) {
 
 let sessionPromise: Promise<{ visitorId: string; sessionId: string }> | null =
   null;
+let locationPostedKey: string | null = null;
+
+function locationPayloadKey(extra?: {
+  city?: string;
+  region?: string;
+  country?: string;
+}): string | null {
+  const city = (extra?.city || "").trim();
+  const region = (extra?.region || "").trim();
+  const country = (extra?.country || "").trim();
+  if (!city && !region && !country) return null;
+  return `${city}|${region}|${country}`;
+}
+
+async function postTrackingSession(extra?: {
+  city?: string;
+  region?: string;
+  country?: string;
+}): Promise<{ visitorId: string; sessionId: string }> {
+  const visitorId = getVisitorId();
+  const existingSessionId = getSessionId();
+  const data = await apiPost<{
+    success: boolean;
+    data?: { visitorId: string; sessionId: string };
+  }>("/tracking/session", {
+    visitorId,
+    sessionId: existingSessionId,
+    landingPath: window.location.pathname + window.location.search,
+    referrer: document.referrer || "",
+    city: extra?.city || "",
+    region: extra?.region || "",
+    country: extra?.country || "",
+  });
+
+  const result = {
+    visitorId: data.data?.visitorId || visitorId,
+    sessionId: data.data?.sessionId || existingSessionId || createUuid(),
+  };
+
+  try {
+    localStorage.setItem(VISITOR_KEY, result.visitorId);
+  } catch {
+    // ignore
+  }
+  setSessionId(result.sessionId);
+  return result;
+}
 
 export async function ensureTrackingSession(extra?: {
   city?: string;
@@ -74,41 +121,33 @@ export async function ensureTrackingSession(extra?: {
   country?: string;
 }): Promise<{ visitorId: string; sessionId: string }> {
   if (!sessionPromise) {
-    sessionPromise = (async () => {
-      const visitorId = getVisitorId();
-      const existingSessionId = getSessionId();
-      const data = await apiPost<{
-        success: boolean;
-        data?: { visitorId: string; sessionId: string };
-      }>("/tracking/session", {
-        visitorId,
-        sessionId: existingSessionId,
-        landingPath: window.location.pathname + window.location.search,
-        referrer: document.referrer || "",
-        city: extra?.city || "",
-        region: extra?.region || "",
-        country: extra?.country || "",
+    sessionPromise = postTrackingSession(extra)
+      .then((result) => {
+        const key = locationPayloadKey(extra);
+        if (key) locationPostedKey = key;
+        return result;
+      })
+      .catch((error) => {
+        sessionPromise = null;
+        throw error;
       });
-
-      const result = {
-        visitorId: data.data?.visitorId || visitorId,
-        sessionId: data.data?.sessionId || existingSessionId || createUuid(),
-      };
-
-      try {
-        localStorage.setItem(VISITOR_KEY, result.visitorId);
-      } catch {
-        // ignore
-      }
-      setSessionId(result.sessionId);
-      return result;
-    })().catch((error) => {
-      sessionPromise = null;
-      throw error;
-    });
+    return sessionPromise;
   }
 
-  return sessionPromise;
+  const result = await sessionPromise;
+  const key = locationPayloadKey(extra);
+  if (key && key !== locationPostedKey) {
+    try {
+      const updated = await postTrackingSession(extra);
+      locationPostedKey = key;
+      return updated;
+    } catch {
+      // Location enrichment must never break session boot / product UX.
+      return result;
+    }
+  }
+
+  return result;
 }
 
 type TrackOptions = {
