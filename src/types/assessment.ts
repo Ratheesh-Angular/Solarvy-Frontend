@@ -25,7 +25,10 @@ export type AssessmentFormData = {
   /** Dependent template label (User_Inputs!B11) */
   template: string;
   country: string;
+  /** Legacy JSON key; Nigeria state label (Excel User_Inputs!B8). Prefer `state` when both exist. */
   city: string;
+  /** Nigeria state / FCT label (mirrors UI); written alongside `city` for new saves. */
+  state: string;
   /** Excel label, e.g. "Grid + Generator" (User_Inputs!B13) */
   powerSetup: string;
   /** Grid unavailability band label (User_Inputs!B61). */
@@ -61,6 +64,7 @@ export const EMPTY_ASSESSMENT_FORM: AssessmentFormData = {
   template: "",
   country: "",
   city: "",
+  state: "",
   powerSetup: "",
   gridUnavailableBand: "",
   monthlyGeneratorFuelSpend: "",

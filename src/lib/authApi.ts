@@ -12,6 +12,21 @@ function buildApiUrl(path: string) {
   return `/api${normalizedPath}`;
 }
 
+/** Resolve avatar/public asset URLs for img src (relative → VITE_API_URL when set). */
+export function resolvePublicAssetUrl(url?: string | null): string {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  if (
+    /^https?:\/\//i.test(raw) ||
+    raw.startsWith("blob:") ||
+    raw.startsWith("data:")
+  ) {
+    return raw;
+  }
+  const path = raw.startsWith("/") ? raw : `/${raw}`;
+  return API_BASE ? `${API_BASE}${path}` : path;
+}
+
 function trackingHeaders(): Record<string, string> {
   try {
     const visitorId = localStorage.getItem("solarvy_visitor_id");
@@ -147,6 +162,57 @@ export async function fetchAuthMe(): Promise<{
 }> {
   const response = await fetch(buildApiUrl("/auth/me"), {
     method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...trackingHeaders(),
+      ...authHeaders(),
+    },
+  });
+  return parseJson(response);
+}
+
+type ProfileResponse = {
+  success: boolean;
+  message?: string;
+  data?: AuthUser;
+};
+
+export async function updateAuthProfile(body: {
+  fullName: string;
+  phoneE164: string;
+  country: string;
+  region: string;
+  city: string;
+}): Promise<ProfileResponse> {
+  const response = await fetch(buildApiUrl("/auth/me"), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...trackingHeaders(),
+      ...authHeaders(),
+    },
+    body: JSON.stringify(body),
+  });
+  return parseJson(response);
+}
+
+export async function uploadAuthAvatar(file: File): Promise<ProfileResponse> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  const response = await fetch(buildApiUrl("/auth/me/avatar"), {
+    method: "POST",
+    headers: {
+      ...trackingHeaders(),
+      ...authHeaders(),
+    },
+    body: formData,
+  });
+  return parseJson(response);
+}
+
+export async function deleteAuthAvatar(): Promise<ProfileResponse> {
+  const response = await fetch(buildApiUrl("/auth/me/avatar"), {
+    method: "DELETE",
     headers: {
       "Content-Type": "application/json",
       ...trackingHeaders(),

@@ -5,8 +5,12 @@ import {
   adminListExpertReviews,
   adminListQuoteUploads,
   adminListRequestIntros,
+  adminUpdateQuoteUpload,
+  normalizeProjectActionStatus,
+  PROJECT_ACTION_STATUS_LABELS,
   type AdminExpertReview,
   type AdminRequestIntro,
+  type ProjectActionStatus,
 } from "../lib/adminApi";
 import { enrichLeadsWithInstallers } from "../lib/leadInstallerResolve";
 
@@ -32,7 +36,32 @@ export default function AdminLeads() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusSaving, setStatusSaving] = useState<number | null>(null);
   const limit = 20;
+
+  const handleQuoteStatus = async (
+    id: number,
+    status: ProjectActionStatus,
+  ) => {
+    setStatusSaving(id);
+    setError("");
+    try {
+      const updated = await adminUpdateQuoteUpload(id, { status });
+      const nextStatus =
+        (updated as Record<string, unknown>)?.status != null
+          ? String((updated as Record<string, unknown>).status)
+          : status;
+      setItems((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: nextStatus } : r)),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update status",
+      );
+    } finally {
+      setStatusSaving(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -165,6 +194,7 @@ export default function AdminLeads() {
                   <th>Contact</th>
                   <th>Details</th>
                   <th>Visitor</th>
+                  <th>Status</th>
                   <th></th>
                 </tr>
               </thead>
@@ -204,6 +234,30 @@ export default function AdminLeads() {
                       ) : (
                         "—"
                       )}
+                    </td>
+                    <td>
+                      <select
+                        className="admin-input admin-input-sm"
+                        value={normalizeProjectActionStatus(row.status)}
+                        disabled={statusSaving === row.id}
+                        onChange={(e) =>
+                          void handleQuoteStatus(
+                            row.id,
+                            e.target.value as ProjectActionStatus,
+                          )
+                        }
+                      >
+                        {(
+                          Object.entries(PROJECT_ACTION_STATUS_LABELS) as [
+                            ProjectActionStatus,
+                            string,
+                          ][]
+                        ).map(([val, label]) => (
+                          <option key={val} value={val}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td>
                       {row.storage_path ? (

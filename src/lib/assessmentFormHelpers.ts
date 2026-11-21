@@ -56,6 +56,16 @@ function normalizeCustomRows(rows: LoadTableRow[]): LoadTableRow[] {
   );
 }
 
+/** Prefer explicit `state`; fall back to legacy `city` (Excel B8 / Nigeria state). */
+export function resolveAssessmentStateFromStored(data: {
+  state?: string;
+  city?: string;
+}): string {
+  const state = (data.state || "").trim();
+  const city = (data.city || "").trim();
+  return state || city;
+}
+
 type AssessmentStateSetters = {
   setSelectedProperty: (label: string) => void;
   setSelectedTemplate: (label: string) => void;
@@ -101,11 +111,13 @@ export function buildAssessmentFormData(input: {
   gridUnavailableBand: string;
   monthlyGeneratorFuelSpend: string;
 }): AssessmentFormData {
+  const nigeriaState = input.formData.state;
   return {
     propertyType: input.selectedProperty,
     template: input.selectedTemplate,
     country: input.formData.country,
-    city: input.formData.state,
+    city: nigeriaState,
+    state: nigeriaState,
     powerSetup: input.selectedPower,
     gridUnavailableBand: input.gridUnavailableBand,
     monthlyGeneratorFuelSpend: input.monthlyGeneratorFuelSpend,
@@ -141,7 +153,7 @@ export function applyAssessmentFormData(
 
   setters.setFormData({
     country: merged.country || "",
-    state: merged.city || "",
+    state: resolveAssessmentStateFromStored(merged),
   });
 
   const spend =

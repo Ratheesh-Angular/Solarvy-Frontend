@@ -17,6 +17,10 @@ export type AuthUser = {
   email: string;
   phoneE164: string;
   authProvider: string;
+  country?: string;
+  region?: string;
+  city?: string;
+  avatarUrl?: string;
 };
 
 type AuthContextValue = {
@@ -25,6 +29,7 @@ type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   setSession: (token: string, user: AuthUser) => void;
+  updateUser: (user: AuthUser) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
 };
@@ -61,6 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ignore
     }
     setToken(nextToken);
+    setUser(nextUser);
+  }, []);
+
+  const updateUser = useCallback((nextUser: AuthUser) => {
     setUser(nextUser);
   }, []);
 
@@ -103,10 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isAuthenticated: Boolean(token && user),
       setSession,
+      updateUser,
       logout,
       refreshUser,
     }),
-    [user, token, isLoading, setSession, logout, refreshUser],
+    [user, token, isLoading, setSession, updateUser, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

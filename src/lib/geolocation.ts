@@ -1,5 +1,15 @@
+import {
+  labelFromNigeriaIsoSubdivision,
+  matchNigeriaState,
+} from "./nigeriaGeoMatching";
+import { fetchIpGeo } from "./visitorTracking";
+
+export { matchNigeriaState };
+export { labelFromNigeriaIsoSubdivision };
+
 const GEO_CACHE_KEY = "solarvy_geo_location";
 const GEO_DENIED_KEY = "solarvy_geo_denied";
+const NOMINATIM_USER_AGENT = "SolarVy/1.0 (energy assessment; contact@solarvy.ng)";
 
 export type DetectedLocation = {
   city: string;
@@ -9,49 +19,6 @@ export type DetectedLocation = {
   latitude: number;
   longitude: number;
 };
-
-function normalizeStateName(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/\bstate\b/g, "")
-    .replace(/[^a-z]/g, "");
-}
-
-const FCT_ALIASES = new Set([
-  "fct",
-  "abuja",
-  "fctabuja",
-  "federalcapitalterritory",
-  "federalcapitalterritoryfct",
-  "federalcapitalterritoryabuja",
-]);
-
-/** Match reverse-geocoded region against Nigeria state labels. */
-export function matchNigeriaState(
-  region: string,
-  stateOptions: string[],
-): string | null {
-  const needle = normalizeStateName(region);
-  if (!needle) return null;
-
-  if (FCT_ALIASES.has(needle)) {
-    const fct = stateOptions.find((option) =>
-      FCT_ALIASES.has(normalizeStateName(option)),
-    );
-    if (fct) return fct;
-  }
-
-  for (const option of stateOptions) {
-    if (normalizeStateName(option) === needle) return option;
-  }
-
-  for (const option of stateOptions) {
-    const hay = normalizeStateName(option);
-    if (hay.includes(needle) || needle.includes(hay)) return option;
-  }
-
-  return null;
-}
 
 function readCache(): DetectedLocation | null {
   try {
@@ -131,6 +98,7 @@ async function reverseGeocode(
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
+      "User-Agent": NOMINATIM_USER_AGENT,
     },
   });
 
@@ -149,6 +117,7 @@ async function reverseGeocode(
       region?: string;
       country?: string;
       country_code?: string;
+      "ISO3166-2-lvl4"?: string;
     };
   };
 
@@ -160,7 +129,12 @@ async function reverseGeocode(
     address.municipality ||
     address.county ||
     "";
-  const state = address.state || address.region || "";
+  let state = address.state || address.region || "";
+  if (!state && address["ISO3166-2-lvl4"]) {
+    state =
+      labelFromNigeriaIsoSubdivision(address["ISO3166-2-lvl4"]) ||
+      state;
+  }
   const country = address.country || "";
   const countryCode = (address.country_code || "").toUpperCase();
 
@@ -235,6 +209,46 @@ export async function detectUserLocation(): Promise<DetectedLocation | null> {
   }
 
   return detectPromise;
+}
+
+function ipGeoToDetected(
+  ip: NonNullable<Awaited<ReturnType<typeof fetchIpGeo>>>,
+): DetectedLocation {
+  const country = ip.country || "";
+  const countryCode =
+    ip.countryCode ||
+    (/^nigeria$/i.test(country) ? "NG" : "");
+  return {
+    city: ip.city || "",
+    state: ip.region || "",
+    country,
+    countryCode,
+    latitude: ip.latitude ?? 0,
+    longitude: ip.longitude ?? 0,
+  };
+}
+
+let resolvePromise: Promise<DetectedLocation | null> | null = null;
+
+/** Browser geolocation first; IP lookup via backend when unavailable or denied. */
+export async function resolveUserLocation(): Promise<DetectedLocation | null> {
+  if (!resolvePromise) {
+    resolvePromise = (async () => {
+      const browser = await detectUserLocation();
+      if (browser) return browser;
+
+      const ip = await fetchIpGeo();
+      if (!ip) return null;
+
+      const location = ipGeoToDetected(ip);
+      console.log("[geolocation] IP-resolved location", location);
+      return location;
+    })().finally(() => {
+      resolvePromise = null;
+    });
+  }
+
+  return resolvePromise;
 }
 
 export function formatCityState(location: DetectedLocation): string {

@@ -621,6 +621,9 @@ export type AdminRequestIntro = {
   email: string;
   projectTimeline: string;
   additionalNotes: string;
+  status: ProjectActionStatus;
+  adminNotes?: string;
+  statusUpdatedAt?: string;
   projectSummary: Array<{ label?: string; value?: string }> | null;
   visitorId: string | null;
   sessionId: string | null;
@@ -641,6 +644,9 @@ export type AdminExpertReview = {
   projectLocation: string;
   reviewType: string;
   additionalNotes: string;
+  status: ProjectActionStatus;
+  adminNotes?: string;
+  statusUpdatedAt?: string;
   attachmentFileName: string;
   storedFileName: string;
   mimeType: string;
@@ -692,6 +698,31 @@ function pickLeadNumber(
   return null;
 }
 
+export type ProjectActionStatus =
+  | "submitted"
+  | "in_progress"
+  | "awaiting_customer"
+  | "completed";
+
+export const PROJECT_ACTION_STATUS_LABELS: Record<ProjectActionStatus, string> = {
+  submitted: "Submitted",
+  in_progress: "In progress",
+  awaiting_customer: "Waiting on customer",
+  completed: "Completed",
+};
+
+export function normalizeProjectActionStatus(
+  status: string | null | undefined,
+): ProjectActionStatus {
+  const raw = String(status || "").trim();
+  if (raw in PROJECT_ACTION_STATUS_LABELS) return raw as ProjectActionStatus;
+  return "submitted";
+}
+
+export function projectActionStatusLabel(status: string | null | undefined) {
+  return PROJECT_ACTION_STATUS_LABELS[normalizeProjectActionStatus(status)];
+}
+
 function normalizeInstallerSnapshot(
   raw: unknown,
 ): AdminInstallerSnapshot | null {
@@ -735,6 +766,9 @@ function normalizeRequestIntro(row: unknown): AdminRequestIntro {
     email: pickLeadStr(r, "email"),
     projectTimeline: pickLeadStr(r, "projectTimeline", "project_timeline"),
     additionalNotes: pickLeadStr(r, "additionalNotes", "additional_notes"),
+    status: normalizeProjectActionStatus(pickLeadStr(r, "status")),
+    adminNotes: pickLeadStr(r, "adminNotes", "admin_notes") || undefined,
+    statusUpdatedAt: pickLeadStr(r, "statusUpdatedAt", "status_updated_at") || undefined,
     projectSummary: (Array.isArray(r.projectSummary)
       ? r.projectSummary
       : Array.isArray(r.project_summary)
@@ -782,6 +816,9 @@ function normalizeExpertReview(row: unknown): AdminExpertReview {
     projectLocation: pickLeadStr(r, "projectLocation", "project_location"),
     reviewType: pickLeadStr(r, "reviewType", "review_type"),
     additionalNotes: pickLeadStr(r, "additionalNotes", "additional_notes"),
+    status: normalizeProjectActionStatus(pickLeadStr(r, "status")),
+    adminNotes: pickLeadStr(r, "adminNotes", "admin_notes") || undefined,
+    statusUpdatedAt: pickLeadStr(r, "statusUpdatedAt", "status_updated_at") || undefined,
     attachmentFileName: pickLeadStr(
       r,
       "attachmentFileName",
@@ -1057,6 +1094,54 @@ export async function adminUpdateFinancingEnquiry(
 ) {
   const data = await adminFetch<ApiEnvelope<AdminFinancingEnquiry>>(
     `/admin/financing-enquiries/${encodeURIComponent(String(id))}${toQuery(params)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return data.data!;
+}
+
+export async function adminUpdateRequestIntro(
+  id: string | number,
+  payload: { status?: ProjectActionStatus; adminNotes?: string },
+  params: { visitorId?: string } = {},
+) {
+  const data = await adminFetch<ApiEnvelope<Record<string, unknown>>>(
+    `/admin/request-intros/${encodeURIComponent(String(id))}${toQuery(params)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return normalizeRequestIntro(data.data!);
+}
+
+export async function adminUpdateExpertReview(
+  id: string | number,
+  payload: { status?: ProjectActionStatus; adminNotes?: string },
+  params: { visitorId?: string } = {},
+) {
+  const data = await adminFetch<ApiEnvelope<Record<string, unknown>>>(
+    `/admin/expert-reviews/${encodeURIComponent(String(id))}${toQuery(params)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return normalizeExpertReview(data.data!);
+}
+
+export async function adminUpdateQuoteUpload(
+  id: string | number,
+  payload: { status?: ProjectActionStatus; adminNotes?: string },
+  params: { visitorId?: string } = {},
+) {
+  const data = await adminFetch<ApiEnvelope<Record<string, unknown>>>(
+    `/admin/quote-uploads/${encodeURIComponent(String(id))}${toQuery(params)}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

@@ -44,8 +44,8 @@ import { getObjectiveIconSrc } from "../lib/objectiveIcons";
 import { getPowerSetupIconSrc } from "../lib/powerSetupIcons";
 import { NIGERIA_STATE_LABELS } from "../lib/nigeriaStates";
 import {
-  detectUserLocation,
   matchNigeriaState,
+  resolveUserLocation,
   type DetectedLocation,
 } from "../lib/geolocation";
 import { ensureTrackingSession } from "../lib/visitorTracking";
@@ -729,6 +729,9 @@ function ApplianceKindSelect({
 
 function Assesement() {
   const draftBridge = useOptionalAssessmentDraftBridge();
+  const draftBridgeRef = useRef(draftBridge);
+  draftBridgeRef.current = draftBridge;
+  const hydratedFromUrlRef = useRef<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [showTemplatePopup, setShowTemplatePopup] = useState(false);
@@ -915,7 +918,7 @@ function Assesement() {
     let cancelled = false;
 
     (async () => {
-      const location = await detectUserLocation();
+      const location = await resolveUserLocation();
       if (!location || cancelled) return;
 
       const isNigeria =
@@ -1611,6 +1614,15 @@ function Assesement() {
 
   useEffect(() => {
     if (!draftIdParam && !assessmentIdParam) {
+      hydratedFromUrlRef.current = null;
+      setIsLoadingDraft(false);
+      return;
+    }
+
+    const hydrateKey = draftIdParam
+      ? `draft:${draftIdParam}`
+      : `assessment:${assessmentIdParam}`;
+    if (hydratedFromUrlRef.current === hydrateKey) {
       setIsLoadingDraft(false);
       return;
     }
@@ -1665,11 +1677,14 @@ function Assesement() {
           setMonthlyGeneratorFuelSpend,
         });
         if (publishedDraftId != null) {
-          draftBridge?.setDraft(
+          draftBridgeRef.current?.setDraft(
             publishedDraftId,
             formData as AssessmentFormData,
             "hydrate",
           );
+        }
+        if (!cancelled) {
+          hydratedFromUrlRef.current = hydrateKey;
         }
         if (formData?.template) {
           templatePromptHandledRef.current = true;
@@ -1725,7 +1740,7 @@ function Assesement() {
     return () => {
       cancelled = true;
     };
-  }, [draftIdParam, assessmentIdParam, showError, draftBridge]);
+  }, [draftIdParam, assessmentIdParam, showError]);
 
   // Apply chatbot assessment updates into the open form without losing draft id.
   useEffect(() => {

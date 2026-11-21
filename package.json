@@ -8,6 +8,8 @@
     "build": "vite build && node scripts/prerender-blogs.mjs",
     "prerender:blogs": "node scripts/prerender-blogs.mjs",
     "lint": "eslint .",
+    "test:geo": "node scripts/test-geolocation-matching.mjs",
+    "test:assessment-hydrate": "node scripts/test-assessment-state-hydrate.mjs",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"

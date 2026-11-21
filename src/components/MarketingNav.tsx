@@ -95,6 +95,11 @@ export default function MarketingNav({
             {isAuthenticated ? null : (
               <>
                 <li className="nav-item">
+                  <Link className="nav-link" to="/projects" onClick={close}>
+                    Projects
+                  </Link>
+                </li>
+                <li className="nav-item">
                   <Link className="nav-link" to="/login" onClick={close}>
                     Log in
                   </Link>

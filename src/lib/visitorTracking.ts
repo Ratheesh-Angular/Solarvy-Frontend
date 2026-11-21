@@ -1,4 +1,13 @@
-import { apiPost, buildApiUrl } from "./api";
+import { apiGet, apiPost, buildApiUrl } from "./api";
+
+export type IpGeoPayload = {
+  country: string;
+  region: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
+  countryCode: string;
+};
 
 const VISITOR_KEY = "solarvy_visitor_id";
 const SESSION_KEY = "solarvy_session_id";
@@ -68,6 +77,22 @@ function setSessionId(id: string) {
 let sessionPromise: Promise<{ visitorId: string; sessionId: string }> | null =
   null;
 let locationPostedKey: string | null = null;
+
+/** Server-side IP geolocation (same lookup as signup / tracking session). */
+export async function fetchIpGeo(): Promise<IpGeoPayload | null> {
+  try {
+    const data = await apiGet<{
+      success: boolean;
+      data?: IpGeoPayload;
+    }>("/tracking/geo");
+    if (!data.success || !data.data) return null;
+    const payload = data.data;
+    if (!payload.country && !payload.region && !payload.city) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
 
 function locationPayloadKey(extra?: {
   city?: string;

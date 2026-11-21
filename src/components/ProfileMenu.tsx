@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FolderKanban, LogOut, User, UserRound } from "lucide-react";
 import type { AuthUser } from "../context/AuthContext";
+import { resolvePublicAssetUrl } from "../lib/authApi";
 
 type ProfileMenuProps = {
   user: AuthUser | null;
@@ -26,6 +27,7 @@ export default function ProfileMenu({
   const menuId = useId();
   const initials = getInitials(user?.fullName);
   const displayName = user?.fullName?.split(" ")[0] || "Account";
+  const avatarSrc = resolvePublicAssetUrl(user?.avatarUrl);
 
   useEffect(() => {
     if (!open) return;
@@ -67,7 +69,13 @@ export default function ProfileMenu({
         onClick={() => setOpen((v) => !v)}
       >
         <span className="solar-profile-avatar" aria-hidden="true">
-          {initials ? (
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt=""
+              className="solar-profile-avatar-img"
+            />
+          ) : initials ? (
             <span className="solar-profile-initials">{initials}</span>
           ) : (
             <UserRound size={18} strokeWidth={2} />

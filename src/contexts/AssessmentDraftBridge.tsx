@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -69,6 +70,8 @@ export function AssessmentDraftBridgeProvider({
     readStoredDraftId(),
   );
   const [formData, setFormData] = useState<AssessmentFormData | null>(null);
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
   const [source, setSource] = useState<DraftBridgeSnapshot["source"]>(null);
   const [updatedAt, setUpdatedAt] = useState(0);
 
@@ -80,18 +83,21 @@ export function AssessmentDraftBridgeProvider({
     ) => {
       setDraftId(nextId);
       writeStoredDraftId(nextId);
-      if (nextForm !== undefined) setFormData(nextForm);
+      if (nextForm !== undefined) {
+        formDataRef.current = nextForm;
+        setFormData(nextForm);
+      }
       setSource(nextSource);
       const stamp = Date.now();
       setUpdatedAt(stamp);
       emitBridgeEvent({
         draftId: nextId,
-        formData: nextForm === undefined ? formData : nextForm,
+        formData: nextForm === undefined ? formDataRef.current : nextForm,
         source: nextSource,
         updatedAt: stamp,
       });
     },
-    [formData],
+    [],
   );
 
   const clearDraft = useCallback(() => {

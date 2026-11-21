@@ -4,10 +4,14 @@ import { Link, useParams } from "react-router-dom";
 import {
   adminDownloadLeadFile,
   adminGetExpertReview,
+  adminUpdateExpertReview,
   adminViewLeadFile,
   type AdminExpertReview,
   type AdminInstallerSnapshot,
+  type ProjectActionStatus,
+  projectActionStatusLabel,
 } from "../lib/adminApi";
+import AdminActionStatusPanel from "../components/AdminActionStatusPanel";
 import {
   downloadExpertReviewReport,
   formatLeadReportDate,
@@ -246,6 +250,34 @@ export default function AdminExpertReviewDetail() {
       ) : null}
 
       <div className="admin-lead-detail-grid">
+        <AdminActionStatusPanel
+          key={`${record.status}-${record.statusUpdatedAt ?? ""}`}
+          status={record.status}
+          adminNotes={record.adminNotes ?? ""}
+          statusUpdatedAt={record.statusUpdatedAt}
+          updatedAt={record.updatedAt}
+          emailHint="Changing the status emails the customer and updates their project space."
+          onSave={async (next: {
+            status: ProjectActionStatus;
+            adminNotes: string;
+          }) => {
+            const updated = await adminUpdateExpertReview(record.id, next, {
+              visitorId: id,
+            });
+            setRecord((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    status: updated.status,
+                    adminNotes: updated.adminNotes,
+                    statusUpdatedAt: updated.statusUpdatedAt,
+                    updatedAt: updated.updatedAt,
+                  }
+                : updated,
+            );
+          }}
+        />
+
         <section className="admin-panel admin-detail-section admin-lead-installer-panel">
           <h2 className="admin-panel-title">Selected installer</h2>
           {installerName ? (
@@ -293,6 +325,7 @@ export default function AdminExpertReviewDetail() {
             <Field label="Full name" value={record.fullName} />
             <Field label="Email" value={record.email} />
             <Field label="Phone" value={record.phoneNumber} />
+            <Field label="Status" value={projectActionStatusLabel(record.status)} />
           </dl>
         </section>
 

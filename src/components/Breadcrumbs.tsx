@@ -26,6 +26,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/blog": "Blog",
   "/about": "About Us",
   "/contact": "Contact Us",
+  "/profile": "Profile",
   "/terms-of-use": "Terms of Use",
   "/privacy-policy": "Privacy Policy",
 };

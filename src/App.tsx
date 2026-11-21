@@ -74,7 +74,7 @@ import { AssessmentDraftBridgeProvider } from "./contexts/AssessmentDraftBridge.
 import Signup from "./pages/Signup.tsx";
 import Login from "./pages/Login.tsx";
 import Profile from "./pages/Profile.tsx";
-import Projects from "./pages/Projects.tsx";
+import ProjectsPage from "./pages/ProjectsPage.tsx";
 import "./css/admin/index.css";
 import "./css/auth-pages.css";
 
@@ -195,7 +195,8 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/projects/:assessmentRef" element={<ProjectsPage />} />
             <Route path="/terms-of-use" element={<TermsOfUse />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           </Route>
