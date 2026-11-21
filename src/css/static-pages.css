@@ -47,6 +47,37 @@
   transform: translateY(-1px);
 }
 
+.upcoming-page-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px !important;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #e8f0fa;
+  color: #174c90;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.upcoming-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.upcoming-page-cta-secondary {
+  background: #fff;
+  color: #174c90;
+  border: 1px solid #c5d4e8;
+}
+
+.upcoming-page-cta-secondary:hover {
+  background: #f0f5fb;
+  color: #123a6e;
+}
+
 .static-legal-updated {
   margin: 0 0 16px;
   font-size: 12px;

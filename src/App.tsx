@@ -75,6 +75,11 @@ import Signup from "./pages/Signup.tsx";
 import Login from "./pages/Login.tsx";
 import Profile from "./pages/Profile.tsx";
 import ProjectsPage from "./pages/ProjectsPage.tsx";
+import FeatureGatedPage from "./components/FeatureGatedPage.tsx";
+import {
+  ENABLE_PROFILE_PAGE,
+  ENABLE_PROJECTS_PAGE,
+} from "./lib/featureFlags.ts";
 import "./css/admin/index.css";
 import "./css/auth-pages.css";
 
@@ -194,9 +199,45 @@ function App() {
             <Route path="/blog/:slug" element={<BlogDetail />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/:assessmentRef" element={<ProjectsPage />} />
+            <Route
+              path="/profile"
+              element={
+                <FeatureGatedPage
+                  enabled={ENABLE_PROFILE_PAGE}
+                  upcomingTitle="Profile"
+                  upcomingDescription="Your SolarVy profile will let you update your details, contact information, and photo in one place."
+                  path="/profile"
+                >
+                  <Profile />
+                </FeatureGatedPage>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <FeatureGatedPage
+                  enabled={ENABLE_PROJECTS_PAGE}
+                  upcomingTitle="Projects"
+                  upcomingDescription="Your projects workspace will bring assessments, installer matches, quotes, and progress into one dashboard."
+                  path="/projects"
+                >
+                  <ProjectsPage />
+                </FeatureGatedPage>
+              }
+            />
+            <Route
+              path="/projects/:assessmentRef"
+              element={
+                <FeatureGatedPage
+                  enabled={ENABLE_PROJECTS_PAGE}
+                  upcomingTitle="Projects"
+                  upcomingDescription="Your projects workspace will bring assessments, installer matches, quotes, and progress into one dashboard."
+                  path="/projects"
+                >
+                  <ProjectsPage />
+                </FeatureGatedPage>
+              }
+            />
             <Route path="/terms-of-use" element={<TermsOfUse />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           </Route>
