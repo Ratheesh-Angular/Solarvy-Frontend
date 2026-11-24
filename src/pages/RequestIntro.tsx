@@ -9,11 +9,17 @@ import { CheckCircle2 } from "lucide-react";
 import { apiPost, ApiError } from "../lib/api";
 import { getAssessment } from "../lib/assessmentApi";
 import { getBuildingIconSrc } from "../lib/buildingIcons";
+import {
+  loadSavedContact,
+  phoneLocalFromE164,
+  saveSavedContact,
+} from "../lib/savedContact";
 import PageSeo from "../components/PageSeo";
 import MarketingNav from "../components/MarketingNav";
 import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
 import { isValidNigeriaLocalPhone } from "../components/NigeriaPhoneInput";
+import { useAuth } from "../context/AuthContext";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import type {
   AssessmentFormData,
@@ -154,6 +160,7 @@ function RequestIntro() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get("assessment")?.trim() || "";
+  const { user } = useAuth();
   const { toast, showSuccess, clearToast } = useFeedbackToast();
   const [projectSummary, setProjectSummary] = useState<ProjectSummaryItem[]>(
     () => [...DEFAULT_PROJECT_SUMMARY],
@@ -182,16 +189,42 @@ function RequestIntro() {
       ? `Match score: ${Math.round(matchPct)}/100`
       : null;
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phoneNumber: "",
-    email: "",
-    projectTimeline: "",
-    additionalNotes: "",
+  const [formData, setFormData] = useState(() => {
+    const saved = loadSavedContact();
+    return {
+      fullName: saved?.fullName || "",
+      phoneNumber: saved?.phoneNumber || "",
+      email: saved?.email || "",
+      projectTimeline: "",
+      additionalNotes: "",
+    };
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+
+  useEffect(() => {
+    const saved = loadSavedContact();
+    const authPhone = phoneLocalFromE164(user?.phoneE164);
+    setFormData((prev) => ({
+      ...prev,
+      fullName:
+        prev.fullName ||
+        user?.fullName?.trim() ||
+        saved?.fullName ||
+        "",
+      phoneNumber:
+        prev.phoneNumber ||
+        authPhone ||
+        saved?.phoneNumber ||
+        "",
+      email:
+        prev.email ||
+        user?.email?.trim() ||
+        saved?.email ||
+        "",
+    }));
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -246,6 +279,11 @@ function RequestIntro() {
               },
             }
           : {}),
+      });
+      saveSavedContact({
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        email: formData.email,
       });
       showSuccess(
         "Your introduction request was submitted successfully.",
@@ -445,14 +483,13 @@ function RequestIntro() {
 
                     <div className="col-md-6">
                       <label className="form-label ass-field-label">
-                        PROJECT TIMELINE
+                        PROJECT TIMELINE (OPTIONAL)
                       </label>
                       <select
                         name="projectTimeline"
                         value={formData.projectTimeline}
                         onChange={handleChange}
                         className="form-select ass-field-control"
-                        required
                       >
                         <option value="">Select timeline</option>
                         <option value="immediately">Immediately</option>

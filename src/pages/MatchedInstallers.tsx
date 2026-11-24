@@ -650,6 +650,53 @@ function MatchedInstallers() {
                       ))}
                     </div>
                   )}
+
+                  <div className="installer-dossier__actions best-match-card__actions mt-3">
+                    <button
+                      type="button"
+                      className="btn-primary-custom-match installer-primary-cta"
+                      onClick={() => {
+                        void trackCtaClick("request_intro", {
+                          entityType: assessmentId
+                            ? "assessment"
+                            : "installer",
+                          entityId: assessmentId || undefined,
+                          metadata: {
+                            installerName: bestMatch.installerName,
+                          },
+                        });
+                        navigate(
+                          assessmentId
+                            ? `/request-intro?assessment=${encodeURIComponent(assessmentId)}`
+                            : "/request-intro",
+                          { state: { installer: bestMatch } },
+                        );
+                      }}
+                    >
+                      {bestMatch.primaryCta?.trim() || "Request Introduction"}
+                    </button>
+                    <Link
+                      to={expertReviewPath}
+                      state={{
+                        from: "matched-installers",
+                        installer: bestMatch,
+                      }}
+                      className="installer-secondary-cta"
+                      onClick={() => {
+                        void trackCtaClick("expert_review", {
+                          entityType: assessmentId
+                            ? "assessment"
+                            : "installer",
+                          entityId: assessmentId || undefined,
+                          metadata: {
+                            installerName: bestMatch.installerName,
+                          },
+                        });
+                      }}
+                    >
+                      {bestMatch.secondaryCta?.trim() || "Get Expert Review"}
+                    </Link>
+                  </div>
                 </div>
               )}
 

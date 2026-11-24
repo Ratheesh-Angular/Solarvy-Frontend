@@ -4,10 +4,16 @@ import sunone from "../assets/images/icon/sun.svg";
 import sunthree from "../assets/images/icon/sun1.svg";
 import { CheckCircle2 } from "lucide-react";
 import { apiPostFormData, ApiError } from "../lib/api";
+import {
+  loadSavedContact,
+  phoneLocalFromE164,
+  saveSavedContact,
+} from "../lib/savedContact";
 import PageSeo from "../components/PageSeo";
 import MarketingNav from "../components/MarketingNav";
 import Breadcrumbs from "../components/Breadcrumbs";
 import FeedbackToast from "../components/FeedbackToast";
+import { useAuth } from "../context/AuthContext";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
 import {
   detectUserLocation,
@@ -58,18 +64,45 @@ function ExpertReview() {
   const [fileName, setFileName] = useState("No file chosen");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const locationTouched = useRef(false);
+  const { user } = useAuth();
   const { toast, showSuccess, clearToast } = useFeedbackToast();
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phoneNumber: "",
-    email: "",
-    projectLocation: "",
-    reviewType: "",
-    additionalNotes: "",
+  const [formData, setFormData] = useState(() => {
+    const saved = loadSavedContact();
+    return {
+      fullName: saved?.fullName || "",
+      phoneNumber: saved?.phoneNumber || "",
+      email: saved?.email || "",
+      projectLocation: "",
+      reviewType: "",
+      additionalNotes: "",
+    };
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    const saved = loadSavedContact();
+    const authPhone = phoneLocalFromE164(user?.phoneE164);
+    setFormData((prev) => ({
+      ...prev,
+      fullName:
+        prev.fullName ||
+        user?.fullName?.trim() ||
+        saved?.fullName ||
+        "",
+      phoneNumber:
+        prev.phoneNumber ||
+        authPhone ||
+        saved?.phoneNumber ||
+        "",
+      email:
+        prev.email ||
+        user?.email?.trim() ||
+        saved?.email ||
+        "",
+    }));
+  }, [user]);
 
 
   const handleChange = (
@@ -135,6 +168,11 @@ function ExpertReview() {
       }
 
       await apiPostFormData("/expert-review", payload);
+      saveSavedContact({
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        email: formData.email,
+      });
       showSuccess(
         "Your expert review request was submitted successfully.",
       );

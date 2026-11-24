@@ -17,6 +17,7 @@ import {
 } from "../components/NigeriaPhoneInput";
 import { useAuth } from "../context/AuthContext";
 import { useFeedbackToast } from "../hooks/useFeedbackToast";
+import { saveSavedContact } from "../lib/savedContact";
 import type { AssessmentResults } from "../types/assessment";
 import {
   FINANCING_ROUTE_ICONS,
@@ -269,6 +270,11 @@ function FinancingEnquiry() {
       status: submitted.status || "enquiry_submitted",
     };
     saveFinancingEnquiry(assessmentId, enquiry);
+    saveSavedContact({
+      fullName: trimmedName,
+      phoneNumber: contactPhoneLocal,
+      email: trimmedEmail,
+    });
     navigate(
       withAssessment(
         `/financing-status?route=${routeId}&partner=${encodeURIComponent(partner.id)}`,
@@ -486,7 +492,7 @@ function FinancingEnquiry() {
                   </p>
                 </div>
 
-                <div className="p-4 shadow-sm rounded-4 ass-first mt-3 mb-4">
+                <div className="p-4 shadow-sm rounded-4 ass-first mt-3 mb-3">
                   <div className="fin-section-head">
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">
@@ -619,7 +625,7 @@ function FinancingEnquiry() {
                   </div>
                 </div>
 
-                <div className="p-4 shadow-sm rounded-4 ass-first mt-3 mb-4">
+                <div className="p-4 shadow-sm rounded-4 ass-first mt-0 mb-4">
                   <div className="fin-section-head">
                     <div>
                       <h5 className="fw-bold mb-1 heading-ass">

@@ -902,7 +902,7 @@ function Assesement() {
       : [];
 
   const [formData, setFormData] = useState({
-    country: "",
+    country: "Nigeria",
     state: "",
   });
   const detectedNigeriaLocationRef = useRef<DetectedLocation | null>(null);
@@ -2232,25 +2232,16 @@ function Assesement() {
                     <label className="form-label ass-field-label">
                       COUNTRY
                     </label>
-                    <select
+                    <input
+                      type="text"
                       name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className={`form-select ass-field-control${
+                      value={formData.country || "Nigeria"}
+                      readOnly
+                      className={`form-control ass-field-control${
                         calculateErrors.country ? " is-invalid" : ""
                       }`}
                       aria-invalid={Boolean(calculateErrors.country)}
-                    >
-                      <option value="">Select country</option>
-                      {(catalogs?.countries?.length
-                        ? catalogs.countries
-                        : ["Nigeria"]
-                      ).map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
+                    />
                     {calculateErrors.country && (
                       <p className="ass-field-error" role="alert">
                         {calculateErrors.country}
@@ -2262,9 +2253,7 @@ function Assesement() {
                     <label className="form-label ass-field-label">State</label>
                     <select
                       name="state"
-                      value={
-                        formData.country === "Nigeria" ? formData.state : ""
-                      }
+                      value={formData.state}
                       onChange={handleChange}
                       className={`form-select ass-field-control${
                         calculateErrors.state ? " is-invalid" : ""

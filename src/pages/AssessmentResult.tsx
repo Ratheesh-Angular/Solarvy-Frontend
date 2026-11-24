@@ -385,22 +385,6 @@ function AssesementResult() {
     results?.disclaimer ||
     "These results are indicative only. Final system design, procurement, and performance should be validated through a detailed review before investment or installation.";
 
-  const showRecommendationSkeleton =
-    Boolean(assessmentId) &&
-    !storedRecommendation &&
-    !recommendationFailed &&
-    !results?.calculationError &&
-    (isLoadingResults || isLoadingRecommendation || canGenerateRecommendation);
-
-  const showQuickSnapshotRecommendationSkeleton =
-    Boolean(assessmentId) &&
-    !storedQuickSnapshotRecommendation &&
-    !quickSnapshotRecommendationFailed &&
-    !results?.calculationError &&
-    (isLoadingResults ||
-      isLoadingQuickSnapshotRecommendation ||
-      canGenerateRecommendation);
-
   const recommendationFallback =
     primaryRecommendation !== MISSING
       ? `Based on this assessment, ${primaryRecommendation} is the recommended option. Treat these figures as a planning baseline, then confirm sizing with a site review before you invest.`
@@ -410,6 +394,18 @@ function AssesementResult() {
     primaryRecommendation !== MISSING
       ? `${primaryRecommendation} is the planning baseline for this site. Confirm sizing with a site review before you invest.`
       : "Your snapshot summary will appear here once the assessment results are ready.";
+
+  const isRefiningRecommendation =
+    isLoadingRecommendation &&
+    !storedRecommendation &&
+    !recommendationFailed &&
+    !results?.calculationError;
+
+  const isRefiningQuickSnapshotRecommendation =
+    isLoadingQuickSnapshotRecommendation &&
+    !storedQuickSnapshotRecommendation &&
+    !quickSnapshotRecommendationFailed &&
+    !results?.calculationError;
 
   const strategyComparisonRows =
     results?.strategyComparison && results.strategyComparison.length > 0
@@ -841,23 +837,18 @@ function AssesementResult() {
                     <h6 className="fw-bold mb-2 rang-head section-card-title">
                       What this means
                     </h6>
-                    {showQuickSnapshotRecommendationSkeleton ? (
-                      <div
-                        className="ai-recommendation-skeleton qs-what-means-skeleton"
-                        aria-busy="true"
-                        aria-label="Loading recommendation"
-                      >
-                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
-                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
-                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
-                        <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
-                      </div>
-                    ) : (
-                      <p className="ai-recommendation-body mb-0">
-                        {storedQuickSnapshotRecommendation ||
-                          quickSnapshotRecommendationFallback}
+                    <p
+                      className="ai-recommendation-body mb-0"
+                      aria-busy={isRefiningQuickSnapshotRecommendation}
+                    >
+                      {storedQuickSnapshotRecommendation ||
+                        quickSnapshotRecommendationFallback}
+                    </p>
+                    {isRefiningQuickSnapshotRecommendation ? (
+                      <p className="ai-recommendation-refining mb-0 mt-2">
+                        Refining recommendation…
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -984,22 +975,17 @@ function AssesementResult() {
                     </div>
                   </div>
                 </div>
-                {showRecommendationSkeleton ? (
-                  <div
-                    className="ai-recommendation-skeleton"
-                    aria-busy="true"
-                    aria-label="Loading recommendation"
-                  >
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--long" />
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--short" />
-                    <span className="ai-recommendation-skeleton-bar ai-recommendation-skeleton-bar--medium" />
-                  </div>
-                ) : (
-                  <p className="ai-recommendation-body mb-0">
-                    {storedRecommendation || recommendationFallback}
+                <p
+                  className="ai-recommendation-body mb-0"
+                  aria-busy={isRefiningRecommendation}
+                >
+                  {storedRecommendation || recommendationFallback}
+                </p>
+                {isRefiningRecommendation ? (
+                  <p className="ai-recommendation-refining mb-0 mt-2">
+                    Refining recommendation…
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
 

@@ -39,6 +39,16 @@ function trackingHeaders(): Record<string, string> {
   }
 }
 
+function authHeaders(): Record<string, string> {
+  try {
+    const token = localStorage.getItem("solarvy_user_token");
+    if (token) return { Authorization: `Bearer ${token}` };
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
 export async function apiPost<T = ApiResponse>(
   path: string,
   body: unknown,
@@ -48,6 +58,7 @@ export async function apiPost<T = ApiResponse>(
     headers: {
       "Content-Type": "application/json",
       ...trackingHeaders(),
+      ...authHeaders(),
     },
     body: JSON.stringify(body),
   });
@@ -67,6 +78,7 @@ export async function apiGet<T = ApiResponse>(path: string): Promise<T> {
     headers: {
       "Content-Type": "application/json",
       ...trackingHeaders(),
+      ...authHeaders(),
     },
   });
 
@@ -88,6 +100,7 @@ export async function apiPatch<T = ApiResponse>(
     headers: {
       "Content-Type": "application/json",
       ...trackingHeaders(),
+      ...authHeaders(),
     },
     body: JSON.stringify(body),
   });
@@ -109,6 +122,7 @@ export async function apiPostFormData<T = ApiResponse>(
     method: "POST",
     headers: {
       ...trackingHeaders(),
+      ...authHeaders(),
     },
     body: formData,
   });

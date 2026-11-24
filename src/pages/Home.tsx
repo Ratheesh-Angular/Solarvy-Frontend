@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import bttnarrow from "../assets/images/btton-arrow.png";
 import bttnarrowhite from "../assets/images/btton-arrow-white.png";
 import one from "../assets/images/1.png";
@@ -21,6 +21,11 @@ import {
   quickFormToAssessmentForm,
 } from "../lib/assessmentConstants";
 import type { QuickAssessmentFormData } from "../types/assessment";
+import {
+  matchNigeriaState,
+  resolveUserLocation,
+} from "../lib/geolocation";
+import { NIGERIA_STATE_LABELS } from "../lib/nigeriaStates";
 import SolarvyLoader from "../components/SolarvyLoader";
 import PageSeo from "../components/PageSeo";
 import MarketingNav from "../components/MarketingNav";
@@ -37,11 +42,40 @@ function Home() {
 
   const [quickForm, setQuickForm] = useState<QuickAssessmentFormData>({
     propertyType: "",
-    location: "",
+    state: "",
     monthlyElectricityBill: "",
     powerSetup: "",
     mainObjective: "",
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const location = await resolveUserLocation();
+      if (!location || cancelled) return;
+
+      const isNigeria =
+        location.countryCode === "NG" ||
+        /nigeria/i.test(location.country || "");
+      if (!isNigeria) return;
+
+      const matchedState = matchNigeriaState(
+        location.state,
+        NIGERIA_STATE_LABELS,
+      );
+      if (!matchedState) return;
+
+      setQuickForm((prev) => {
+        if (prev.state) return prev;
+        return { ...prev, state: matchedState };
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleQuickFormChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -66,8 +100,8 @@ function Home() {
     if (!quickForm.propertyType.trim()) {
       errors.propertyType = "Please select a property type.";
     }
-    if (!quickForm.location.trim()) {
-      errors.location = "Please select a location.";
+    if (!quickForm.state.trim()) {
+      errors.state = "Please select a state.";
     }
     const billAmount = parseFormattedNumber(quickForm.monthlyElectricityBill);
     if (!quickForm.monthlyElectricityBill.trim()) {
@@ -205,24 +239,28 @@ function Home() {
                       )}
                     </div>
                     <div className="col">
-                      <label className="quick-lable">Location</label>
+                      <label className="quick-lable">State</label>
                       <select
                         className={`form-select select-text${
-                          fieldErrors.location ? " is-invalid" : ""
+                          fieldErrors.state ? " is-invalid" : ""
                         }`}
-                        name="location"
-                        value={quickForm.location}
+                        name="state"
+                        value={quickForm.state}
                         onChange={handleQuickFormChange}
-                        aria-invalid={Boolean(fieldErrors.location)}
+                        aria-invalid={Boolean(fieldErrors.state)}
                       >
                         <option value="" disabled hidden>
                           Select
                         </option>
-                        <option value="Nigeria">Nigeria</option>
+                        {NIGERIA_STATE_LABELS.map((label) => (
+                          <option key={label} value={label}>
+                            {label}
+                          </option>
+                        ))}
                       </select>
-                      {fieldErrors.location && (
+                      {fieldErrors.state && (
                         <p className="ass-field-error" role="alert">
-                          {fieldErrors.location}
+                          {fieldErrors.state}
                         </p>
                       )}
                     </div>

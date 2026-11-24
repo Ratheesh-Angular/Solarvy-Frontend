@@ -152,7 +152,7 @@ export function applyAssessmentFormData(
   if (merged.mainObjective) setters.setSelectedObjective(merged.mainObjective);
 
   setters.setFormData({
-    country: merged.country || "",
+    country: "Nigeria",
     state: resolveAssessmentStateFromStored(merged),
   });
 

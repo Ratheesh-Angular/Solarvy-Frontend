@@ -1281,6 +1281,12 @@ button.btn-outline-customsss2-req {
   font-size: 11px;
 }
 
+.ai-recommendation-refining {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
 .ai-recommendation-skeleton {
   display: flex;
   flex-direction: column;

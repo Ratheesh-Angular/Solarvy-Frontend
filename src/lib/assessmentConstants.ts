@@ -164,8 +164,9 @@ export function quickFormToAssessmentForm(
     if (label) partial.propertyType = label;
   }
 
-  if (quick.location) {
-    partial.country = quick.location;
+  partial.country = "Nigeria";
+  if (quick.state) {
+    partial.state = quick.state;
   }
 
   if (quick.monthlyElectricityBill) {

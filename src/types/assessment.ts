@@ -87,7 +87,7 @@ export const EMPTY_ASSESSMENT_FORM: AssessmentFormData = {
 
 export type QuickAssessmentFormData = {
   propertyType: string;
-  location: string;
+  state: string;
   monthlyElectricityBill: string;
   powerSetup: string;
   mainObjective: string;
