@@ -24,7 +24,7 @@ export type AdminNavItem = {
 };
 
 /** Set to true to restore the floating chatbot and its admin menus. */
-export const SHOW_CHATBOT = false;
+export const SHOW_CHATBOT = true;
 
 const CHATBOT_NAV_KEYS = new Set<AdminPageKey>([
   "chatbot-prompt",

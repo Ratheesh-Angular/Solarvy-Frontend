@@ -223,6 +223,12 @@ const PROPERTY_DESCRIPTIONS: Record<string, string> = {
 
 const PROPERTY_TYPE_FALLBACKS = Object.keys(PROPERTY_DESCRIPTIONS);
 
+const POWER_SETUP_FALLBACKS = [
+  "Grid Only",
+  "Grid + Generator",
+  "Solar + Grid",
+];
+
 const POWER_SETUP_ICONS: Record<string, LucideIcon> = {
   "Grid + Generator": PlugZap,
   "Grid Only": Zap,
@@ -732,21 +738,23 @@ function Assesement() {
   const draftBridgeRef = useRef(draftBridge);
   draftBridgeRef.current = draftBridge;
   const hydratedFromUrlRef = useRef<string | null>(null);
-  const [selectedProperty, setSelectedProperty] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const draftIdParam = searchParams.get("draft");
+  const assessmentIdParam = searchParams.get("assessment");
+  const [selectedProperty, setSelectedProperty] = useState(
+    draftIdParam || assessmentIdParam ? "" : "Home",
+  );
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [showTemplatePopup, setShowTemplatePopup] = useState(false);
   const [selectedPower, setSelectedPower] = useState("");
   const [inputMethod, setInputMethod] = useState<
     "bill" | "appliance" | "custom"
-  >("bill");
+  >("appliance");
   const [selectedObjective, setSelectedObjective] = useState("");
   const [catalogs, setCatalogs] = useState<ExcelCatalogs | null>(null);
   const [isLoadingCatalogs, setIsLoadingCatalogs] = useState(true);
   const [isPrefilling, setIsPrefilling] = useState(false);
   const [isExtractingBill, setIsExtractingBill] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const draftIdParam = searchParams.get("draft");
-  const assessmentIdParam = searchParams.get("assessment");
   const [draftId, setDraftId] = useState<number | null>(
     draftIdParam ? Number(draftIdParam) : null,
   );
@@ -790,11 +798,15 @@ function Assesement() {
   const [monthlyElectricityBill, setMonthlyElectricityBill] = useState("");
   const monthlyUsageTouchedRef = useRef(false);
   type CalculateFieldErrors = {
+    propertyType?: string;
     country?: string;
     state?: string;
     powerSetup?: string;
     gridUnavailable?: string;
     monthlyGeneratorFuelSpend?: string;
+    billInfo?: string;
+    applianceLoad?: string;
+    customLoad?: string;
     backupDuration?: string;
     mainObjective?: string;
   };
@@ -874,7 +886,9 @@ function Assesement() {
   }));
 
   const powerOptions = (
-    catalogs?.powerSetups ?? Object.keys(POWER_SETUP_ICONS)
+    catalogs?.powerSetups?.length
+      ? catalogs.powerSetups
+      : POWER_SETUP_FALLBACKS
   ).map((label) => ({
     title: label,
     desc: POWER_SETUP_DESCRIPTIONS[label] ?? "",
@@ -1054,6 +1068,7 @@ function Assesement() {
 
   /** Open template picker when property is pre-filled (e.g. from Home quick form) but no template yet. */
   useEffect(() => {
+    if (isLoadingDraft) return;
     if (templatePromptHandledRef.current) return;
     if (!selectedProperty || selectedTemplate || !catalogs) return;
 
@@ -1062,7 +1077,7 @@ function Assesement() {
 
     setShowTemplatePopup(true);
     templatePromptHandledRef.current = true;
-  }, [selectedProperty, selectedTemplate, catalogs]);
+  }, [selectedProperty, selectedTemplate, catalogs, isLoadingDraft]);
 
   const closeTemplatePicker = () => {
     setShowTemplatePopup(false);
@@ -1091,6 +1106,9 @@ function Assesement() {
         return [...templateRows, ...userExtras].slice(0, MAX_EQUIP_ROWS);
       });
       setAppliancePage(1);
+      if (templateRows.length) {
+        clearCalculateError("applianceLoad");
+      }
       showSuccess(
         templateRows.length
           ? `Loaded ${templateRows.length} appliances from your template.`
@@ -1145,6 +1163,9 @@ function Assesement() {
 
   const handleRowChange = (index: any, field: any, value: any) => {
     const setter = inputMethod === "custom" ? setCustomRows : setApplianceRows;
+    clearCalculateError(
+      inputMethod === "custom" ? "customLoad" : "applianceLoad",
+    );
 
     setter((prevRows) => {
       const updatedRows: LoadTableRow[] = [...prevRows];
@@ -1206,6 +1227,7 @@ function Assesement() {
   };
 
   const addEquipmentRow = (customEquipment: boolean) => {
+    clearCalculateError(customEquipment ? "customLoad" : "applianceLoad");
     const setter = customEquipment ? setCustomRows : setApplianceRows;
     const setPage = customEquipment ? setCustomPage : setAppliancePage;
     setter((prev) => {
@@ -1370,6 +1392,7 @@ function Assesement() {
 
       if (filled > 0) {
         setBillAiApplied(true);
+        clearCalculateError("billInfo");
       }
 
       if (extracted.lowConfidence || filled === 0) {
@@ -1815,6 +1838,9 @@ function Assesement() {
 
   const handleCompleteAssessment = async () => {
     const errors: CalculateFieldErrors = {};
+    if (!selectedProperty.trim()) {
+      errors.propertyType = "Please select a building type.";
+    }
     if (!formData.country.trim()) {
       errors.country = "Please select a country.";
     }
@@ -1828,6 +1854,26 @@ function Assesement() {
       errors.gridUnavailable =
         "Please select how many hours grid power is unavailable.";
     }
+    if (inputMethod === "bill") {
+      const usageVal = parseFormattedNumber(monthlyUsage);
+      const spendVal = parseFormattedNumber(monthlySpend);
+      const hasUsage = Number.isFinite(usageVal) && usageVal > 0;
+      const hasSpend = Number.isFinite(spendVal) && spendVal > 0;
+      if (!hasUsage && !hasSpend) {
+        errors.billInfo =
+          "Please enter your monthly electricity usage (kWh) or average monthly electricity spend (₦).";
+      }
+    } else if (inputMethod === "appliance") {
+      if (visibleApplianceCount === 0 || liveDailyKwh <= 0) {
+        errors.applianceLoad =
+          "Please select a property template or add at least one appliance with usage greater than 0.";
+      }
+    } else if (inputMethod === "custom") {
+      if (visibleCustomCount === 0 || liveDailyKwh <= 0) {
+        errors.customLoad =
+          "Please add at least one equipment item with usage greater than 0.";
+      }
+    }
     if (!backupDuration) {
       errors.backupDuration = "Please select a backup duration.";
     }
@@ -1839,11 +1885,15 @@ function Assesement() {
       setCalculateErrors(errors);
       const firstKey = (
         [
+          "propertyType",
           "country",
           "state",
           "powerSetup",
           "gridUnavailable",
           "monthlyGeneratorFuelSpend",
+          "billInfo",
+          "applianceLoad",
+          "customLoad",
           "backupDuration",
           "mainObjective",
         ] as const
@@ -2083,7 +2133,10 @@ function Assesement() {
           <Breadcrumbs />
           <div className="row g-4 align-items-start">
             <div className="col-lg-8">
-              <div className="p-4 shadow-sm rounded-4 ass-first">
+              <div
+                className="p-4 shadow-sm rounded-4 ass-first"
+                id="ass-field-propertyType"
+              >
                 <div className="d-flex align-items-center mb-3">
                   <div className="step-box me-3">1</div>
                   <div>
@@ -2104,6 +2157,7 @@ function Assesement() {
                         className={`property-card w-100 ${selectedProperty === item.title ? "active" : ""}`}
                         onClick={() => {
                           setSelectedProperty(item.title);
+                          clearCalculateError("propertyType");
                           setSelectedTemplate("");
                           setAppliancePage(1);
                           setApplianceRows((prev) =>
@@ -2148,6 +2202,12 @@ function Assesement() {
                     </div>
                   ))}
                 </div>
+
+                {calculateErrors.propertyType && (
+                  <p className="ass-field-error mb-3" role="alert">
+                    {calculateErrors.propertyType}
+                  </p>
+                )}
 
                 {selectedProperty && showTemplatePopup && (
                   <div className="template-picker-panel mb-3">
@@ -2529,6 +2589,9 @@ function Assesement() {
                               | "custom";
                             if (next === inputMethod) return;
                             setInputMethod(next);
+                            clearCalculateError("billInfo");
+                            clearCalculateError("applianceLoad");
+                            clearCalculateError("customLoad");
                           }}
                         >
                           <div className="d-flex align-items-start">
@@ -2659,7 +2722,10 @@ function Assesement() {
                     </div>
                   </div>
 
-                  <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
+                  <div
+                    className="p-4 shadow-sm rounded-4 ass-first mt-3"
+                    id="ass-field-billInfo"
+                  >
                     <div className="d-flex align-items-start mb-3">
                       <div
                         className="step-box me-3"
@@ -2697,12 +2763,16 @@ function Assesement() {
                           </label>
                           <input
                             type="text"
-                            className="form-control ass-field-control"
+                            className={`form-control ass-field-control${
+                              calculateErrors.billInfo ? " is-invalid" : ""
+                            }`}
                             placeholder=""
                             value={monthlyUsage}
+                            aria-invalid={Boolean(calculateErrors.billInfo)}
                             onChange={(e) => {
                               monthlyUsageTouchedRef.current = true;
                               setMonthlyUsage(e.target.value);
+                              clearCalculateError("billInfo");
                             }}
                           />
                         </div>
@@ -2728,15 +2798,19 @@ function Assesement() {
                           </label>
                           <input
                             type="text"
-                            className="form-control ass-field-control"
+                            className={`form-control ass-field-control${
+                              calculateErrors.billInfo ? " is-invalid" : ""
+                            }`}
                             placeholder=""
                             value={monthlySpend}
+                            aria-invalid={Boolean(calculateErrors.billInfo)}
                             onChange={(e) => {
                               const spend = formatIntegerWithCommas(
                                 e.target.value,
                               );
                               setMonthlySpend(spend);
                               setMonthlyElectricityBill(spend);
+                              clearCalculateError("billInfo");
                             }}
                           />
                         </div>
@@ -2754,13 +2828,21 @@ function Assesement() {
                         </div>
                       </div>
                     </div>
+                    {calculateErrors.billInfo && (
+                      <p className="ass-field-error mt-3 mb-0" role="alert">
+                        {calculateErrors.billInfo}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
               {inputMethod === "appliance" && (
                 <div className="Appliance Calculator-section-tab-2">
-                  <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
+                  <div
+                    className="p-4 shadow-sm rounded-4 ass-first mt-3"
+                    id="ass-field-applianceLoad"
+                  >
                     <div className="d-flex align-items-center mb-3">
                       <div className="step-box me-3">4</div>
                       <div>
@@ -2926,13 +3008,21 @@ function Assesement() {
                           <span className="plus">+</span> Add Equipment
                         </button>
                       </div>
+                      {calculateErrors.applianceLoad && (
+                        <p className="ass-field-error mt-3 mb-0" role="alert">
+                          {calculateErrors.applianceLoad}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
 
               {inputMethod === "custom" && (
-                <div className="p-4 shadow-sm rounded-4 ass-first mt-3">
+                <div
+                  className="p-4 shadow-sm rounded-4 ass-first mt-3"
+                  id="ass-field-customLoad"
+                >
                   <div className="d-flex align-items-center mb-3">
                     <div className="step-box me-3">4</div>
                     <div>
@@ -3080,6 +3170,11 @@ function Assesement() {
                         <span className="plus">+</span> Add Equipment
                       </button>
                     </div>
+                    {calculateErrors.customLoad && (
+                      <p className="ass-field-error mt-3 mb-0" role="alert">
+                        {calculateErrors.customLoad}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
