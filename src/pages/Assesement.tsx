@@ -799,6 +799,7 @@ function Assesement() {
   const monthlyUsageTouchedRef = useRef(false);
   type CalculateFieldErrors = {
     propertyType?: string;
+    template?: string;
     country?: string;
     state?: string;
     powerSetup?: string;
@@ -1091,6 +1092,7 @@ function Assesement() {
    */
   const handleTemplateSelect = async (template: string) => {
     setSelectedTemplate(template);
+    clearCalculateError("template");
     setShowTemplatePopup(false);
     setIsPrefilling(true);
     clearToast();
@@ -1841,6 +1843,9 @@ function Assesement() {
     if (!selectedProperty.trim()) {
       errors.propertyType = "Please select a building type.";
     }
+    if (selectedProperty.trim() && !selectedTemplate.trim()) {
+      errors.template = "Please select a template for your property.";
+    }
     if (!formData.country.trim()) {
       errors.country = "Please select a country.";
     }
@@ -1883,9 +1888,13 @@ function Assesement() {
 
     if (Object.keys(errors).length > 0) {
       setCalculateErrors(errors);
+      if (errors.template) {
+        setShowTemplatePopup(true);
+      }
       const firstKey = (
         [
           "propertyType",
+          "template",
           "country",
           "state",
           "powerSetup",
@@ -2158,6 +2167,7 @@ function Assesement() {
                         onClick={() => {
                           setSelectedProperty(item.title);
                           clearCalculateError("propertyType");
+                          clearCalculateError("template");
                           setSelectedTemplate("");
                           setAppliancePage(1);
                           setApplianceRows((prev) =>
@@ -2209,81 +2219,97 @@ function Assesement() {
                   </p>
                 )}
 
-                {selectedProperty && showTemplatePopup && (
-                  <div className="template-picker-panel mb-3">
-                    <div className="template-picker-header">
-                      <div className="template-picker-header-main">
-                        <div className="template-picker-icon" aria-hidden>
-                          <LayoutGrid size={14} strokeWidth={2} />
-                        </div>
-                        <div>
-                          <h6 className="template-picker-title ass-semi mb-1">
-                            {catalogs?.templatesTitle || "Templates"}
-                          </h6>
-                          <p className="template-picker-subtitle para-ass mb-0">
-                            Choose the closest match for{" "}
-                            <strong>{selectedProperty}</strong>
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="template-picker-close"
-                        aria-label="Close templates"
-                        onClick={closeTemplatePicker}
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    <div className="template-picker-grid" role="list">
-                      {templateOptions.length === 0 && (
-                        <span className="template-picker-loading para-ass">
-                          Loading templates...
-                        </span>
-                      )}
-                      {templateOptions.map((template) => {
-                        const isSelected = selectedTemplate === template;
-                        return (
+                {selectedProperty && (
+                  <div id="ass-field-template">
+                    {showTemplatePopup && (
+                      <div className="template-picker-panel mb-3">
+                        <div className="template-picker-header">
+                          <div className="template-picker-header-main">
+                            <div className="template-picker-icon" aria-hidden>
+                              <LayoutGrid size={14} strokeWidth={2} />
+                            </div>
+                            <div>
+                              <h6 className="template-picker-title ass-semi mb-1">
+                                {catalogs?.templatesTitle || "Templates"}
+                              </h6>
+                              <p className="template-picker-subtitle para-ass mb-0">
+                                Choose the closest match for{" "}
+                                <strong>{selectedProperty}</strong>
+                              </p>
+                            </div>
+                          </div>
                           <button
-                            key={template}
                             type="button"
-                            role="listitem"
-                            className={`template-picker-option${
-                              isSelected
-                                ? " template-picker-option--selected"
-                                : ""
-                            }`}
-                            onClick={() => handleTemplateSelect(template)}
+                            className="template-picker-close"
+                            aria-label="Close templates"
+                            onClick={closeTemplatePicker}
                           >
-                            {template}
+                            ×
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                        </div>
 
-                {selectedTemplate && !showTemplatePopup && (
-                  <div className="template-picker-summary mb-3">
-                    <span className="template-picker-summary-label ass-field-label">
-                      Template
-                    </span>
-                    <span className="template-picker-summary-value ass-semi">
-                      {selectedTemplate}
-                    </span>
-                    {isPrefilling && (
-                      <span className="template-picker-summary-status">
-                        Loading...
-                      </span>
+                        <div className="template-picker-grid" role="list">
+                          {templateOptions.length === 0 && (
+                            <span className="template-picker-loading para-ass">
+                              Loading templates...
+                            </span>
+                          )}
+                          {templateOptions.map((template) => {
+                            const isSelected = selectedTemplate === template;
+                            return (
+                              <button
+                                key={template}
+                                type="button"
+                                role="listitem"
+                                className={`template-picker-option${
+                                  isSelected
+                                    ? " template-picker-option--selected"
+                                    : ""
+                                }`}
+                                onClick={() => handleTemplateSelect(template)}
+                              >
+                                {template}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {calculateErrors.template && (
+                          <p className="ass-field-error mt-2 mb-0" role="alert">
+                            {calculateErrors.template}
+                          </p>
+                        )}
+                      </div>
                     )}
-                    <button
-                      type="button"
-                      className="template-picker-change-btn"
-                      onClick={() => setShowTemplatePopup(true)}
-                    >
-                      Change
-                    </button>
+
+                    {selectedTemplate && !showTemplatePopup && (
+                      <div className="template-picker-summary mb-3">
+                        <span className="template-picker-summary-label ass-field-label">
+                          Template
+                        </span>
+                        <span className="template-picker-summary-value ass-semi">
+                          {selectedTemplate}
+                        </span>
+                        {isPrefilling && (
+                          <span className="template-picker-summary-status">
+                            Loading...
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="template-picker-change-btn"
+                          onClick={() => setShowTemplatePopup(true)}
+                        >
+                          Change
+                        </button>
+                      </div>
+                    )}
+
+                    {!showTemplatePopup && calculateErrors.template && (
+                      <p className="ass-field-error mb-3" role="alert">
+                        {calculateErrors.template}
+                      </p>
+                    )}
                   </div>
                 )}
 
