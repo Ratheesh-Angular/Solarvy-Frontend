@@ -29,14 +29,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: Frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        working-directory: Frontend
         run: npm ci
 
       - name: Build
-        working-directory: Frontend
         run: npm run build
 
       - name: Configure AWS credentials (OIDC)
@@ -48,7 +46,6 @@ jobs:
       # Pass 1: hashed assets (safe to cache for a year).
       # HTML, sitemap.xml and robots.txt are excluded here so they are handled in pass 2.
       - name: Upload hashed assets to S3
-        working-directory: Frontend
         run: |
           aws s3 sync dist "s3://${{ secrets.S3_BUCKET }}" --delete \
             --exclude "*.html" \
@@ -58,7 +55,6 @@ jobs:
 
       # Pass 2: everything else, always revalidated. Also removes stale HTML pages.
       - name: Upload HTML and metadata to S3
-        working-directory: Frontend
         run: |
           aws s3 sync dist "s3://${{ secrets.S3_BUCKET }}" --delete \
             --cache-control "public,max-age=0,must-revalidate"
